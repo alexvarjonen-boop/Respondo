@@ -79,8 +79,12 @@ import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
 import {reliabilityOverview} from './respondo-reliability-lab.mjs';
+import {ensureScheduledQualitySchema,claimScheduledQualityRun,executeScheduledQualityRun,scheduledQualityOverview} from './respondo-scheduled-quality.mjs';
+import {ensureOwnerSalesSchema,ownerSalesOverview,recordOwnerSale,retractOwnerSale} from './respondo-sales-evidence.mjs';
+import {capabilityHealthOverview} from './respondo-capability-health.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
+import {compileWorkflowDescription} from './respondo-workflow-descriptions.mjs';
 import {conversationEvidence} from './respondo-evidence-handoff.mjs';
 import {ensureFreeCommerceSchema,putFreeOrderSnapshot,freeOrderOverview,lookupFreeOrderStatus} from './respondo-free-commerce.mjs';
 import {ensureFreeWebhookSchema,freeWebhookStatus,rotateFreeWebhookKey,
@@ -8558,7 +8562,7 @@ async function generateGroundedAnswer(args={}) {
   const result=guardCitedNumericFacts(retailChecked,args.rows);
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
-  if(!result?.handoff || String(result.answer||'').trim() ||
+  if(args.disableAIFallback===true || !result?.handoff || String(result.answer||'').trim() ||
     args.multiPart || !['Asiakaskysymys','Usein kysytyt'].includes(String(result.intent||'')))return result;
   const original=String(args.message||'').trim();
   if(!original || original.length>480 || !Array.isArray(args.rows))return result;
@@ -10035,6 +10039,9 @@ app.get('/api/app/native/free-workflows/templates',auth,ownerOnly,subscribed,nat
   ()=>({templates:workflowTemplateCatalog()})));
 app.post('/api/app/native/free-workflows/from-template',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createFreeWorkflow(pool,id,workflowFromTemplate(req.body||{}))));
+/* Non-executing, cost-free suggestion from a narrowly supported description. */
+app.post('/api/app/native/free-workflows/describe',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (_id,req)=>compileWorkflowDescription(req.body||{})));
 app.post('/api/app/native/free-workflows/preview',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (_id,req)=>previewFreeWorkflow(req.body?.workflow||{},req.body?.sample||{})));
 app.post('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -10630,6 +10637,12 @@ app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
    not proof of answer correctness, regulatory compliance or paid sales. */
 app.get('/api/app/native/reliability',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>reliabilityOverview(pool,id)));
+/* Synthetic questions run against the actual deterministic production answer path.
+   Reports are tenant-private. Neither test inputs nor answers reach visitors. */
+app.get('/api/app/native/quality/scheduled',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>scheduledQualityOverview(pool,id)));
+app.get('/api/app/native/capability-health',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>capabilityHealthOverview(pool,id)));
 app.get('/api/app/native/manual-versions',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>listManualVersions(pool,id)));
 app.post('/api/app/native/manual-versions',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -10643,6 +10656,13 @@ app.get('/api/app/native/quality/evidence/:conversationId',auth,ownerOnly,subscr
 /* Owner-only funnel metrics: verified submissions, not claimed sales. */
 app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>conversionOverview(pool,id,req.query?.days)));
+/* Owner-confirmed sales are intentionally NOT provider-verified payments. */
+app.get('/api/app/native/sales',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>ownerSalesOverview(pool,id,req.query?.days)));
+app.post('/api/app/native/sales',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>recordOwnerSale(pool,id,req.user.sub,req.body||{})));
+app.post('/api/app/native/sales/:id/retract',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>retractOwnerSale(pool,id,req.params.id,req.user.sub,req.body?.reason)));
 /* Read-only owner progress and explicitly approved first-party growth settings. */
 app.get('/api/app/native/growth',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>growthOverview(pool,id)));
@@ -18560,9 +18580,27 @@ async function runNativeMailPolling(){
  }
 }
 
+let scheduledQualityCycleBusy=false;
+async function runScheduledQualityCycle(){
+ if(scheduledQualityCycleBusy||!pool)return;
+ scheduledQualityCycleBusy=true;
+ try{
+  const run=await claimScheduledQualityRun(pool);
+  if(run){
+   await executeScheduledQualityRun(pool,run,input=>
+    generateGroundedAnswer({...input,disableAIFallback:true}));
+  }
+ }catch(error){
+  // Scheduled safety checks are never allowed to crash customer chat traffic.
+  console.warn('Scheduled answer quality check failed',error?.name||'error');
+ }finally{scheduledQualityCycleBusy=false;}
+}
+
 async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
+    await withRuntimeSchemaLock(() => ensureScheduledQualitySchema(pool));
+    await withRuntimeSchemaLock(() => ensureOwnerSalesSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailBridgeSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
@@ -18597,6 +18635,12 @@ async function start() {
   if(process.env.NODE_ENV==='production'){
     const timer=setInterval(()=>{void runScheduledWebsiteRefresh();},30*60*1000);
     timer.unref();
+    // One claimed company per cycle. A unique daily key prevents duplicates
+    // across multiple Railway replicas; no paid model fallback is invoked.
+    const qualityTimer=setInterval(()=>{void runScheduledQualityCycle();},10*60*1000);
+    qualityTimer.unref();
+    const qualityStartup=setTimeout(()=>{void runScheduledQualityCycle();},90*1000);
+    qualityStartup.unref();
     // Persisted outbox allows send recovery after restarts and deploys.
     const sendDueCheckups=()=>void runDueOnboardingCheckups(pool,{
       apiKey:process.env.RESEND_API_KEY,

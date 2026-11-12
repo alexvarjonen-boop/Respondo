@@ -12,14 +12,14 @@ const tenant='6dfac903-66a3-4386-98e2-461ab47e2314';
 const source='4ff55e70-5c13-4c33-a369-5f19294bb52d';
 const workflow='5318d11d-f2b7-4d04-b53a-b889d1be7693';
 
-test('all six sensitive capability APIs reject anonymous access in live smoke',async()=>{
+test('all nine sensitive capability APIs reject anonymous access in live smoke',async()=>{
  const seen=[];
  const anonymous=async(url,init)=>{
   seen.push({url:url.pathname,init});
   return {status:401,headers:{get:()=> 'application/json; charset=utf-8'}};
  };
  const result=await checkProtectedCapabilityRoutes('https://www.respondoai.fi',anonymous);
- assert.equal(result.tested,6);
+ assert.equal(result.tested,9);
  assert.equal(result.authenticatedWorkflowsVerified,false);
  assert(seen.every(x=>x.init.method==='GET'&&x.init.redirect==='follow'));
  assert(seen.some(x=>x.url==='/api/app/native/free-workflows'));
@@ -129,7 +129,7 @@ test('protected API smoke accepts only the two branded hosts after redirect', as
   status:401,
   headers:{get:()=> 'application/json'}
  });
- assert.equal((await checkProtectedCapabilityRoutes('https://www.respondoai.fi',canonical)).tested,6);
+ assert.equal((await checkProtectedCapabilityRoutes('https://www.respondoai.fi',canonical)).tested,9);
  const foreign=async(url)=>({
   url:'https://evil.example'+url.pathname,
   status:401,
