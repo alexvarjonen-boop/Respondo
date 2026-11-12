@@ -138,6 +138,16 @@ export async function createFreeWorkflow(db,tenantId,payload){
 export async function setFreeWorkflowEnabled(db,tenantId,id,enabled){
  if(!isUUID(tenantId)||!isUUID(id)||typeof enabled!=='boolean')
   throw new TypeError('Invalid workflow update');
+ if(enabled){
+  // Fail closed if an old or malformed rule is ever stored in the database.
+  // Disabling remains possible even when the stored rule is invalid.
+  const current=await db.query(`SELECT name,trigger_key,conditions,actions
+    FROM respondo_free_workflows WHERE tenant_id=$1 AND id=$2`,[tenantId,id]);
+  const rule=current.rows?.[0];
+  if(!rule)return null;
+  validateFreeWorkflow({name:rule.name,trigger:rule.trigger_key,
+    conditions:rule.conditions,actions:rule.actions,enabled:true});
+ }
  const r=await db.query(`UPDATE respondo_free_workflows
    SET enabled=$3,updated_at=NOW() WHERE tenant_id=$1 AND id=$2
    RETURNING id,enabled`,[tenantId,id,enabled]);
