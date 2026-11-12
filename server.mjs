@@ -57,6 +57,7 @@ import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-po
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
+import { guardUnverifiedPromises } from './unverified-promise-guard.mjs';
 import { verifyRetailAnswer } from './product-reply-integrity.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import {growthOverview,growthSettings,saveGrowthSettings,recordWidgetActivation,previewGrowthQuote,growthWeeklyReport,isPostcodeQuestion,serviceAreaResponse,suggestedGreeting,customerIntentStage,compareAnswerDrafts} from './respondo-growth-ops.mjs';
@@ -8563,7 +8564,9 @@ async function generateGroundedAnswer(args={}) {
   }
 
   const retailChecked=verifyRetailAnswer(rawResult,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily);
-  const result=guardCitedNumericFacts(retailChecked,args.rows);
+  const result=guardUnverifiedPromises(guardCitedNumericFacts(retailChecked,args.rows),{
+    question:message,lang:args.lang
+  });
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
   if(args.disableAIFallback===true || !result?.handoff || String(result.answer||'').trim() ||
@@ -8577,7 +8580,9 @@ async function generateGroundedAnswer(args={}) {
     question:original,rows:matches,
     lang:['fi','sv','en'].includes(args.lang)?args.lang:'fi'
   });
-  return guardCitedNumericFacts(verifyRetailAnswer(generated||result,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),args.rows);
+  return guardUnverifiedPromises(guardCitedNumericFacts(verifyRetailAnswer(generated||result,
+    args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,
+    productMatchesFamily),args.rows),{question:message,lang:args.lang});
 }
 
 function cookies(req) {
