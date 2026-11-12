@@ -156,7 +156,7 @@ test('revenue queries only read active tenant and require visitor/channel match'
  const calls=[];
  const db={query:async(sql,args)=>{
   calls.push([sql,args]);
-  return sql.includes('FROM public.respondo_owner_sales s')?
+  return sql.trim().startsWith('SELECT s.id')?
    {rows:[{id:other,status:'owner_confirmed',amount_cents:9900,attributed:true,
     action_request_id:request,confirmed_at:'2026-11-12T08:00:00Z'}]}:
    {rows:[{id:request,request_type:'quote',created_at:'2026-11-12'}]};
@@ -194,8 +194,8 @@ test('capability health explicitly separates configured from browser or payment 
 test('backend, scheduler and owner dashboard expose only authenticated operational features',()=>{
  const server=read('server.mjs'),entry=read('server-entry.mjs'),
   ui=read('public/native-ai-operations.js');
- assert.match(entry,/ensureScheduledQualitySchema\(pool\)/);
- assert.match(entry,/ensureOwnerSalesSchema\(pool\)/);
+ assert.match(server,/ensureScheduledQualitySchema\(pool\)/);
+ assert.match(server,/ensureOwnerSalesSchema\(pool\)/);
  for(const route of ['quality/scheduled','capability-health','sales'])
   assert(server.includes("'/api/app/native/"+route+"'"));
  assert.match(server,/quality\/scheduled',auth,ownerOnly,subscribed/);
