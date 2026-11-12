@@ -1,7 +1,7 @@
 import { approvedProductLinkAnswer } from './product-url-match.mjs';
 import { approvedCurrentPageProduct } from './page-context-product.mjs';
 import { compareApprovedProducts } from './verified-product-comparison.mjs';
-import { decodeVisitorPhoto, visitorPhotoMessage, validPhotoId, ensureVisitorPhotoSchema, saveVisitorPhoto } from './verified-photo-assist.mjs';
+import { decodeVisitorPhoto, visitorPhotoMessage, validPhotoId, ensureVisitorPhotoSchema, saveVisitorPhoto, purgeExpiredVisitorPhotos } from './verified-photo-assist.mjs';
 import { isPhysicalClubProduct, groundedBudgetProductAnswer } from './product-budget.mjs';
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
@@ -18767,6 +18767,22 @@ async function start() {
     checkupTimer.unref();
     const checkupStartup=setTimeout(sendDueCheckups,10000);
     checkupStartup.unref();
+    // Purge expired customer photo bytes even when nobody uploads a new photo.
+    // This runs independently of chat traffic and never exposes image content.
+    let photoPurgeBusy=false;
+    const runPhotoPurge=async()=>{
+      if(!pool||photoPurgeBusy)return;
+      photoPurgeBusy=true;
+      try{
+        await ensureVisitorPhotoSchema(pool);
+        await purgeExpiredVisitorPhotos(pool);
+      }catch(error){console.error('Visitor photo retention cleanup failed',error?.name||'error');}
+      finally{photoPurgeBusy=false;}
+    };
+    const photoPurgeTimer=setInterval(()=>void runPhotoPurge(),60*60*1000);
+    photoPurgeTimer.unref();
+    const photoPurgeStartup=setTimeout(()=>void runPhotoPurge(),5*60*1000);
+    photoPurgeStartup.unref();
     const mailPollTimer=setInterval(()=>void runNativeMailPolling(),5*60*1000);
     mailPollTimer.unref();
     const mailPollStartup=setTimeout(()=>void runNativeMailPolling(),45000);
