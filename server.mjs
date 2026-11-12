@@ -84,6 +84,7 @@ import {ensureOwnerSalesSchema,ownerSalesOverview,recordOwnerSale,retractOwnerSa
 import {capabilityHealthOverview} from './respondo-capability-health.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
+import {compileWorkflowDescription} from './respondo-workflow-descriptions.mjs';
 import {conversationEvidence} from './respondo-evidence-handoff.mjs';
 import {ensureFreeCommerceSchema,putFreeOrderSnapshot,freeOrderOverview,lookupFreeOrderStatus} from './respondo-free-commerce.mjs';
 import {ensureFreeWebhookSchema,freeWebhookStatus,rotateFreeWebhookKey,
@@ -10038,6 +10039,9 @@ app.get('/api/app/native/free-workflows/templates',auth,ownerOnly,subscribed,nat
   ()=>({templates:workflowTemplateCatalog()})));
 app.post('/api/app/native/free-workflows/from-template',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createFreeWorkflow(pool,id,workflowFromTemplate(req.body||{}))));
+/* Non-executing, cost-free suggestion from a narrowly supported description. */
+app.post('/api/app/native/free-workflows/describe',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (_id,req)=>compileWorkflowDescription(req.body||{})));
 app.post('/api/app/native/free-workflows/preview',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (_id,req)=>previewFreeWorkflow(req.body?.workflow||{},req.body?.sample||{})));
 app.post('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
