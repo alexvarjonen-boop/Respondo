@@ -38,7 +38,9 @@ test('conversion summary is counts only, with no inferred sales or invented rate
   assert.equal(summary.actionRatePercent,17);
   assert.equal(summary.submittedRequests,5);
   assert.equal(summary.confirmedBookings,1);
-  assert.equal(summary.verifiedPayments,1);
+  assert.equal(summary.verifiedPayments,0);
+  assert.equal(summary.reportedPaidQuotes,1);
+  assert.equal(summary.paymentsLedgerVerified,false);
   assert.equal(summary.salesConversionVerified,false);
   assert.equal(summary.revenueAttributed,false);
   assert.equal(summarizeConversionData().actionRatePercent,null);
