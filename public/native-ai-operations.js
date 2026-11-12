@@ -110,7 +110,7 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,feedbackSummary=null,websiteChanges=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,scheduleNotices=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
+    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,sales=null,scheduledQuality=null,capabilityStatus=null,feedbackSummary=null,websiteChanges=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,scheduleNotices=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
     const kinds=['contacts','tickets','quotes','rules','docs','inbox','calendar','tasks','flows','orders','quality','insights','helpdesk','zendesk'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
@@ -490,10 +490,21 @@
         try{feedbackSummary=await request('GET',API+'/feedback?days='+days);}
         catch(error){feedbackSummary=null;}
         if(active==='insights'){
-          try{conversions=await request('GET',API+'/conversions?days='+days);}
-          catch(error){conversions=null;feedback.textContent=error.message||t.error;}
+          try{
+            [conversions,sales]=await Promise.all([
+              request('GET',API+'/conversions?days='+days),
+              request('GET',API+'/sales?days='+days)
+            ]);
+          }catch(error){conversions=null;sales=null;feedback.textContent=error.message||t.error;}
+        } else if(active==='quality'){
+          try{
+            [scheduledQuality,capabilityStatus]=await Promise.all([
+              request('GET',API+'/quality/scheduled'),
+              request('GET',API+'/capability-health')
+            ]);
+          }catch(error){scheduledQuality=null;capabilityStatus=null;feedback.textContent=error.message||t.error;}
         }
-        if(active!=='insights'||conversions)feedback.textContent='';
+        if((active!=='insights'||conversions)&&(active!=='quality'||scheduledQuality))feedback.textContent='';
         render();
       }catch(error){feedback.textContent=error.message||t.error;}
     }
@@ -1208,6 +1219,47 @@
         )));
       }
       content.appendChild(el('p','native-disclaimer',t.disclaimerQuality));
+      // Daily tests execute the production rule-based answer engine using
+      // business-approved knowledge. They do not verify factual correctness.
+      if(isQuality && scheduledQuality){
+        const t3=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
+        content.appendChild(el('h4','native-subtitle',t3(
+          'Automaattiset bottitestit','Automatiska bottester','Automated bot tests')));
+        const latest=scheduledQuality.runs?.[0];
+        if(latest){
+          const lines=el('div','native-quality-metrics');
+          for(const [name,value] of [
+            [t3('Viimeisin testipäivä','Senaste testdag','Last test day'),latest.day],
+            [t3('Testin tila','Teststatus','Run status'),latest.status],
+            [t3('Oikeita bottimoottorin ajoja','Verkliga körningar av botmotorn','Actual bot-engine executions'),latest.executed],
+            [t3('Ihmisen tarkistusta vaativat','Kräver manuell granskning','Requires human review'),latest.reviews_required]
+          ])qualityMetric(lines,name,value||0);
+          content.appendChild(lines);
+          for(const issue of latest.report?.results||[]){
+            if(issue.status!=='review')continue;
+            content.appendChild(recordCard(issue.topic+' · '+issue.language,
+              issue.reason+' · '+t3('Tarkista vastaus manuaalisesti','Granska svaret manuellt','Review manually')));
+          }
+        }else content.appendChild(el('p','native-empty',t3(
+          'Päivittäistä testiä ei ole vielä suoritettu.','Inget dagligt test har körts ännu.','No daily test has run yet.')));
+        content.appendChild(el('p','native-disclaimer',t3(
+          'Testit käyttävät hyväksyttyjä yritystietoja ja oikeaa vastausmoottoria ilman maksullista AI-varajärjestelmää. Lähdeviittaus ei yksin todista vastauksen oikeellisuutta.',
+          'Testerna använder godkända företagsfakta och den riktiga svarsmotorn utan betald AI-reserv. En källhänvisning bevisar inte riktigheten.',
+          'The real answer engine uses approved business facts without paid AI fallback. A citation is not proof that an answer is correct.')));
+      }
+      if(isQuality && capabilityStatus){
+        const t3=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
+        content.appendChild(el('h4','native-subtitle',t3(
+          'Toimintojen todellinen tila','Funktionernas faktiska status','Actual capability status')));
+        for(const check of capabilityStatus.checks||[]){
+          content.appendChild(recordCard(check.key.replace(/_/g,' '),
+            check.status+' · '+check.reason));
+        }
+        content.appendChild(el('p','native-disclaimer',t3(
+          'Asetettu tai käytössä ei tarkoita, että kaikkia kirjautuneen selaimen toimintoja tai palveluntarjoajan OAuth-yhteyksiä olisi testattu.',
+          'Konfigurerad är inte samma sak som ett verifierat webbläsarflöde eller OAuth.',
+          'Configured does not mean that authenticated browser flows or provider OAuth connections have been tested.')));
+      }
       if(!isQuality && conversions?.summary){
         const funnel=conversions.summary;
         const label=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
@@ -1230,6 +1282,88 @@
           'Mätningen bygger på matchande besökarreferenser och inskickade förfrågningar inom samma kanal. Saknade referenser utesluts. En förfrågan är inte en försäljning. CRM-statusen vunnen är företagets egen markering, inte en verifierad betalning.',
           'The rate covers matched visitor references with a conversation and a request in the same channel; missing references are excluded. Submitting a request is not a sale or verified resolution. A CRM contact marked won is a company-entered status, not verified payment.'
         )));
+      }
+      if(!isQuality && sales){
+        const t3=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
+        content.appendChild(el('h4','native-subtitle',t3(
+          'Yrityksen vahvistamat kaupat','Försäljning bekräftad av företaget','Company-confirmed sales')));
+        const info=sales.summary||{};
+        const summary=el('div','native-quality-metrics');
+        const euros=cents=>(Number(cents||0)/100).toLocaleString(
+          language==='en'?'en-US':language==='sv'?'sv-SE':'fi-FI',
+          {minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+        for(const [title,value] of [
+          [t3('Kirjatut kaupat','Registrerade köp','Recorded sales'),info.ownerConfirmedSales||0],
+          [t3('Kirjattu myynti','Registrerad försäljning','Recorded revenue'),euros(info.ownerConfirmedRevenueCents)],
+          [t3('Keskusteluun yhdistetty myynti','Försäljning kopplad till samtal','Conversation-attributed revenue'),euros(info.attributedOwnerConfirmedRevenueCents)],
+          [t3('Maksupalvelun vahvistama myynti','Betalningsverifierad försäljning','Provider-verified revenue'),euros(info.platformVerifiedRevenueCents)]
+        ])qualityMetric(summary,title,value);
+        content.appendChild(summary);
+        content.appendChild(el('p','native-disclaimer',t3(
+          'Vain yrityksen itse laskun tai kuitin perusteella vahvistama myynti. Respondo ei ole tarkistanut maksua pankista tai maksupalvelusta. Keskusteluyhteys edellyttää samaa kävijätunnistetta ja kanavaa.',
+          'Endast försäljning som företaget bekräftat med faktura eller kvitto. Betalning är inte kontrollerad av Respondo.',
+          'Sales are confirmed by the company using an invoice or receipt reference. Respondo has not independently checked the payment with a provider. Attribution requires a matching visitor reference and channel.')));
+        if(sales.eligibleRequests?.length){
+          const form=el('form','native-form');
+          const label=el('label','native-label',t3('Valitse asiakkaan pyyntö','Välj kundförfrågan','Select customer request'));
+          const requestSelect=el('select','native-input');
+          for(const item of sales.eligibleRequests){
+            const option=el('option','',item.request_type+' · '+String(item.created_at).slice(0,10)+' · '+String(item.id).slice(0,8));
+            option.value=item.id;requestSelect.append(option);
+          }
+          label.append(requestSelect);form.append(label);
+          const valueLabel=el('label','native-label',t3('Todellinen myynti (€)','Verklig försäljning (€)','Actual sale (€)'));
+          const amount=el('input','native-input');amount.type='number';amount.step='0.01';amount.min='0.01';amount.max='1000000000';amount.required=true;
+          valueLabel.append(amount);form.append(valueLabel);
+          const refLabel=el('label','native-label',t3('Laskun tai kuitin viite','Faktura- eller kvittoreferens','Invoice or receipt reference'));
+          const reference=el('input','native-input');reference.maxLength=120;reference.required=true;reference.placeholder=t3('Vain viitenumero, ei henkilötietoja','Endast referensnummer','Reference only; no customer details');
+          refLabel.append(reference);form.append(refLabel);
+          const confirmLabel=el('label','native-label');
+          const confirm=el('input');confirm.type='checkbox';confirm.required=true;
+          confirmLabel.append(confirm,document.createTextNode(' '+t3(
+            'Vahvistan kaupan yrityksen kirjanpidosta.',
+            'Jag bekräftar försäljningen med företagets bokföring.',
+            'I confirm this sale using my business records.')));
+          form.append(confirmLabel);
+          const submit=button(t3('Kirjaa vahvistettu kauppa','Registrera bekräftad försäljning','Record confirmed sale'),'submit');
+          form.append(submit);
+          form.addEventListener('submit',async(event)=>{
+            event.preventDefault();
+            if(busy||!confirm.checked)return;
+            const value=Number(amount.value);
+            if(!Number.isFinite(value)||value<=0||Math.round(value*100)>100000000000)return;
+            busy=true;submit.disabled=true;feedback.textContent=t.saving;
+            try{
+              await request('POST',API+'/sales',{
+                actionRequestId:requestSelect.value,
+                amountCents:Math.round(value*100),
+                currency:'EUR',reference:reference.value,confirm:true
+              });
+              await loadQuality();feedback.textContent=t.saved;
+            }catch(error){feedback.textContent=error.message||t.error;}
+            finally{busy=false;submit.disabled=false;}
+          });
+          content.append(form);
+        }
+        for(const item of (sales.recentSales||[]).slice(0,15)){
+          const card=recordCard(euros(item.amountCents),
+            item.status+' · '+t3('Keskusteluun yhdistetty','Kopplad till samtal','Conversation attributed')+': '+(item.attributed?'yes':'no'));
+          if(item.status==='owner_confirmed'){
+            const retract=button(t3('Peru kirjaus','Återkalla registrering','Retract record'),'button');
+            retract.addEventListener('click',async()=>{
+              if(busy)return;
+              const reason=window.prompt(t3('Perumisen syy (vähintään 8 merkkiä)','Orsak till återkallelse (minst 8 tecken)','Retraction reason (at least 8 characters)'));
+              if(!reason||reason.trim().length<8)return;
+              busy=true;retract.disabled=true;
+              try{
+                await request('POST',API+'/sales/'+encodeURIComponent(item.id)+'/retract',{reason});
+                await loadQuality();
+              }catch(error){feedback.textContent=error.message||t.error;}
+              finally{busy=false;retract.disabled=false;}
+            });card.append(retract);
+          }
+          content.append(card);
+        }
       }
       if(!isQuality){
         const channels=el('div','native-list');
