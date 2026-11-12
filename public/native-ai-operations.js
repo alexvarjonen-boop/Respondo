@@ -1348,6 +1348,10 @@
           'Vain yrityksen itse laskun tai kuitin perusteella vahvistama myynti. Respondo ei ole tarkistanut maksua pankista tai maksupalvelusta. Keskusteluyhteys edellyttää samaa kävijätunnistetta ja kanavaa.',
           'Endast försäljning som företaget bekräftat med faktura eller kvitto. Betalning är inte kontrollerad av Respondo.',
           'Sales are confirmed by the company using an invoice or receipt reference. Respondo has not independently checked the payment with a provider. Attribution requires a matching visitor reference and channel.')));
+        if(sales.partialSample) content.appendChild(el('p','native-disclaimer',t3(
+          'Raportti sisältää enintään 500 viimeisintä myyntikirjausta. Näytetty summa voi olla osittainen.',
+          'Rapporten innehåller högst 500 senaste försäljningsposter. Summan kan vara partiell.',
+          'The report covers at most 500 recent sale records. Totals may be partial.')));
         if(sales.eligibleRequests?.length){
           const form=el('form','native-form');
           const label=el('label','native-label',t3('Valitse asiakkaan pyyntö','Välj kundförfrågan','Select customer request'));
