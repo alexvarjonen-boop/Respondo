@@ -18,13 +18,15 @@ const purposeFor=s=>{
 export function compileWorkflowDescription(input={}){
  const raw=clean(input.description);
  if(raw.length<12||raw.length>600)throw new TypeError('Describe one supported workflow in 12–600 characters');
- if(forbidden.test(raw))throw new TypeError('External delivery, payments and booking confirmations are not supported');
- const isLead=lead.test(raw),isRequest=request.test(raw);
+ // Fold accents so JavaScript ASCII word boundaries also work with FI/SV words.
+ const folded=raw.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+ if(forbidden.test(folded))throw new TypeError('External delivery, payments and booking confirmations are not supported');
+ const isLead=lead.test(folded),isRequest=request.test(folded);
  if(isLead===isRequest)throw new TypeError('Specify exactly one supported trigger: new lead or customer request');
  const actions=[];
- if(task.test(raw))actions.push({type:'create_task',title:'Review customer request',dueHours:24});
- if(ticket.test(raw))actions.push({type:'open_ticket',title:'Review customer case'});
- if(approval.test(raw))actions.push({type:'request_approval',title:'Owner approval required',purpose:purposeFor(raw)});
+ if(task.test(folded))actions.push({type:'create_task',title:'Review customer request',dueHours:24});
+ if(ticket.test(folded))actions.push({type:'open_ticket',title:'Review customer case'});
+ if(approval.test(folded))actions.push({type:'request_approval',title:'Owner approval required',purpose:purposeFor(folded)});
  if(!actions.length)throw new TypeError('Specify create task, open ticket or request approval');
  const rule=validateFreeWorkflow({name:normalizeTitle(raw),trigger:isLead?'lead_captured':'action_requested',
   actions,conditions:{},enabled:false});
