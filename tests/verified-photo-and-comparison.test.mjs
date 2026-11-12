@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {decodeVisitorPhoto,visitorPhotoMessage,validPhotoId,saveVisitorPhoto} from '../verified-photo-assist.mjs';
 import {compareApprovedProducts} from '../verified-product-comparison.mjs';
+import {guardUnverifiedPromises} from '../unverified-promise-guard.mjs';
 
 const safePng='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8AAAAMBAQCc479ZAAAAAElFTkSuQmCC';
 const tenant='11111111-1111-4111-8111-111111111111';
@@ -64,4 +65,24 @@ test('comparison uses two named approved products and preserves exact known valu
   assert.equal(compareApprovedProducts(rows,'Compare Alpha Table versus Gamma Table','en',parse),null);
   assert.equal(compareApprovedProducts(rows,'Compare these products','en',parse),null);
   assert.equal(compareApprovedProducts(rows,'Tell me about Alpha Table and Beta Table','en',parse),null);
+});
+
+test('AI promise guard blocks unsupported completed customer transactions',()=>{
+  for(const [lang,answer] of [
+    ['fi','Varaus on vahvistettu.'],['sv','Bokningen är bekräftad.'],
+    ['en','We charged your card.'],['en','Your order has shipped.'],
+    ['en','Your refund has been processed.']
+  ]){
+    const out=guardUnverifiedPromises({answer,handoff:false,confidence:0.95,sourceIds:['seed']},
+      {question:'Has this happened?',lang});
+    assert.equal(out.handoff,true);
+    assert.equal(out.answer,'');
+    assert.equal(out.qualityFlag,'unverified_transaction_promise');
+  }
+  const safe={answer:'You can request a booking; the company will confirm it.',
+    handoff:false,confidence:0.8,sourceIds:['source']};
+  assert.equal(guardUnverifiedPromises(safe,{question:'Can I book?',lang:'en'}),safe);
+  const factual={answer:'We offer 2 sizes of this product.',handoff:false,
+    confidence:0.9,sourceIds:['source']};
+  assert.equal(guardUnverifiedPromises(factual,{question:'Sizes?',lang:'en'}),factual);
 });
