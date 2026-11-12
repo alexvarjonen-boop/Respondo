@@ -50,10 +50,25 @@ export async function checkProtectedCapabilityRoutes(origin = defaultOrigin, fet
   for (const path of routes) {
     const response = await fetcher(new URL(path, origin), {
       method: 'GET',
-      redirect: 'manual',
+      redirect: 'follow',
       signal: AbortSignal.timeout(15_000),
       headers: { 'user-agent': 'Respondo-Capability-Smoke/1.0' },
     });
+    // The branded www domain permanently redirects to the apex domain.
+    // Follow it, but never accept a redirected response from another host
+    // or an unexpected path as proof that an owner endpoint is protected.
+    if (response.url) {
+      const finalUrl = new URL(response.url);
+      const initial = new URL(origin);
+      const allowedHosts = new Set([initial.hostname]);
+      if (['www.respondoai.fi','respondoai.fi'].includes(initial.hostname)) {
+        allowedHosts.add('www.respondoai.fi');
+        allowedHosts.add('respondoai.fi');
+      }
+      assert.equal(finalUrl.protocol, initial.protocol, 'Unexpected protocol redirect: ' + path);
+      assert.ok(allowedHosts.has(finalUrl.hostname), 'Off-site capability redirect: ' + path);
+      assert.equal(finalUrl.pathname, path, 'Unexpected capability redirect path: ' + path);
+    }
     assert.equal(response.status, 401, 'Protected API missing or accessible anonymously: ' + path);
     assert.match(response.headers.get('content-type') || '', /application\/json/i, path + ' must return JSON');
   }
