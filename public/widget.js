@@ -418,7 +418,7 @@
         <form class="composer" id="form">
           <input id="input" autocomplete="off" placeholder="${t('Kysy jotain…', 'Type your question…')}" aria-label="${t('Kirjoita kysymyksesi', 'Type your question')}">
           <select id="voiceLang" class="voice-lang" aria-label="${t('Puheen kieli', 'Speech language')}" title="${t('Puheen kieli', 'Speech language')}" hidden><option value="fi">FI</option><option value="sv">SV</option><option value="en">EN</option></select>
-          <input type="file" id="photoFile" class="photo-file" accept="image/*" hidden aria-label="${experienceText('Valitse kuva','Välj bild','Choose a photo')}">
+          <input type="file" id="photoFile" class="photo-file" accept="image/jpeg,image/png,image/webp" hidden aria-label="${experienceText('Valitse kuva','Välj bild','Choose a photo')}">
           <button type="button" id="photoBtn" class="photo-btn" hidden aria-label="${experienceText('Lähetä kuva tarkistettavaksi','Skicka bild för granskning','Send photo for review')}" title="${experienceText('Lähetä kuva tarkistettavaksi','Skicka bild för granskning','Send photo for review')}">＋</button>
           <button type="button" id="voiceBtn" class="voice-btn" hidden aria-pressed="false" aria-label="${t('Puhu kysymyksesi', 'Speak your question')}" title="${t('Puhu kysymyksesi', 'Speak your question')}"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></svg></button>
           <button type="submit" aria-label="${t('Lähetä', 'Send')}">→</button>
