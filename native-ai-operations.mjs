@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import { enqueueNativeTask } from './native-taskboard.mjs';
+import { enqueueNativeTask,leadFollowupTiming } from './native-taskboard.mjs';
 import {runFreeWorkflowEvent} from './respondo-free-actions.mjs';
 
 const RULES=[['lead_captured','save_contact'],['action_requested','open_ticket']];
@@ -225,7 +225,7 @@ export async function runNativeAutomation(db,tenantId,trigger,event){
             sourceKind:'lead',sourceId:event.id,taskKey:'lead_followup',
             title:'Follow up: '+contact.name,
             details:text(event.note||'Customer lead',1200),
-            dueHours:24,priority:'normal'
+            ...leadFollowupTiming(event.note,event.requestType)
           });
         }else if(trigger==='action_requested'&&rule.action_key==='open_ticket'){
           await client.query(`INSERT INTO respondo_native_tickets
@@ -238,7 +238,8 @@ export async function runNativeAutomation(db,tenantId,trigger,event){
             sourceKind:'action',sourceId:event.id,taskKey:'action_review',
             title:'Review: '+text(event.title||'Customer request',140),
             details:text(event.details||'Customer action requires review',1200),
-            dueHours:4,priority:event.priority==='urgent'?'urgent':'normal'
+            dueHours:event.priority==='urgent'?0.5:4,
+            priority:event.priority==='urgent'?'urgent':'normal'
           });
         }else throw new Error('Unsafe automation action');
         executed++;

@@ -111,8 +111,8 @@ test('existing CRM/ticket automations write native tasks in the same transaction
   assert.match(entry,/await ensureNativeTaskSchema\(pool\)/);
   assert.match(module,/await enqueueNativeTask\(client,tenantId,\{\s*sourceKind:'lead'/);
   assert.match(module,/await enqueueNativeTask\(client,tenantId,\{\s*sourceKind:'action'/);
-  assert.match(module,/dueHours:24/);
-  assert.match(module,/dueHours:4/);
+  assert.match(module,/leadFollowupTiming\(event\.note,event\.requestType\)/);
+  assert.match(module,/dueHours:event\.priority==='urgent'\?0\.5:4/);
   assert.match(server,/app\.get\('\/api\/app\/native\/tasks',auth,ownerOnly,subscribed/);
   assert.match(server,/createManualNativeTask\(pool,id,req.user.sub,req.body\|\|\{\}\)/);
   assert.match(server,/updateNativeTask\(pool,id,req.params.id,req.body\?\.status\)/);

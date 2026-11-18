@@ -15,6 +15,9 @@ import { createLeadOperations } from './lead-operations.mjs';
 import { readServiceRule,listServiceRules,saveServiceRule,serviceDialogue,estimateServiceDuration,fitServiceSlots } from './service-capacity.mjs';
 import { handoffBrief } from './handoff-brief.mjs';
 import { createResilientTranslationClient } from './resilient-translation.mjs';
+import { mailboxReadHealth } from './mailbox-read-health.mjs';
+import { inspectInstalledWidgetHtml,sameInstalledSiteHost } from './installation-proof.mjs';
+import { createPublicAssetCompression } from './public-asset-compression.mjs';
 import { nativeOverview,createNativeContact,updateNativeContact,createNativeTicket,updateNativeTicket,
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
@@ -9588,6 +9591,7 @@ app.get(['/media', '/media/', '/media/index.html'], (req,res) => {
 
 app.get('/trafic', (req,res) => { res.set('X-Robots-Tag','noindex, nofollow'); return res.redirect(302,'/traffic.html'); });
 
+app.use(createPublicAssetCompression(path.join(__dirname,'public')));
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
   // A public/guides directory exists for feed.xml, but /guides is an SPA route.
@@ -10187,6 +10191,26 @@ app.get('/api/app/integrations/readiness',auth,ownerOnly,subscribed,(req,res)=>{
   freshdesk:true,native_calendar:true,webhooks:true
  },meaning:'Provider configuration only. Tenant authorization and connection tests are separate.'});
 });
+// Owner-requested verification reads ONLY the company's saved public website.
+// It never accepts a URL from the request, never follows private network
+// addresses, and never claims that static HTML proves a completed chat.
+app.post('/api/app/installation/verify',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ res.set('Cache-Control','private, no-store');
+ try{
+  const tr=await q('SELECT id,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const tenant=tr.rows[0];
+  if(!tenant.website)return res.json({status:'website_missing',reason:'save_website_first',checkedAt:new Date().toISOString()});
+  const result=await fetchPublicHtml(tenant.website,9000,1_200_000);
+  const verdict=sameInstalledSiteHost(tenant.website,result.finalUrl)
+    ?inspectInstalledWidgetHtml(result.html,result.finalUrl,tenant.slug)
+    :{status:'inconclusive',reason:'redirected_outside_website'};
+  return res.json({...verdict,checkedAt:new Date().toISOString(),
+    proof:'published_html_only',browserExecutionVerified:false});
+ }catch(error){console.warn('Installation verification unavailable',error?.name||'error');
+  return res.json({status:'inconclusive',reason:'website_unavailable',checkedAt:new Date().toISOString(),
+    proof:'none',browserExecutionVerified:false});}
+});
 app.get('/api/app/native/mail/status',auth,ownerOnly,subscribed,async(req,res)=>{
  try{
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
@@ -10196,7 +10220,8 @@ app.get('/api/app/native/mail/status',auth,ownerOnly,subscribed,async(req,res)=>
   return res.json({
    connections:rows.rows.map(x=>({
     provider:x.provider,connected:true,lastVerifiedAt:x.last_verified_at,lastSyncedAt:x.last_synced_at,
-    expiresAt:x.expires_at,lastSyncError:x.last_sync_error||null
+    expiresAt:x.expires_at,lastSyncError:x.last_sync_error||null,
+    ...mailboxReadHealth({lastSyncedAt:x.last_synced_at,lastSyncError:x.last_sync_error})
    })),
    oauthAvailable:{
     gmail:Boolean(nativeMailOauthConfig('gmail')?.clientId&&nativeMailOauthConfig('gmail')?.clientSecret),
@@ -10313,10 +10338,11 @@ async function nativeMailRefresh(tenantId,provider,credential){
 app.post('/api/app/native/mail/:provider/sync',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
  const provider=String(req.params.provider||'');
  if(!nativeMailboxProvider(provider))return res.status(400).json({error:'Tuntematon palvelu.'});
+ let tenantId=null;
  try{
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
   if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
-  const tenantId=tr.rows[0].id;
+  tenantId=tr.rows[0].id;
   const rows=await q('SELECT * FROM respondo_native_mail_credentials WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
   if(!rows.rowCount)return res.status(409).json({error:'Yhdistä sähköposti ensin.'});
   const access=await nativeMailRefresh(tenantId,provider,rows.rows[0]);
@@ -10325,6 +10351,10 @@ app.post('/api/app/native/mail/:provider/sync',auth,ownerOnly,subscribed,nativeW
   await q('UPDATE respondo_native_mail_credentials SET last_synced_at=NOW(),last_verified_at=NOW(),last_sync_error=NULL WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
   return res.json({...result,reviewRequired:true});
  }catch(e){console.error('Native mail sync failed',e?.name||'error');
+  if(tenantId)try{
+    await q('UPDATE respondo_native_mail_credentials SET last_sync_error=$3 WHERE tenant_id=$1 AND provider=$2',
+      [tenantId,provider,'manual_sync_failed']);
+  }catch{}
   return res.status(502).json({error:'Sähköpostien haku epäonnistui. Yhdistä tarvittaessa uudelleen.'})}
 });
 app.delete('/api/app/native/mail/:provider',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
@@ -17016,6 +17046,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       await runNativeAutomation(pool,tenant.id,'action_requested',{
         id,title: type==='quote'?'Quote request':type==='booking'?'Booking request':
           type==='callback'?'Callback request':'Order status request',
+        priority:['quote','booking','callback'].includes(type)?'urgent':'normal',
         details:String(fields.details||fields.note||payload.question||'').slice(0,1200)
       });
     }catch(error){
@@ -17041,6 +17072,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           await runNativeAutomation(pool,tenant.id,'lead_captured',{
             id:actionLeadId,name:String(fields.name||'Website contact').slice(0,120),
             email:contact.email||'',phone:contact.phone||'',
+            requestType:type,
             note:String(fields.details||fields.note||payload.question||'').slice(0,1200)
           });
         }catch(error){

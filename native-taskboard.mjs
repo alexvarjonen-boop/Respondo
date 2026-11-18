@@ -1,10 +1,17 @@
 // First-party task board and automation follow-ups.
 // No email, SMS, Meta, external CRM, or chargeable AI calls.
+import {classifyLeadIntent} from './lead-qualification.mjs';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const isUuid=x=>UUID.test(String(x||''));
 const txt=(v,max)=>String(v??'').trim().slice(0,max);
 const KINDS=new Set(['lead','action','manual']);
 const KEYS=new Set(['lead_followup','action_review','manual']);
+export function leadFollowupTiming(message,requestType=''){
+  const intent=classifyLeadIntent(message).intent;
+  return ['quote','booking','callback'].includes(requestType)||['quote','booking','purchase'].includes(intent)
+    ?{dueHours:0.5,priority:'urgent',intent}
+    :{dueHours:24,priority:'normal',intent};
+}
 export async function ensureNativeTaskSchema(db){
   await db.query(`CREATE TABLE IF NOT EXISTS public.respondo_native_tasks(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

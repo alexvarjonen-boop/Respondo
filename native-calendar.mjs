@@ -16,6 +16,22 @@ export function pendingBookingEligibility(request,now=Date.now()){
     return {canConfirm:false,reason:'duration_unverified'};
   return {canConfirm:true,reason:null};
 }
+export function suggestedNativeAlternatives(request,slots=[],events=[],now=Date.now()){
+  const minutes=Number(request?.serviceCapacity?.durationMinutes);
+  if(!Number.isInteger(minutes)||minutes<1||minutes>1440)return [];
+  const blocked=[...(Array.isArray(slots)?slots:[]).filter(s=>s?.status==='booked'),
+    ...(Array.isArray(events)?events:[]).filter(e=>e?.status==='confirmed')];
+  return (Array.isArray(slots)?slots:[])
+    .filter(s=>{
+      if(s?.status!=='open'||String(s.id)===String(request?.requestedSlot?.slotId))return false;
+      const start=date(s.starts_at),end=date(s.ends_at);
+      if(!Number.isFinite(start)||!Number.isFinite(end)||start<=now+60000||
+        end-start<minutes*60000||end-start>86400000)return false;
+      return !blocked.some(b=>date(b.starts_at)<end&&date(b.ends_at)>start);
+    })
+    .sort((a,b)=>date(a.starts_at)-date(b.starts_at)).slice(0,3)
+    .map(s=>({slotId:s.id,startsAt:s.starts_at,endsAt:s.ends_at,requiresOwnerVerification:true}));
+}
 export function validateInternalReservation(request,slot,now=Date.now(),manualDurationMinutes=null){
   const requested=request?.payload?.requestedSlot;
   const workload=request?.payload?.serviceCapacity;
@@ -90,7 +106,9 @@ export async function nativeCalendarOverview(db,tenantId){
         approvalRequired:x.service_capacity?.approvalRequired===true,
         manualVerificationRequired:x.service_capacity?.manualVerificationRequired===true
       },
-      ...pendingBookingEligibility({requestedSlot:x.requested_slot,serviceCapacity:x.service_capacity})
+      ...pendingBookingEligibility({requestedSlot:x.requested_slot,serviceCapacity:x.service_capacity}),
+      suggestedAlternatives:suggestedNativeAlternatives(
+        {requestedSlot:x.requested_slot,serviceCapacity:x.service_capacity},slots.rows,events.rows)
     })),
     events:events.rows||[],slots:slots.rows||[],
     externalCalendarSynchronized:false,

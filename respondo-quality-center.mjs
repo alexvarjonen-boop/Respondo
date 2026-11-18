@@ -49,6 +49,31 @@ export function summarizeQualityGaps(gaps=[]){
       requiresOwnerApproval:true
     }));
 }
+// A repeated question can indicate an unhelpful answer, but it is NOT proof
+// the previous answer was wrong. Never infer customer satisfaction here.
+export function findRepeatedCustomerQuestions(rows=[],withinMs=2*60*60*1000){
+  const seen=new Map(),repeats=[];
+  const sorted=(Array.isArray(rows)?rows:[]).slice().sort((a,b)=>
+    new Date(a.created_at).getTime()-new Date(b.created_at).getTime());
+  for(const item of sorted){
+    const visitor=short(item?.visitor_ref,160),channel=short(item?.source_channel||'website',40);
+    const question=short(item?.question,500);
+    const normalized=question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+      .replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+    const time=new Date(item?.created_at).getTime();
+    if(!visitor||normalized.length<8||!Number.isFinite(time)||
+      /^(?:hello|hi|thanks|thank you|kiitos|moikka|hei|hej|tack)(?:\s|$)/.test(normalized))continue;
+    const key=visitor+'|'+channel+'|'+normalized;
+    const previous=seen.get(key);
+    if(previous&&time>previous.time&&time-previous.time<=withinMs){
+      repeats.push({conversationId:item.id,question:redactQualityQuestion(question),
+        channel,askedAgainAfterMinutes:Math.max(1,Math.round((time-previous.time)/60000)),
+        requiresOwnerReview:true,accuracyVerified:false});
+    }
+    seen.set(key,{time});
+  }
+  return repeats.reverse().slice(0,20);
+}
 export async function ensureQualityCenterSchema(db){
   await db.query(`CREATE TABLE IF NOT EXISTS public.respondo_quality_reviews(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,7 +124,7 @@ export async function updateQualityReview(db,tenantId,id,payload={}){
 export async function qualityCenterOverview(db,tenantId,requestedDays=30){
   const days=qualityDays(requestedDays), params=[tenantId,days];
   const [
-    channels,daily,unanswered,reviews,leads,actions,tickets,actionStatuses,knowledge
+    channels,daily,unanswered,reviews,leads,actions,tickets,actionStatuses,knowledge,recentQuestions
   ]=await Promise.all([
     db.query(`SELECT COALESCE(NULLIF(source_channel,''),'website') AS channel,
       COUNT(*)::int AS total,
@@ -134,7 +159,11 @@ export async function qualityCenterOverview(db,tenantId,requestedDays=30){
     db.query(`SELECT COUNT(*)::int AS total,
       COUNT(*) FILTER(WHERE approved=TRUE)::int AS approved,
       COUNT(*) FILTER(WHERE approved=TRUE AND verified_at >= NOW()-INTERVAL '90 days')::int AS recent
-      FROM knowledge WHERE tenant_id=$1`,[tenantId])
+      FROM knowledge WHERE tenant_id=$1`,[tenantId]),
+    db.query(`SELECT id,visitor_ref,question,source_channel,created_at FROM conversations
+      WHERE tenant_id=$1 AND created_at>=NOW()-($2::int*INTERVAL '1 day')
+        AND visitor_ref IS NOT NULL AND BTRIM(visitor_ref)<>''
+      ORDER BY created_at DESC LIMIT 300`,params)
   ]);
   const rawReviews=reviews.rows||[];
   const rawGaps=(unanswered.rows||[]).map(r=>({
@@ -144,6 +173,8 @@ export async function qualityCenterOverview(db,tenantId,requestedDays=30){
   }));
   return {
     days,
+    repeatQuestionReview:{sampleSize:(recentQuestions.rows||[]).length,
+      latest300Only:true,questions:findRepeatedCustomerQuestions(recentQuestions.rows||[])},
     recurringGaps:summarizeQualityGaps(rawGaps),
     summary:qualitySummary({channels:channels.rows,leads:leads.rows[0]?.total,
       actions:actions.rows[0]?.total,tickets:tickets.rows[0]?.total,reviews:rawReviews}),
