@@ -10143,6 +10143,19 @@ app.post('/api/app/native/inbox/:id/meta-reply',auth,ownerOnly,subscribed,native
 });
 /* Consent-based Gmail and Microsoft 365 mailbox read access.
    Both providers feed the existing Respondo Inbox; no outbound email. */
+// Native Gmail/Outlook mailbox connections are intentionally withdrawn from
+// Respondo. Google sign-in and first-party transactional mail are independent.
+// Keep this server-side gate in front of every legacy OAuth/status/sync route,
+// including callbacks to old URLs, so removing UI links is not the only guard.
+const NATIVE_MAIL_CONNECTIONS_ENABLED=false;
+app.use('/api/app/native/mail',(_req,res)=>res.status(410).json({
+  error:'External mailbox connections are not available in Respondo.',
+  code:'native_mail_disabled'
+}));
+app.use('/api/app/native/inbox/:id/mail-reply',(_req,res)=>res.status(410).json({
+  error:'External mailbox replies are not available in Respondo.',
+  code:'native_mail_disabled'
+}));
 const NATIVE_MAIL_STATE_COOKIE='respondo_native_mail_oauth_state';
 function nativeMailOauthConfig(provider){
  if(provider==='gmail')return {
@@ -10183,7 +10196,8 @@ app.get('/api/app/integrations/readiness',auth,ownerOnly,subscribed,(req,res)=>{
  const meta=has('META_APP_SECRET','META_VERIFY_TOKEN')&&String(process.env.META_VERIFY_TOKEN||'').length>=16;
  const zendesk=Boolean(zendeskConfig(process.env,SEO_CANONICAL_ORIGIN));
  return res.json({prerequisites:{
-  gmail:google,outlook:microsoft,
+  gmail:NATIVE_MAIL_CONNECTIONS_ENABLED&&google,
+  outlook:NATIVE_MAIL_CONNECTIONS_ENABLED&&microsoft,
   google_calendar:google,google_drive:google,sharepoint:microsoft,
   whatsapp:meta,instagram:meta,facebook:meta,
   zendesk, stripe:Boolean(stripe),
@@ -18533,7 +18547,7 @@ async function withOwnerSeedLock(fn) {
 // Native mailbox polling shares one Postgres advisory lock across Railway replicas.
 // Inbound mail is review-only; this worker never sends email.
 async function runNativeMailPolling(){
- if(!pool||process.env.NODE_ENV!=='production'||process.env.RESPONDO_NATIVE_MAIL_POLL_ENABLED==='false')return;
+ if(!NATIVE_MAIL_CONNECTIONS_ENABLED||!pool||process.env.NODE_ENV!=='production'||process.env.RESPONDO_NATIVE_MAIL_POLL_ENABLED==='false')return;
  const lockClient=await pool.connect();
  let acquired=false;
  try{
@@ -18664,10 +18678,12 @@ async function start() {
     checkupTimer.unref();
     const checkupStartup=setTimeout(sendDueCheckups,10000);
     checkupStartup.unref();
-    const mailPollTimer=setInterval(()=>void runNativeMailPolling(),5*60*1000);
-    mailPollTimer.unref();
-    const mailPollStartup=setTimeout(()=>void runNativeMailPolling(),45000);
-    mailPollStartup.unref();
+    if(NATIVE_MAIL_CONNECTIONS_ENABLED){
+      const mailPollTimer=setInterval(()=>void runNativeMailPolling(),5*60*1000);
+      mailPollTimer.unref();
+      const mailPollStartup=setTimeout(()=>void runNativeMailPolling(),45000);
+      mailPollStartup.unref();
+    }
   }
 }
 

@@ -12,12 +12,14 @@ const server=file('server.mjs');
 const pkg=JSON.parse(file('package.json'));
 
 test('simple three-step onboarding supports every provider actually present in Respondo',()=>{
-  const ids=['gmail','outlook','google_calendar','native_calendar','hubspot','pipedrive',
+  const ids=['google_calendar','native_calendar','hubspot','pipedrive',
     'shopify','woocommerce','stripe','whatsapp','instagram','facebook',
     'freshdesk','zendesk','google_drive','sharepoint','webhooks'];
   for(const id of ids)assert.match(guide,new RegExp("id:'"+id+"'"),id);
-  for(const group of ['mail','calendar','crm','commerce','payments','social','support','files','advanced'])
+  for(const group of ['calendar','crm','commerce','payments','social','support','files','advanced'])
     assert.match(guide,new RegExp("id:'"+group+"',label:"),group);
+  assert.doesNotMatch(guide,/\{id:'(?:gmail|outlook)',group:'mail'/);
+  assert.doesNotMatch(guide,/\{id:'mail',label:/);
   assert.match(guide,/chosenGroup='respondo',chosenProvider=null/);
   assert.match(guide,/data-integration-group/);
   assert.match(guide,/data-integration-provider/);
@@ -30,13 +32,12 @@ test('simple three-step onboarding supports every provider actually present in R
 
 test('all guided actions lead to existing authorization or real authenticated configuration forms',()=>{
   const existing=['crm-integration','commerce-integration','booking-calendar','stripe-connect',
-    'native-mail-connections','meta-native-connections','business-integrations','native-operations'];
+    'meta-native-connections','business-integrations','native-operations'];
   for(const id of existing){
     assert.match(workspace,new RegExp("\\['"+id+"'"),id);
     assert.match(app,new RegExp('id="'+id+'"'),id);
   }
   for(const oauth of [
-    '/api/app/native/mail/gmail/start','/api/app/native/mail/outlook/start',
     '/api/app/google-calendar/start','/api/app/native/cloud/google_drive/start'
   ]){
     assert.ok(guide.includes(oauth),'guide uses '+oauth);
@@ -51,7 +52,7 @@ test('all guided actions lead to existing authorization or real authenticated co
 
 test('automated status is read-only, tenant-scoped and never fabricates connected state',()=>{
   for(const endpoint of [
-    '/api/app/connectors/crm','/api/app/native/mail/status',
+    '/api/app/connectors/crm',
     '/api/app/native/meta/status','/api/app/native/cloud/status',
     '/api/app/helpdesk/freshdesk','/api/app/helpdesk/zendesk',
     '/api/app/integrations/readiness'

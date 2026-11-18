@@ -88,16 +88,14 @@ test('Meta readiness respects webhook verification token length',()=>{
 
 test('unconfigured provider panels stay hidden until authenticated server readiness permits them',()=>{
  const app=read('public/app.js');
- assert.match(app,/id="native-mail-connections" data-respondo-provider-gated="yes"[^>]* hidden>/);
+ assert.doesNotMatch(app,/<article class="panel" id="native-mail-connections"/);
  assert.match(app,/id="meta-native-connections" data-respondo-provider-gated="yes"[^>]* hidden>/);
  assert.match(app,/const enabled=permitted&&\(nativeMailOauthReady\.gmail\|\|nativeMailOauthReady\.outlook\)/);
  assert.match(app,/setProviderPanelAvailability\(mailPanel,enabled\)/);
  assert.match(app,/panel\.dataset\.respondoConnectorAvailable=next/);
  assert.match(app,/panel\.hidden=ready!==true/);
- assert.match(app,/data-native-mail-connect="outlook" hidden/);
- assert.match(app,/data-native-mail-connect="gmail" hidden/);
- assert.match(app,/data-native-mail-sync="outlook" hidden/);
- assert.match(app,/data-native-mail-sync="gmail" hidden/);
+ assert.doesNotMatch(app,/<button[^>]+data-native-mail-connect=/);
+ assert.doesNotMatch(app,/<button[^>]+data-native-mail-sync=/);
  assert.match(app,/el\.hidden=!ready\|\|!saved/);
  assert.match(app,/const readiness=await api\('\/api\/app\/integrations\/readiness'\)/);
  assert.match(app,/if\(!ready\)\{setProviderPanelAvailability\(panel,false\);return;\}/);

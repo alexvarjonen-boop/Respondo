@@ -99,7 +99,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   // Reparenting a protected form must never make it appear available.
   if(!workspace.dataset.integrationLocksStamped){
     workspace.dataset.integrationLocksStamped='yes';
-    for(const id of ['crm-integration','native-mail-connections','meta-native-connections',
+    for(const id of ['crm-integration','meta-native-connections',
       'business-integrations','commerce-integration','stripe-connect']){
       const pane=shell.querySelector('#'+id);
       // Provider-gated panels start hidden while readiness is checked.
@@ -431,7 +431,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
     customers:[['leads',translate('Liidit ja yhteydenotot','Leads och kontakter','Leads & contacts')],['conversations',translate('Keskustelut','Konversationer','Conversations')]],
     conversations:[['conversations',translate('Keskusteluhistoria','Samtalshistorik','Conversation history')],['live-inbox',translate('Live-keskustelut','Livekonversationer','Live conversations')]],
-    integrations:[['native-operations',translate('Respondon työkalut','Respondos verktyg','Respondo tools')],['crm-integration',translate('CRM-yhteydet','CRM-anslutningar','CRM connectors')],['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')],['native-mail-connections',translate('Sähköposti','E-post','Email')],['meta-native-connections',translate('Viestikanavat','Meddelandekanaler','Messaging channels')]],
+    integrations:[['native-operations',translate('Respondon työkalut','Respondos verktyg','Respondo tools')],['crm-integration',translate('CRM-yhteydet','CRM-anslutningar','CRM connectors')],['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')],['meta-native-connections',translate('Viestikanavat','Meddelandekanaler','Messaging channels')]],
     profile:[['workspaces',translate('Yritykset','Företag','Companies')],['account-security',translate('Tilin asetukset','Kontoinställningar','Account security')]]
   };
   const primary={
@@ -529,7 +529,6 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       [['Keskusteluhistoria','Samtalshistorik','Conversation history'],'conversations','conversations','chat'],
       [['Live-asiakaspalvelu','Livekundservice','Live customer support'],'conversations','live-inbox','henkilö vastaus'],
       [['Ajanvaraus ja kalenteri','Bokningar och kalender','Bookings and calendar'],'integrations','booking-calendar','varaus aika'],
-      [['Sähköpostin yhdistäminen','Anslut e-post','Connect email'],'integrations','native-mail-connections','gmail outlook oauth'],
       [['CRM-yhteydet','CRM-anslutningar','CRM connections'],'integrations','crm-integration','hubspot pipedrive'],
       [['API ja webhookit','API och webhooks','API and webhooks'],'integrations','business-integrations','kehittaja'],
       [['Verkkokauppayhteydet','Webbutiksanslutningar','Online store connections'],'integrations','commerce-integration','shopify woocommerce'],
