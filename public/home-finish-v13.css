@@ -515,7 +515,7 @@
   }
 }
 
-/* V34: one clear site-navigation hint near the homepage's only CTA. */
+/* Direct feature-discovery link near the homepage CTA. */
 #app .apple-home-page .rs-spiral-heading .rs-chat-navigation-note{
   display:block;
   width:min(100%,440px);
@@ -527,6 +527,8 @@
   line-height:1.5!important;
   letter-spacing:0;
   text-wrap:pretty;
+  text-decoration:underline;
+  text-underline-offset:4px;
 }
 @media(max-width:1099px){
   #app .apple-home-page .rs-spiral-heading .rs-chat-navigation-note{
