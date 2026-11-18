@@ -27,6 +27,9 @@ test('direct feature link is phone readable and browser cache is refreshed',()=>
   assert.match(html,/home-finish-v13\.css\?v=[^"]*chat-navigation-note-v34/);
   assert.match(html,/home-finish-v13\.css\?v=[^"]*direct-features-v35/);
   assert.match(html,/app\.js\?v=[^"]*chat-navigation-note-v34/);
+  assert.match(html,/app\.js\?v=[^"]*feature-finder-v49-direct-features-v35/);
   assert.match(read('app.js'),/apple-home\.js\?v=[^']*chat-navigation-note-v34/);
+  assert.match(read('app.js'),/apple-home\.js\?v=[^']*direct-features-v35/);
   assert.match(read('apple-home.js'),/spiral-hero\.js\?v=[^']*chat-navigation-note-v34/);
+  assert.match(read('apple-home.js'),/spiral-hero\.js\?v=[^']*direct-features-v35/);
 });
