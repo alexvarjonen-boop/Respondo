@@ -749,6 +749,17 @@
             :'Verify the duration and staff availability before confirming. Document the check in the decision note.'));
         }
         const confirm=button(t.calendarConfirm,'button');
+        if(item.canConfirm===false){
+          confirm.disabled=true;
+          card.appendChild(el('p','native-disclaimer',
+            item.reason==='requested_time_expired'
+              ?(language==='fi'?'Toivottu aika on jo mennyt. Pyydä asiakkaalta uusi aika.'
+                :language==='sv'?'Den önskade tiden har passerat. Be kunden välja en ny tid.'
+                :'The requested time has passed. Ask the customer to choose a new time.')
+              :(language==='fi'?'Varausta ei voi vahvistaa ilman tarkistettua ajankohtaa ja työaikaa.'
+                :language==='sv'?'Bokningen kräver en verifierad tid och arbetslängd.'
+                :'A verified start time and service duration are required.')));
+        }
         confirm.addEventListener('click',()=>{
           if(!idGuard(item.id))return;
           if(manualDuration && (!Number.isInteger(Number(manualDuration.value))||
@@ -1318,6 +1329,8 @@
             funnel.actionRatePercent==null?'—':String(funnel.actionRatePercent)+' %'],
           [label('Lähetetyt pyynnöt','Skickade förfrågningar','Submitted requests'),funnel.submittedRequests],
           [label('Vahvistetut varaukset','Bekräftade bokningar','Confirmed bookings'),funnel.confirmedBookings],
+          [label('Vahvistetut / varauspyynnöt','Bekräftade / bokningsförfrågningar','Confirmed / booking requests'),
+            funnel.bookingConfirmationRatePercent==null?'—':String(funnel.bookingConfirmationRatePercent)+' %'],
           [label('Voitetuksi merkityt CRM-asiakkuudet','CRM-kontakter markerade vunna','CRM contacts marked won'),funnel.crmWonContacts||0],
           [label('Maksetuiksi merkityt tarjoukset (ei vahvistettu)','Offerter markerade som betalda (ej verifierat)','Quotes marked paid (unverified)'),funnel.reportedPaidQuotes||0],
         ])qualityMetric(funnelMetrics,name,value);

@@ -408,7 +408,7 @@
             <small class="product-sheet-note">${experienceText('Tarkista ajantasainen hinta ja saatavuus verkkokaupasta.','Kontrollera aktuellt pris och lagerstatus i butiken.','Check current price and availability in the store.')}</small>
           </section>
         </div>
-        <div class="chat" id="chat"></div>
+        <div class="chat" id="chat" role="log" aria-live="polite" aria-relevant="additions text"></div>
         <div class="quick" id="quick"></div>
         <div class="status" id="status">${t('Yhdistetään…', 'Connecting…')}</div>
         <form class="composer" id="form">
@@ -1578,6 +1578,9 @@
     }
   }
 
+  // Touch devices should not unexpectedly open their software keyboard or
+  // scroll the host website when the widget opens or a reply arrives.
+  const restoreKeyboardFocus = () => !window.matchMedia?.('(pointer:coarse), (hover:none)')?.matches;
   launcher.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
     launcher.setAttribute('aria-expanded',String(open));
@@ -1587,7 +1590,7 @@
     if (!open) closeProductSheet(false);
     if (open && ready) {
       renderExperienceHome();
-      setTimeout(() => input.focus(), 50);
+      if (restoreKeyboardFocus()) setTimeout(() => input.focus({preventScroll:true}), 50);
     }
   });
 
@@ -1697,7 +1700,7 @@
     } finally {
       input.disabled = false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
-      if(productSheet.hidden) input.focus();
+      if(productSheet.hidden && restoreKeyboardFocus()) input.focus({preventScroll:true});
       chat.scrollTop = chat.scrollHeight;
     }
   }

@@ -7,6 +7,8 @@ const shipping=/(?:tilauksesi (?:on )?lähetetty|tilaus (?:on )?toimitettu|din b
 const payment=/(?:maksu (?:on )?veloitet(?:tu)|betalning(?:en)? (?:har )?debiterats|payment (?:has been )?charged|we charged your card)/i;
 const price=/\b\d{1,7}(?:[.,]\d{1,2})?\s*(?:€|eur\b|euroa\b|euros?\b)/i;
 const assertedSlot=/(?:\b(?:klo|kello)\s*\d{1,2}(?::\d{2})?\s*(?:on\s+)?vapaa(?:na)?\b|\b(?:kl\.?|klockan)\s*\d{1,2}(?::\d{2})?\s*(?:är\s+)?ledig\b|\b\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s+is\s+(?:still\s+)?available\b)/i;
+const warrantyPromise=/(?:\b\d+\s*(?:vuoden|vuotta|year|years|års?)\s+(?:takuu|garanti|warranty)|(?:takuu|garanti|warranty)\s+(?:on |is |är )?\d+\s*(?:vuotta|vuoden|year|years|år))/i;
+const inventoryPromise=/(?:\b(?:on|löytyy)\s+varastossa\b|\b(?:finns|finns kvar)\s+i\s+lager\b|\b(?:is|are|currently)\s+in\s+stock\b)/i;
 const langWords={
  fi:/\b(?:kiitos|voitte|teemme|hintamme|varaus|tilauksesi|tarkistamme|saatavilla|palvelumme)\b/i,
  sv:/\b(?:tack|bokning|beställning|pris|vi erbjuder|kan ni|välkommen|tillgänglig)\b/i,
@@ -41,6 +43,10 @@ export function evaluateFreeQualityScenario(value={}){
   flag('unverified_order','high','Order status must be checked against merchant data');
  if(price.test(answer)&&proof.priceSourceApproved!==true)
   flag('unverified_price','high','Quoted price requires currently approved pricing');
+ if(warrantyPromise.test(answer)&&proof.warrantySourceApproved!==true)
+  flag('unverified_warranty','high','Warranty duration requires an approved policy source');
+ if(inventoryPromise.test(answer)&&proof.inventoryVerified!==true)
+  flag('unverified_inventory','high','Live stock availability requires merchant verification');
  if(assertedSlot.test(answer)&&
     !(proof.availabilityVerified===true&&proof.durationVerified===true))
   flag('unverified_availability','high','A proposed slot requires live calendar verification and sufficient service duration');

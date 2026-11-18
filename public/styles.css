@@ -4486,6 +4486,16 @@ body:before{opacity:.012}
    ========================================================= */
 .live-inbox-panel{margin-bottom:16px!important}
 .live-thread-list{display:grid;gap:12px;margin-top:18px}
+.handoff-brief{padding:12px 14px;margin:9px 0;border:1px solid rgba(117,139,178,.25);border-radius:12px;background:rgba(117,139,178,.08);display:grid;gap:5px}
+.handoff-brief b{font-size:12px;color:inherit}
+.handoff-brief p{font-size:12px;line-height:1.45;margin:0;overflow-wrap:anywhere}
+.handoff-brief small{font-size:10px;color:#be7440;font-weight:700}
+.dashboard-action-queue{display:grid;gap:14px;margin-block:18px}
+.dashboard-action-queue-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.dashboard-action-queue-list button{display:flex;align-items:center;gap:12px;min-height:66px;text-align:left;border:1px solid rgba(145,154,174,.25);border-radius:16px;background:rgba(145,154,174,.08);color:inherit;padding:12px;cursor:pointer}
+.dashboard-action-queue-list button:hover,.dashboard-action-queue-list button:focus-visible{border-color:currentColor}
+.dashboard-action-queue-list button b{font-size:23px;min-width:25px;font-variant-numeric:tabular-nums}
+.dashboard-action-queue-list button span:nth-child(2){font-size:12px;line-height:1.4;flex:1}
 .live-thread{
   border:1px solid rgba(17,17,20,.08);
   border-radius:18px;

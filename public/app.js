@@ -4004,6 +4004,16 @@ function legal(type) {
   </div>`;
 }
 
+function handoffBriefMarkup(thread) {
+  const needs=Array.isArray(thread?.brief?.customerRequests) ? thread.brief.customerRequests : [];
+  if(!needs.length)return '';
+  return `<div class="handoff-brief" role="note">
+    <b>${appText('Asiakkaan viimeisin tarve','Kundens senaste behov','Customer’s latest request')}</b>
+    ${needs.map(value=>`<p>${esc(value)}</p>`).join('')}
+    ${thread.brief.waitingForReply?`<small>${appText('Odottaa vastausta','Väntar på svar','Waiting for a reply')}</small>`:''}
+  </div>`;
+}
+
 async function agentDashboard(me) {
   let data;
   try { data=await api('/api/app/agent-dashboard'); }
@@ -4017,7 +4027,7 @@ async function agentDashboard(me) {
     </section>
     <div class="support-agent-metrics"><div><small>${appText('Keskustelut','Konversationer','Conversations')}</small><b>${Number(data.stats?.conversations||0)}</b></div><div><small>${appText('Avoinna','Öppna','Open')}</small><b>${Number(data.stats?.open||0)}</b></div><div><small>${appText('Ihmisen hallussa','Mänsklig hantering','Human takeover')}</small><b>${Number(data.stats?.human||0)}</b></div></div>
     <details class="support-agent-dropdown" open><summary>${appText('Analytiikka','Analys','Analytics')}</summary><div class="support-agent-analysis"><p><b>${Number(data.stats?.conversations||0)}</b> ${appText('sinulle osoitettua keskustelua','konversationer tilldelade dig','conversations assigned to you')}</p><p><b>${Number(data.stats?.open||0)}</b> ${appText('avointa juuri nyt','öppna just nu','open right now')}</p></div></details>
-    <div class="live-thread-list">${threads.length?threads.map(thread=>`<article class="live-thread ${thread.mode==='human'?'human-mode':''}" data-thread-id="${esc(thread.id)}"><div class="live-thread-head"><div><span class="live-channel">${esc(thread.source_channel||'website')}</span><b>${esc(thread.external_contact_id||thread.visitor_ref||appText('Asiakas','Kund','Customer'))}</b></div><span class="live-mode">${thread.assigned_agent_id===agent.id?appText('● Sinulla','● Hos dig','● Assigned to you'):appText('○ Vapaa keskustelu','○ Ledig konversation','○ Available chat')}</span></div><div class="live-messages">${(thread.messages||[]).map(m=>`<div class="live-message ${esc(m.role||'user')}"><small>${m.role==='user'?appText('Asiakas','Kund','Customer'):m.role==='human'?esc(agent.display_name||appText('Sinä','Du','You')):'RESPONDO'}</small><p>${esc(m.message||'')}</p></div>`).join('')}</div><div class="live-thread-actions">${thread.assigned_agent_id===agent.id?`<button type="button" class="btn live-mode-toggle" data-mode="${thread.mode==='human'?'ai':'human'}">${thread.mode==='human'?appText('Palauta automaattiselle','Återgå till automatiskt','Return to automatic'):appText('Ota haltuun','Ta över','Take over')}</button><form class="live-reply-form"><input name="message" placeholder="${appText('Kirjoita vastaus…','Skriv ett svar…','Write a reply…')}" ${thread.mode==='human'?'':'disabled'}><button type="submit" ${thread.mode==='human'?'':'disabled'}>${appText('Lähetä','Skicka','Send')} →</button></form>`:`<button type="button" class="btn agent-claim-chat">${appText('Ota keskustelu haltuun','Ta över konversationen','Take over chat')}</button>`}</div><div class="live-msg"></div></article>`).join(''):`<div class="empty-state"><b>${appText('Sinulle ei ole vielä osoitettu keskusteluja.','Inga konversationer har tilldelats dig ännu.','No conversations have been assigned to you yet.')}</b></div>`}</div></section>
+    <div class="live-thread-list">${threads.length?threads.map(thread=>`<article class="live-thread ${thread.mode==='human'?'human-mode':''}" data-thread-id="${esc(thread.id)}"><div class="live-thread-head"><div><span class="live-channel">${esc(thread.source_channel||'website')}</span><b>${esc(thread.external_contact_id||thread.visitor_ref||appText('Asiakas','Kund','Customer'))}</b></div><span class="live-mode">${thread.assigned_agent_id===agent.id?appText('● Sinulla','● Hos dig','● Assigned to you'):appText('○ Vapaa keskustelu','○ Ledig konversation','○ Available chat')}</span></div>${handoffBriefMarkup(thread)}<div class="live-messages">${(thread.messages||[]).map(m=>`<div class="live-message ${esc(m.role||'user')}"><small>${m.role==='user'?appText('Asiakas','Kund','Customer'):m.role==='human'?esc(agent.display_name||appText('Sinä','Du','You')):'RESPONDO'}</small><p>${esc(m.message||'')}</p></div>`).join('')}</div><div class="live-thread-actions">${thread.assigned_agent_id===agent.id?`<button type="button" class="btn live-mode-toggle" data-mode="${thread.mode==='human'?'ai':'human'}">${thread.mode==='human'?appText('Palauta automaattiselle','Återgå till automatiskt','Return to automatic'):appText('Ota haltuun','Ta över','Take over')}</button><form class="live-reply-form"><input name="message" placeholder="${appText('Kirjoita vastaus…','Skriv ett svar…','Write a reply…')}" ${thread.mode==='human'?'':'disabled'}><button type="submit" ${thread.mode==='human'?'':'disabled'}>${appText('Lähetä','Skicka','Send')} →</button></form>`:`<button type="button" class="btn agent-claim-chat">${appText('Ota keskustelu haltuun','Ta över konversationen','Take over chat')}</button>`}</div><div class="live-msg"></div></article>`).join(''):`<div class="empty-state"><b>${appText('Sinulle ei ole vielä osoitettu keskusteluja.','Inga konversationer har tilldelats dig ännu.','No conversations have been assigned to you yet.')}</b></div>`}</div></section>
   </main></div>`;
 }
 
@@ -4159,6 +4169,8 @@ async function dashboard(options = {}) {
   const actionStats = data.actionStats || [];
   const actionRequests = data.actionRequests || [];
   const liveThreads = data.liveThreads || [];
+  const pendingCustomerActions = actionRequests.filter(x=>['new','in_progress'].includes(x.status)).length;
+  const pendingHumanReplies = liveThreads.filter(x=>x.status==='open'&&x.mode==='human'&&x.brief?.waitingForReply).length;
   const supportAgents = data.supportAgents || [];
   const bookingSlots = data.bookingSlots || [];
   const stripeConnect = data.stripeConnect || { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false };
@@ -4585,6 +4597,16 @@ async function dashboard(options = {}) {
         </div>
       </section>
 
+      ${!isDemo&&(pendingCustomerActions||pendingHumanReplies||gaps.length)?`
+      <section class="dashboard-action-queue dashboard-view-section" data-dashboard-view="overview" aria-label="${appText('Huomiota vaativat asiat','Kräver uppmärksamhet','Needs attention')}">
+        <div class="dashboard-entry-head"><div><small>${appText('TOIMI SEURAAVAKSI','GÖR DETTA NU','NEXT ACTIONS')}</small><h2>${appText('Nämä odottavat sinua','Det här väntar på dig','These need your attention')}</h2></div></div>
+        <div class="dashboard-action-queue-list">
+          ${pendingCustomerActions?`<button type="button" data-dashboard-open="actions"><b>${pendingCustomerActions}</b><span>${appText('asiakaspyyntöä käsittelemättä','kundförfrågningar att behandla','customer requests to review')}</span><span aria-hidden="true">→</span></button>`:''}
+          ${pendingHumanReplies?`<button type="button" data-dashboard-open="customers"><b>${pendingHumanReplies}</b><span>${appText('keskustelua odottaa ihmisen vastausta','konversationer väntar på svar','conversations waiting for a human reply')}</span><span aria-hidden="true">→</span></button>`:''}
+          ${gaps.length?`<button type="button" data-dashboard-open="answers"><b>${gaps.length}</b><span>${appText('vastauspuutetta tarkistettavana','svarsluckor att granska','knowledge gaps to review')}</span><span aria-hidden="true">→</span></button>`:''}
+        </div>
+      </section>`:''}
+
       ${isWelcome ? `
       <section class="welcome-card dashboard-view-section" data-dashboard-view="overview" id="welcomeCard">
         <div class="welcome-mark" aria-hidden="true"><img src="/respondo-symbol.svg" alt="" width="44" height="44" loading="lazy"></div>
@@ -4620,7 +4642,7 @@ async function dashboard(options = {}) {
         <article class="stat"><small>${appText('KESKUSTELUT','KONVERSATIONER','CONVERSATIONS')}</small><b>${s.conversations}</b><span>${appText('yhteensä','totalt','total')}</span></article>
         <article class="stat"><small>${appText('VIIMEISET 7 PV','SENASTE 7 DAGARNA','LAST 7 DAYS')}</small><b>${s.last7 || 0}</b><span>${appText('keskustelua','konversationer','conversations')}</span></article>
         <article class="stat"><small>${appText('VASTATTU SUORAAN','SVARADE DIREKT','ANSWERED DIRECTLY')}</small><b>${s.answeredRate}%</b><span>${appText('ilman että asiakas piti ohjata eteenpäin','utan att kunden behövde skickas vidare','without routing the customer onward')}</span></article>
-        <button type="button" class="stat stat-contact-shortcut" id="dashboardContactShortcut" aria-label="${esc(appText('Näytä yhteydenotot','Visa kontaktförfrågningar','View contact requests'))}"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></button>
+        <button type="button" class="stat stat-contact-shortcut" id="dashboardContactShortcut" aria-label="${esc(appText('Näytä yhteydenotot','Visa kontaktförfrågningar','View contact requests'))}"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? appText('arvioitu arvo ','uppskattat värde ','estimated value ') + formatMoney(s.estimatedLeadValue) : appText('asiakasta jätti yhteystietonsa','kunder lämnade kontaktuppgifter','customers left their contact details')}</span></button>
       </section>
 
       <section class="respondo-intelligence dashboard-view-section" data-dashboard-view="overview">
@@ -4668,7 +4690,7 @@ async function dashboard(options = {}) {
             <h2>${appText('Kerro Respondolle tärkeimmät asiat yrityksestäsi','Berätta det viktigaste om ditt företag för Respondo','Tell Respondo the essentials about your business')}</h2>
             <p>${appText('Täytä nämä kerran. Jos jokin muuttuu, voit päivittää tiedot milloin tahansa.','Fyll i uppgifterna en gång. Du kan uppdatera dem när som helst.','Fill these in once. You can update them at any time.')}</p>
           </div>
-          <span class="install-badge">Perustiedot</span>
+          <span class="install-badge">${appText('Perustiedot','Grunduppgifter','Business details')}</span>
         </div>
         <form id="businessProfileForm" class="business-profile-form" data-respondo-owner="${!isDemo && (['respondo','respondoai'].includes(String(t.slug||'').toLowerCase()) || ['respondo','respondo ai'].includes(String(t.name||'').toLowerCase())) ? '1' : '0'}">
           <div class="profile-grid">
@@ -4683,7 +4705,7 @@ async function dashboard(options = {}) {
               </div>
               <div class="field bot-name-field">
                 <label>${appText('Botin nimi','Bottens namn','Bot name')}</label>
-                <input name="botName" maxlength="40" value="${esc(t.bot_name || 'RESPONDO AI')}" placeholder="Esim. Aino, Roope tai Yrityksen Apuri">
+                <input name="botName" maxlength="40" value="${esc(t.bot_name || 'RESPONDO AI')}" placeholder="${appText('Esim. Aino tai Yrityksen apuri','T.ex. Anna eller Företagsassistent','E.g. Anna or Company Assistant')}">
               </div>
               <input type="hidden" name="botAvatar" value="${esc(t.bot_avatar || 'robot-1')}">
               <div class="bot-avatar-presets" role="list" aria-label="Valmiit robottikuvat">
@@ -4711,9 +4733,9 @@ async function dashboard(options = {}) {
               </div>
             </div>
             <div class="field website-import-field profile-wide">
-              <label>Verkkosivusi osoite</label>
-              <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
-              <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
+              <label>${appText('Verkkosivusi osoite','Din webbplatsadress','Your website address')}</label>
+              <input name="website" value="${profileValue('Verkkosivu')}" placeholder="${appText('https://yritys.fi','https://foretag.se','https://company.com')}">
+              <small class="field-hint">${appText('Botti toimii vain tällä verkkosivulla.','Botten fungerar endast på den här webbplatsen.','The bot works only on this website.')}</small>
               ${planAccess.websiteImport
                 ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>`
                 : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku ei ole käytössä tässä tilauksessa.','Automatisk webbplatsimport är inte tillgänglig i detta abonnemang.','Automatic website import is not available on this plan.')}</div>`}
@@ -4731,7 +4753,7 @@ async function dashboard(options = {}) {
               <input name="greeting" maxlength="220" value="${esc(t.greeting || 'Hei! Miten voin auttaa?')}" placeholder="Hei! Miten voin auttaa?">
             </div>
             <div class="field">
-              <label>Vastaustyyli</label>
+              <label>${appText('Vastaustyyli','Svarsstil','Response style')}</label>
               <select name="tone">
                 <option value="Luonteva ja ystävällinen" ${profileValue('Vastaustyyli').includes('Luonteva') || !profileValue('Vastaustyyli') ? 'selected' : ''}>Luonteva ja ystävällinen</option>
                 <option value="Lyhyt ja suora" ${profileValue('Vastaustyyli').includes('Lyhyt') ? 'selected' : ''}>Lyhyt ja suora</option>
@@ -4932,6 +4954,7 @@ async function dashboard(options = {}) {
                 </div>
                 <span class="live-mode">${thread.mode === 'human' ? appText('● Ihminen vastaa','● En person svarar','● Human replying') : appText('● Automaattinen vastaus','● Automatiskt svar','● Automatic reply')}</span>
               </div>
+              ${handoffBriefMarkup(thread)}
               <div class="live-messages">
                 ${(Array.isArray(thread.messages) ? thread.messages : []).map((m) => `
                   <div class="live-message ${esc(m.role || 'user')}">

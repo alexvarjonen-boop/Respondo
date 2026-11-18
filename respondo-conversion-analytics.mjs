@@ -34,7 +34,11 @@ export function summarizeConversionData(channels=[],requests=[],leads=[],crmStag
     actionSubmittingVisitors:converters,
     actionRatePercent:visitors?Math.round(100*converters/visitors):null,
     submittedRequests:submissions,
-    confirmedBookings,verifiedPayments:0,reportedPaidQuotes,
+    bookingRequests:byAction.booking,
+    confirmedBookings,
+    bookingConfirmationRatePercent:byAction.booking
+      ?Math.round(100*Math.min(confirmedBookings,byAction.booking)/byAction.booking):null,
+    verifiedPayments:0,reportedPaidQuotes,
     paymentsLedgerVerified:false,leadsReceived,crmWonContacts:stages.won,crmStages:stages,byAction,byChannel,
     attribution:'Only visitors with a recorded conversation and a submitted request sharing the same channel and visitor reference are included in the rate.',
     salesConversionVerified:false,revenueAttributed:false,

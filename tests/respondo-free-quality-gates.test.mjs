@@ -25,6 +25,20 @@ test('detects unverified refund, payment, shipment and quoted price',()=>{
   assert(r.flags.some(x=>x.code===code),answer);
  }
 });
+test('a believable warranty or live stock claim still needs actual evidence',()=>{
+ for(const [language,answer,code,proofKey] of [
+  ['fi','Tuotteella on 2 vuoden takuu.','unverified_warranty','warrantySourceApproved'],
+  ['sv','Produkten har 3 års garanti.','unverified_warranty','warrantySourceApproved'],
+  ['en','The warranty is 5 years.','unverified_warranty','warrantySourceApproved'],
+  ['fi','Tuote on varastossa.','unverified_inventory','inventoryVerified'],
+  ['sv','Produkten finns i lager.','unverified_inventory','inventoryVerified'],
+  ['en','This item is in stock.','unverified_inventory','inventoryVerified']
+ ]){
+  const props={language,question:'Availability and warranty?',answer};
+  assert.ok(evaluateFreeQualityScenario(props).flags.some(x=>x.code===code),answer);
+  assert.ok(!evaluateFreeQualityScenario({...props,proof:{[proofKey]:true}}).flags.some(x=>x.code===code),answer);
+ }
+});
 test('FI SV EN examples and no-cost batch gate',()=>{
  const data=runFreeQualitySuite({cases:freeQualityScenarios()});
  assert.equal(data.total,6);

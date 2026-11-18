@@ -16,6 +16,8 @@ test('CRM wins are company-marked status, never inferred payment or revenue',()=
   assert.equal(summary.actionRatePercent,25);
   assert.equal(summary.submittedRequests,11);
   assert.equal(summary.confirmedBookings,2);
+  assert.equal(summary.bookingRequests,7);
+  assert.equal(summary.bookingConfirmationRatePercent,29);
   assert.equal(summary.verifiedPayments,0);
   assert.equal(summary.reportedPaidQuotes,1);
   assert.equal(summary.paymentsLedgerVerified,false);
@@ -57,4 +59,5 @@ test('untrusted CRM status or invalid counts cannot inflate metrics',()=>{
   assert.equal(s.crmWonContacts,0);
   assert.equal(s.crmStages.new,2);
   assert.equal(s.crmStages['won; DROP TABLE'],undefined);
+  assert.equal(s.bookingConfirmationRatePercent,null);
 });

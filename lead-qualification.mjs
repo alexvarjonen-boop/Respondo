@@ -3,17 +3,23 @@
 // rate limits, and authentication before persisting or exporting any lead.
 const fold = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const patterns = Object.freeze({
-  quote: /tarjouspyyn|tarjouksen|tarjousta|hinta-arvio|paljonko maks|request (?:a )?quote|send me a quote|quotation|cost estimate|offert|prisforslag/,
-  booking: /ajanvarau|varata ajan|varaisin ajan|book(?:ing)? (?:an )?appointment|schedule (?:a )?meeting|boka tid|tidsbokning/,
-  purchase: /haluan ostaa|ostaisin|tilaisin|tilata tuot|(?:want to )?buy(?: this| one)?|place an order|purchase|kopa|bestalla/,
-  contact: /ottakaa yhteytt|soittakaa|minuun yhteytt|contact me|call me|reach out|kontakta mig|ring mig/,
+  quote: /tarjouspyyn|tarjouksen|tarjousta|hinta[ -]?arvio|paljo(?:nko)?\s+maks|paljo(?:nko)?\b.{0,45}\bmaks|mit[aä]\s+maks|mit[aä]\s+hint|request (?:a )?quote|send me a quote|quotation|cost estimate|how much (?:does|would|will|is)|offert|prisf[oö]rslag|vad kostar|hur mycket kostar/,
+  booking: /ajanvarau|varata ajan|varaisin ajan|oisko.{0,30}aika|olisiko.{0,30}aika|book(?:ing)? (?:an? )?appointment|schedule (?:an? )?(?:meeting|visit|appointment)|boka (?:en )?tid|tidsbokning|ledig tid/,
+  purchase: /haluan ostaa|ostaisin|ostaa (?:t[aä]m[aä]n|tuon)|tilaisin|tilata tuot|(?:want to |i(?:'d| would) like to )?buy(?: this| one)?|place an order|purchase|kopa|bestalla|jag vill (?:kopa|bestalla)/,
+  contact: /ottakaa yhteytt|soittakaa|voitteko soittaa|minuun yhteytt|contact me|call me|reach out|kontakta mig|ring mig|kan ni ringa/,
   support: /ei toimi|ongelma|reklamaatio|palautus|refund|broken|not working|complaint|problem|reklamation|fungerar inte/
 });
 export function classifyLeadIntent(message) {
   const text = fold(message).slice(0, 4000);
   if (!text.trim()) return { intent: 'unknown', confidence: 0 };
+  // A negated sales request is not permission to create a sales opportunity.
+  // Support signals still take precedence when a customer reports a problem.
+  const deniesSales = /\b(?:en|emme|ei|ala|älä)\s+(?:nyt\s+)?(?:halua|tarvitse|tahdo)\b.{0,45}\b(?:ostaa|tila|tarjou|aika)|\b(?:i (?:do not|don't|dont)|not)\s+(?:want|need|looking for)\b.{0,45}\b(?:buy|book|quote|appointment)|\b(?:jag vill inte|behover ingen|inte intresserad av)\b.{0,45}\b(?:kopa|boka|offert)/.test(text);
   for (const intent of ['support', 'quote', 'booking', 'purchase', 'contact']) {
-    if (patterns[intent].test(text)) return { intent, confidence: 0.85 };
+    if (patterns[intent].test(text)) {
+      if (intent !== 'support' && deniesSales) return { intent:'unknown', confidence:0 };
+      return { intent, confidence: 0.85 };
+    }
   }
   return { intent: 'unknown', confidence: 0 };
 }
