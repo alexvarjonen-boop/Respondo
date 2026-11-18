@@ -17,7 +17,7 @@ test('owner always has a visible shortcut to search for real capabilities in thr
 test('feature finder routes to supported panels and disables locked or unconfigured modules',()=>{
   const ui=read('workspace-continuation-v24.js'),app=read('app.js');
   const destinations=['knowledge','unanswered','leads','conversations','live-inbox','booking-calendar',
-    'native-mail-connections','crm-integration','business-integrations','commerce-integration',
+    'crm-integration','business-integrations','commerce-integration',
     'meta-native-connections','actions2','native-operations','install','support-team','billing',
     'workspaces','account-security'];
   for(const id of destinations){

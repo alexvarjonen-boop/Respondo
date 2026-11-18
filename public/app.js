@@ -1,6 +1,6 @@
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49-native-mail-disabled-v50';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51-navigation-v52-verified-only-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -5229,22 +5229,6 @@ async function dashboard(options = {}) {
           <div id="respondoCrmConnectorMount" class="respondo-crm-connector-mount"></div>
         </article>
 
-        <article class="panel" id="native-mail-connections" data-respondo-provider-gated="yes" data-respondo-plan-allowed="${planAccess.allCurrentFeatures ? 'yes' : 'no'}" hidden>
-          <div class="panel-head">
-            <div>
-              <small>RESPONDO NATIVE MAIL</small>
-              <h2>${appText('Gmail ja Microsoft 365','Gmail och Microsoft 365','Gmail and Microsoft 365')}</h2>
-              <p>${appText('Yhdistä sähköposti sallimalla viestien lukeminen ja erikseen hyväksytyt vastaukset. Respondo hakee saapuvat viestit omaan Inboxiin. Viestejä ei lähetetä automaattisesti; yrityksen omistajan pitää hyväksyä jokainen lähetys.','Anslut e-post med behörighet att läsa och skicka uttryckligen godkända svar. Respondo hämtar inkommande meddelanden till sin inkorg. Varje utgående meddelande kräver ägarens godkännande.','Authorize mailbox read access and individually approved replies. Incoming messages are imported into Respondo Inbox. Each outgoing email requires explicit owner approval; automatic sending is disabled.')}</p>
-            </div>
-          </div>
-          <div class="calendar-sync-actions" style="display:flex;gap:12px;flex-wrap:wrap">
-            <button type="button" class="btn dashboard-action" data-native-mail-connect="gmail" hidden>${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</button>
-            <button type="button" class="btn dashboard-action" data-native-mail-connect="outlook" hidden>${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</button>
-            <button type="button" class="btn integration-test-btn" data-native-mail-sync="gmail" hidden>${appText('Hae Gmail-viestit','Hämta Gmail-meddelanden','Fetch Gmail messages')}</button>
-            <button type="button" class="btn integration-test-btn" data-native-mail-sync="outlook" hidden>${appText('Hae Outlook-viestit','Hämta Outlook-meddelanden','Fetch Outlook messages')}</button>
-          </div>
-          <div id="nativeMailStatus" aria-live="polite"></div>
-        </article>
         <article class="panel" id="meta-native-connections" data-respondo-provider-gated="yes" data-respondo-plan-allowed="${planAccess.allCurrentFeatures ? 'yes' : 'no'}" hidden>
           <div class="panel-head">
             <div>

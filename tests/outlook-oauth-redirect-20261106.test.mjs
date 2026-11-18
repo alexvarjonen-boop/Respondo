@@ -8,8 +8,8 @@ const backend=file('server.mjs');
 const html=file('public/index.html');
 const guide=file('public/integration-onboarding.js');
 
-test('Outlook connect never navigates when Microsoft OAuth is not configured',()=>{
-  assert.match(app,/data-native-mail-connect="outlook"/);
+test('Outlook connect is absent from the UI and old event guard does not auto-navigate',()=>{
+  assert.doesNotMatch(app,/<button[^>]+data-native-mail-connect="outlook"/);
   assert.match(app,/const nativeMailOauthReady=\{gmail:false,outlook:false\}/);
   assert.match(app,/nativeMailOauthReady\.outlook=response\?\.oauthAvailable\?\.outlook===true/);
   assert.match(app,/if\(nativeMailOauthReady\[provider\]!==true\)\{[\s\S]*?return;[\s\S]*?\}/);

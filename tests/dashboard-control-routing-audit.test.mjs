@@ -35,7 +35,8 @@ test('all 12 orbit buttons are mapped to real workspace destinations',()=>{
 });
 
 test('every workspace module tab points to an actual DOM panel',()=>{
-  assert.ok(tabTargets.length>=18);
+  assert.ok(tabTargets.length>=17);
+  assert.ok(!tabTargets.includes('native-mail-connections'),'Withdrawn mailbox module must not be navigable');
   for(const id of tabTargets){
     assert.match(app,new RegExp('id="'+id+'"'),'Missing module panel: '+id);
   }
@@ -71,7 +72,7 @@ test('dashboard deep links resolve to correct sections (including setup)',()=>{
 test('all visible integration categories have modules and locked tabs explain access',()=>{
   for(const id of [
     'native-operations','crm-integration','business-integrations','commerce-integration',
-    'booking-calendar','stripe-connect','native-mail-connections','meta-native-connections'
+    'booking-calendar','stripe-connect','meta-native-connections'
   ])assert.ok(tabTargets.includes(id),'Missing integration category '+id);
   assert.match(workspace,/dataset\.respondoPlanLocked==='yes'/);
   assert.match(workspace,/Feature unavailable/);
@@ -106,11 +107,11 @@ test('built-in tools bind every tab and use a real render path',()=>{
 });
 
 test('integration OAuth entrypoints use implemented backend routes',()=>{
-  for(const id of ['gmail','outlook','google_calendar','google_drive']){
+  for(const id of ['google_calendar','google_drive']){
     assert.match(guide,new RegExp("id:'"+id+"'.*?href:'/api/app/"));
   }
+  assert.doesNotMatch(guide,/\{id:'(?:gmail|outlook)',group:'mail'/);
   for(const route of [
-    "/api/app/native/mail/:provider/start",
     "/api/app/native/cloud/:provider/start",
     "/api/app/google-calendar/start"
   ])assert.ok(server.includes(route),'Missing OAuth route: '+route);

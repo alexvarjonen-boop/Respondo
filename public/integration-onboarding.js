@@ -4,7 +4,6 @@
   // It sends the owner to EXISTING tenant-scoped forms and OAuth consent flows.
   const tr=(fi,sv,en,lang)=>({fi,sv,en})[lang]||en;
   const groups=[
-    {id:'mail',label:['Sähköpostit','E-post','Email'],help:['Lue asiakasviestejä ja hyväksy vastaukset Respondossa.','Läs kundmejl och godkänn svar i Respondo.','Read customer emails and approve replies in Respondo.']},
     {id:'calendar',label:['Ajanvaraus','Tidsbokning','Bookings'],help:['Näytä vapaat ajat ilman päällekkäisiä varauksia.','Visa lediga tider utan dubbelbokningar.','Show free times without double bookings.']},
     {id:'crm',label:['Liidit ja asiakkaat','Leads och kunder','Leads & customers'],help:['Siirrä hyväksytyt liidit asiakasjärjestelmään.','Överför godkända leads till ert CRM.','Sync consented leads with your CRM.']},
     {id:'commerce',label:['Verkkokauppa','Webbutik','Online store'],help:['Hae asiakkaan tilaustiedot turvallisesti.','Kontrollera kundorder på ett säkert sätt.','Look up customer orders safely.']},
@@ -47,10 +46,6 @@
       help:['Tarkista epävarmat vastaukset ja korjaa tietoja.','Granska osäkra svar och korrigera fakta.','Review uncertain replies and correct facts.']}
   ];
   const providers=[
-    {id:'gmail',group:'mail',name:'Gmail',tab:'native-mail-connections',href:'/api/app/native/mail/gmail/start',
-      step:['Valitse Yhdistä Google-tili ja hyväksy oikeudet Googlen sivulla. Saapuneet viestit tulevat Respondon inboxiin. Lähetys vaatii erillisen hyväksynnän.','Välj Anslut Google-konto och godkänn behörigheterna hos Google. Utgående svar kräver godkännande.','Connect your Google account and approve access at Google. Incoming mail goes to Respondo; each outgoing reply needs approval.']},
-    {id:'outlook',group:'mail',name:'Outlook / Microsoft 365',tab:'native-mail-connections',href:'/api/app/native/mail/outlook/start',
-      step:['Kirjaudu Microsoft-tilille ja hyväksy pyydetyt oikeudet. Viestit haetaan Respondoon, mutta niitä ei lähetetä ilman hyväksyntää.','Logga in hos Microsoft och godkänn åtkomst. Utgående meddelanden kräver godkännande.','Sign in with Microsoft and approve access. Respondo imports mail; sending always requires approval.']},
     {id:'google_calendar',group:'calendar',name:'Google Calendar',tab:'booking-calendar',href:'/api/app/google-calendar/start',
       step:['Yhdistä Google-tili ja hyväksy kalenterin käyttö. Määritä sen jälkeen palvelujen kestot ja työajat. Respondo ei vahvista varausta ilman tarkistusta.','Godkänn kalenderåtkomst hos Google och ange sedan tjänsternas tidsåtgång.','Authorize calendar access, then set your service durations and working hours. Respondo does not promise unverified bookings.']},
     {id:'native_calendar',group:'calendar',name:'Respondo Calendar',tab:'native-operations',nativeTab:'calendar',nativeInternal:true,
@@ -484,7 +479,6 @@
       if(chosenGroup!=='respondo'){
         Object.assign(endpoints,{
           crm:'/api/app/connectors/crm',
-          mail:'/api/app/native/mail/status',
           meta:'/api/app/native/meta/status',
           cloud:'/api/app/native/cloud/status',
           freshdesk:'/api/app/helpdesk/freshdesk',
