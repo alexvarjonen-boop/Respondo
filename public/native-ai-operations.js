@@ -683,7 +683,11 @@
 
     function renderSchedule(){
       content.replaceChildren(el('p','native-intro',t.calendarIntro),
-        el('p','native-disclaimer',t.calendarExternalWarning));
+        el('p','native-disclaimer',language==='fi'
+          ?'Ulkoisia kalentereita ei päivitetä. Hyväksytyn varauksen sähköposti-ilmoitusta yritetään vain, jos lähetyspalvelu ja asiakkaan osoite ovat käytettävissä. Tarkista toimitustila alta ja ilmoita tarvittaessa erikseen.'
+          :language==='sv'
+            ?'Externa kalendrar uppdateras inte. E-postmeddelanden efter godkännande försöks endast om e-posttjänsten och kundens adress är tillgängliga. Kontrollera leveransstatusen och meddela kunden separat vid behov.'
+            :'External calendars are not updated. An email notice is attempted only after approval and when customer email and delivery are available. Check delivery status and contact the customer separately when needed.'));
       if(!schedule){content.appendChild(el('p','native-empty',t.loading));return;}
       const notices=scheduleNotices?.notices||[];
       if(notices.length){
@@ -760,6 +764,16 @@
                 :language==='sv'?'Bokningen kräver en verifierad tid och arbetslängd.'
                 :'A verified start time and service duration are required.')));
         }
+        if(Array.isArray(item.suggestedAlternatives)&&item.suggestedAlternatives.length){
+          const label=language==='fi'?'Mahdollisia vaihtoehtoisia aikoja'
+            :language==='sv'?'Möjliga alternativa tider':'Possible alternative times';
+          const proposal=item.suggestedAlternatives.map(slot=>
+            scheduleDate(slot.startsAt)+' – '+scheduleDate(slot.endsAt)).join(' · ');
+          card.appendChild(el('p','native-disclaimer',label+': '+proposal+'. '+(
+            language==='fi'?'Tarkista ja sovi asiakkaan kanssa ennen vahvistusta.'
+            :language==='sv'?'Kontrollera och kom överens med kunden innan bekräftelse.'
+            :'Verify and agree with the customer before confirming.')));
+        }
         confirm.addEventListener('click',()=>{
           if(!idGuard(item.id))return;
           if(manualDuration && (!Number.isInteger(Number(manualDuration.value))||
@@ -798,7 +812,10 @@
         if(item.status==='confirmed'){
           const cancel=button(t.calendarCancel,'button');
           cancel.addEventListener('click',()=>{
-            if(idGuard(item.id)&&window.confirm(t.calendarCancelPrompt))
+            if(idGuard(item.id)&&window.confirm(language==='fi'
+              ?'Perutaanko varaus? Tarkista peruutusilmoituksen toimitustila ja ilmoita asiakkaalle tarvittaessa erikseen.'
+              :language==='sv'?'Avboka? Kontrollera meddelandets leveransstatus och meddela kunden separat vid behov.'
+                :'Cancel this reservation? Check the notification delivery status and contact the customer separately if needed.'))
               scheduleAction('POST',SCHEDULE+'/events/'+item.id+'/cancel');
           });
           card.appendChild(cancel);
@@ -1335,10 +1352,24 @@
           [label('Maksetuiksi merkityt tarjoukset (ei vahvistettu)','Offerter markerade som betalda (ej verifierat)','Quotes marked paid (unverified)'),funnel.reportedPaidQuotes||0],
         ])qualityMetric(funnelMetrics,name,value);
         content.appendChild(funnelMetrics);
+        if(funnel.byChannel?.length){
+          content.appendChild(el('h4','native-subtitle',label(
+            'Pyynnöt ja varaukset kanavittain','Förfrågningar och bokningar per kanal','Requests and bookings by channel')));
+          for(const channel of funnel.byChannel){
+            content.appendChild(recordCard(channel.channel,[
+              label('Keskustelleet kävijät','Besökare med samtal','Engaged visitors')+': '+channel.engagedVisitors,
+              label('Pyynnön lähettäneet','Förfrågande besökare','Requesting visitors')+': '+channel.actionSubmittingVisitors,
+              label('Lähetetyt pyynnöt','Inskickade förfrågningar','Submitted requests')+': '+channel.submittedRequests,
+              label('Tarjoukset','Offerter','Quotes')+': '+channel.quoteRequests,
+              label('Varauspyynnöt','Bokningsförfrågningar','Booking requests')+': '+channel.bookingRequests,
+              label('Vahvistetut varaukset','Bekräftade bokningar','Confirmed bookings')+': '+channel.confirmedBookings
+            ].join(' · ')));
+          }
+        }
         content.appendChild(el('p','native-disclaimer',label(
-          'Luvut perustuvat saman kanavan kävijätunnisteisiin sekä tallennettuihin pyyntöihin. Puuttuvat tunnisteet eivät kuulu prosenttiin. Lähetetty pyyntö ei ole myynti eikä automaattinen vastaus todista onnistunutta palvelua. Voitetuksi merkitty CRM-asiakkuus on yrityksen oma tilamerkintä, ei varmistettu maksu.',
-          'Mätningen bygger på matchande besökarreferenser och inskickade förfrågningar inom samma kanal. Saknade referenser utesluts. En förfrågan är inte en försäljning. CRM-statusen vunnen är företagets egen markering, inte en verifierad betalning.',
-          'The rate covers matched visitor references with a conversation and a request in the same channel; missing references are excluded. Submitting a request is not a sale or verified resolution. A CRM contact marked won is a company-entered status, not verified payment.'
+          'Keskustelusta pyyntöön -prosentissa yhdistetään saman kanavan kävijätunnisteet; tunnisteettomat eivät kuulu prosenttiin. Kanavien pyyntölaskuri sisältää myös tunnisteettomat pyynnöt, eikä yksittäistä pyyntöä saa tulkita eri kävijäksi. Pyyntö tai CRM-voitto ei todista maksettua kauppaa.',
+          'Andelen samtal till förfrågan bygger på matchande besökarreferenser i samma kanal. Kanalspecifika förfrågningar omfattar även poster utan referens och är inte unika besökare. Förfrågan eller CRM-vinst bevisar inte betalning.',
+          'The conversation-to-request rate uses matched visitor references in the same channel. Channel request totals also include requests without visitor references and are not unique visitors. A request or CRM win is not verified payment.'
         )));
       }
       if(!isQuality && sales){
@@ -1480,6 +1511,24 @@
           card.append(approve,decline);reviewPanel.appendChild(card);
         }
         content.appendChild(reviewPanel);
+      }
+      const repeated=report.repeatQuestionReview?.questions||[];
+      if(repeated.length){
+        const section=el('section','native-list');
+        section.appendChild(el('h4','native-subtitle',language==='fi'?'Sama kysymys kysyttiin uudelleen'
+          :language==='sv'?'Samma fråga ställdes igen':'Customers repeated a question'));
+        for(const item of repeated){
+          const card=recordCard(item.question,
+            (language==='fi'?'Uudelleen ':language==='sv'?'Igen efter ':'Repeated after ')+
+              Number(item.askedAgainAfterMinutes||0)+' min · '+(item.channel||'website'));
+          addEvidenceInspector(card,item.conversationId);
+          section.appendChild(card);
+        }
+        section.appendChild(el('p','native-disclaimer',
+          language==='fi'?'Havainto perustuu enintään 300 viimeisimpään keskusteluun. Toisto ei yksin todista vastausta vääräksi.'
+          :language==='sv'?'Urvalet omfattar högst 300 senaste samtal. En upprepning bevisar inte ett felaktigt svar.'
+          :'Sample of up to 300 recent conversations. A repeat does not prove the answer was wrong.'));
+        content.appendChild(section);
       }
       const prioritized=Array.isArray(report.recurringGaps)?report.recurringGaps:[];
       if(prioritized.length){

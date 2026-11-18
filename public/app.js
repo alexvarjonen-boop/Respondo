@@ -5399,7 +5399,9 @@ async function dashboard(options = {}) {
           <small style="line-height:1.5;opacity:.76">${appText('Valinta päivittää alla olevan asennuskoodin. Smart Assist toimii myös jo asennetuissa boteissa automaattisesti.','Valet uppdaterar installationskoden nedan. Smart Assist fungerar också automatiskt i befintliga installationer.','Your choice updates the embed code below. Existing installations also receive Smart Assist automatically.')}</small>
         </div>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
-        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
+        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Koodi lisätty','✓ Koden tillagd','✓ Code added') : appText('Olen lisännyt koodin','Jag har lagt till koden','I added the code')}</button>
+        <button type="button" class="btn" id="verifyInstallation" ${t.website?'':'disabled'}>${appText('Tarkista asennus oikealta sivulta','Kontrollera installationen på webbplatsen','Verify installation on the live website')}</button>
+        <p id="installationProofResult" class="field-hint" role="status" aria-live="polite">${appText('Koodin lisääminen ei vielä todista, että se näkyy julkaistulla sivulla.','Att lägga till koden bevisar inte att den finns på den publicerade sidan.','Adding the code does not prove it appears on the published website.')}</p>
         <div class="license-lock" style="margin-top:20px">
           <b>${appText('Google Sites -asennus','Google Sites-installation','Google Sites installation')}</b>
           ${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) ? (
@@ -7614,7 +7616,26 @@ async function route() {
       const tenantId = e.currentTarget.dataset.tenantId;
       localStorage.setItem('respondo-installed-' + tenantId, '1');
       e.currentTarget.classList.add('done');
-      e.currentTarget.textContent = '✓ Asennus valmis';
+      e.currentTarget.textContent = appText('✓ Koodi lisätty','✓ Koden tillagd','✓ Code added');
+    });
+    $('#verifyInstallation')?.addEventListener('click',async event=>{
+      const button=event.currentTarget,result=$('#installationProofResult');
+      button.disabled=true;
+      if(result)result.textContent=appText('Tarkistetaan julkaistua sivua…','Kontrollerar webbplatsen…','Checking the published website…');
+      try{
+        const proof=await api('/api/app/installation/verify',{method:'POST',body:'{}'});
+        if(!result)return;
+        result.textContent=proof.status==='snippet_detected'
+          ?appText('✓ Oikean yrityksen Respondo-koodi löytyi sivun HTML:stä. Tarkista vielä, että botti avautuu ja vastaa selaimessa.','✓ Rätt Respondo-kod hittades i sidans HTML. Testa ännu att chatten öppnas och svarar.','✓ Correct Respondo code found in page HTML. Also test that the chat opens and replies in a browser.')
+          :proof.status==='wrong_company'
+            ?appText('Sivulla on Respondo-koodi, mutta siinä on väärä yritystunnus. Kopioi yllä oleva koodi.','Respondo-koden har fel företags-ID. Kopiera koden ovan.','The site has a Respondo script with the wrong company ID. Copy the code above.')
+            :proof.status==='website_missing'
+              ?appText('Lisää ensin yrityksesi verkkosivun osoite asetuksiin.','Lägg först till företagets webbadress.','Save your business website address first.')
+              :proof.status==='not_detected'
+                ?appText('Koodia ei löytynyt sivun HTML:stä. Lisää se tai tarkista dynaaminen upotus selaimessa.','Koden hittades inte i sidans HTML. Kontrollera även dynamiska inbäddningar i webbläsaren.','Code not found in published HTML. Also check dynamic embeds in your browser.')
+                :appText('Sivustoa ei voitu tarkistaa varmasti. Kokeile myöhemmin ja tarkista botti selaimessa.','Webbplatsen kunde inte kontrolleras säkert. Försök igen senare.','Could not verify the website reliably. Try again later and check the bot in a browser.');
+      }catch(error){if(result)result.textContent=error.message;}
+      finally{button.disabled=false;}
     });
 
     document.querySelectorAll('.add-unanswered-answer').forEach((button) => {
@@ -8836,7 +8857,14 @@ async function route() {
         }
         for(const item of list){
           const p=document.createElement('p');
-          p.textContent=item.provider+' · '+appText('Lukuyhteys tallennettu','Läsanslutning sparad','Read connection saved');
+          const label=item.readCheck==='failed'
+            ?appText('Synkronointi epäonnistui — yhdistä tarvittaessa uudelleen','Synkronisering misslyckades — anslut igen vid behov','Sync failed — reconnect if needed')
+            :item.readCheck==='verified_recently'
+              ?appText('Saapuvien viestien luku testattu','Läsning av inkommande mejl verifierad','Incoming mail read verified')
+              :item.readCheck==='stale'
+                ?appText('Luku aiemmin onnistunut — tarkista uudelleen','Läsning fungerade tidigare — testa igen','Read succeeded previously — test again')
+                :appText('Yhteys tallennettu — testaa lukeminen','Anslutning sparad — testa läsning','Connection saved — test inbox read');
+          p.textContent=item.provider+' · '+label;
           el.appendChild(p);
         }
         if(!nativeMailOauthReady.outlook){
@@ -8863,8 +8891,10 @@ async function route() {
         try{
           const result=await api('/api/app/native/mail/'+encodeURIComponent(provider)+'/sync',
             {method:'POST',body:'{}'});
-          if(el)el.textContent=appText('Uusia tarkistettavia viestejä: ','Nya meddelanden för granskning: ','New messages for review: ')+result.imported;
-        }catch(error){if(el)el.textContent=error.message;}
+          await loadNativeMailStatus();
+          if(el)el.appendChild(Object.assign(document.createElement('p'),{textContent:
+            appText('Uusia tarkistettavia viestejä: ','Nya meddelanden för granskning: ','New messages for review: ')+result.imported}));
+        }catch(error){await loadNativeMailStatus();if(el)el.appendChild(Object.assign(document.createElement('p'),{textContent:error.message}));}
         finally{button.disabled=false;}
       });
     });

@@ -10,8 +10,10 @@ export function summarizeConversionData(channels=[],requests=[],leads=[],crmStag
     const engaged=asCount(row.engaged),converted=Math.min(engaged,asCount(row.converted));
     visitors+=engaged;converters+=converted;
     return {channel:cleanChannel(row.channel),engagedVisitors:engaged,actionSubmittingVisitors:converted,
-      actionRatePercent:engaged?Math.round(100*converted/engaged):null};
+      actionRatePercent:engaged?Math.round(100*converted/engaged):null,
+      submittedRequests:0,quoteRequests:0,bookingRequests:0,confirmedBookings:0};
   });
+  const channelTotals=new Map(byChannel.map(row=>[row.channel,row]));
   const byAction=Object.fromEntries(kinds.map(type=>[type,0]));
   for(const row of Array.isArray(requests)?requests:[]){
     const type=String(row.request_type||'');
@@ -19,6 +21,19 @@ export function summarizeConversionData(channels=[],requests=[],leads=[],crmStag
     if(kinds.includes(type))byAction[type]+=total;
     submissions+=total;
     confirmedBookings+=asCount(row.confirmed_bookings);
+    const channel=cleanChannel(row.channel);
+    if(!channelTotals.has(channel)){
+      const entry={channel,engagedVisitors:0,actionSubmittingVisitors:0,actionRatePercent:null,
+        submittedRequests:0,quoteRequests:0,bookingRequests:0,confirmedBookings:0};
+      channelTotals.set(channel,entry);byChannel.push(entry);
+    }
+    const entry=channelTotals.get(channel);
+    entry.submittedRequests+=total;
+    if(type==='quote')entry.quoteRequests+=total;
+    if(type==='booking'){
+      entry.bookingRequests+=total;
+      entry.confirmedBookings+=asCount(row.confirmed_bookings);
+    }
     // The action's result.paid flag is not a Stripe/payment-ledger receipt.
     reportedPaidQuotes+=asCount(row.paid_quotes);
   }
@@ -65,7 +80,8 @@ export async function conversionOverview(db,tenantId,days=30) {
         FROM engaged e LEFT JOIN converted c
           ON e.visitor_ref=c.visitor_ref AND e.channel=c.channel
        GROUP BY e.channel ORDER BY engaged DESC LIMIT 20`,params),
-    db.query(`SELECT a.request_type,COUNT(*)::int AS submitted,
+    db.query(`SELECT COALESCE(NULLIF(a.source_channel,''),'website') AS channel,
+       a.request_type,COUNT(*)::int AS submitted,
        COUNT(*) FILTER(
          WHERE a.request_type='booking' AND (
            a.result->'internalBooking'->>'decision'='confirmed'
@@ -86,7 +102,7 @@ export async function conversionOverview(db,tenantId,days=30) {
       FROM action_requests a
       WHERE a.tenant_id=$1 AND a.created_at >= NOW()-($2::int * INTERVAL '1 day')
         AND a.request_type IN ('quote','booking','callback','order_status')
-      GROUP BY a.request_type`,params),
+      GROUP BY 1,a.request_type`,params),
     db.query(`SELECT COUNT(*)::int AS total FROM leads
       WHERE tenant_id=$1 AND created_at >= NOW()-($2::int * INTERVAL '1 day')`,params),
     db.query(`SELECT stage,COUNT(*)::int AS total FROM respondo_native_contacts

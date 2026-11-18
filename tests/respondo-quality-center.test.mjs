@@ -93,7 +93,8 @@ test('quality center queries are all tenant-scoped, bounded and only show redact
     return {rows:[]};
   }};
   const report=await qualityCenterOverview(db,tenant,7);
-  assert.equal(queries.length,9);
+  assert.equal(queries.length,10);
+  assert.equal(report.repeatQuestionReview.latest300Only,true);
   assert.ok(queries.every(([sql,args])=>args[0]===tenant&&sql.includes('tenant_id=$1')));
   assert.equal(report.days,7);
   assert.equal(report.summary.automationRate,60);

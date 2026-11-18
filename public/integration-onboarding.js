@@ -318,6 +318,7 @@
       if(s==='notConfigured')return lang==='fi'?'Vaatii ylläpidon asetukset':lang==='sv'?'Kräver administratör':'Needs administrator setup';
       if(s==='unverified')return lang==='fi'?'Yhteyden tilaa tarkistetaan':lang==='sv'?'Kontrollerar anslutning':'Checking connection availability';
       if(s==='connected')return t.connected;
+      if(s==='readVerified')return lang==='fi'?'Saapuvien viestien luku testattu — lähetys vaatii hyväksynnän':lang==='sv'?'Läsning av inkommande mejl verifierad — sändning kräver godkännande':'Incoming mail read verified — sending still needs approval';
       if(s==='attention')return lang==='fi'?'Yhteys vaatii huomiota — viestien synkronointi epäonnistui':lang==='sv'?'Anslutningen kräver åtgärd — synkroniseringen misslyckades':'Connection needs attention — message sync failed';
       if(s==='notConnected')return t.notConnected;
       if(s==='ready')return t.ready;
@@ -529,7 +530,7 @@
         next.set(result.crm.provider,'partial');
       for(const account of result.mail?.connections||[]){
         if(account.connected&&['gmail','outlook'].includes(account.provider))
-          next.set(account.provider,account.lastSyncError?'attention':'partial');
+          next.set(account.provider,account.lastSyncError?'attention':account.readCheck==='verified_recently'?'readVerified':'partial');
       }
       for(const channel of result.meta?.channels||[]){
         if(['whatsapp','instagram','facebook'].includes(channel.provider)&&channel.configured)
