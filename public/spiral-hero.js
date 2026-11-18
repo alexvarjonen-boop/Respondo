@@ -89,7 +89,7 @@ export function spiralHeroMarkup(t, lang) {
         <a class="rs-first-order-link" href="/assistant?lang=${lang}" aria-label="${t('Kokeile bottia','Testa botten','Try the bot')}">
           <span>${t('Kokeile bottia','Testa botten','Try the bot')}</span>
         </a>
-        <p class="rs-chat-navigation-note">${t('Navigoi sivustolla oikean alakulman chatin kautta.','Navigera på webbplatsen via chatten nere till höger.','Navigate this website using the chat in the bottom-right corner.')}</p>
+        <a class="rs-chat-navigation-note" href="/ominaisuudet?lang=${lang}">${t('Katso kaikki ominaisuudet →','Se alla funktioner →','Explore all features →')}</a>
       </div>
       <div class="rs-spiral-orbit" role="group" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">
         <div class="rs-studio-orbit-art">

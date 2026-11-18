@@ -34,6 +34,7 @@ function ensureWorkspace(demo) {
         <span class="respondo-workspace-brand-copy"><b>${escape(company)}</b><small>RESPONDO OS</small></span>
       </div>
       <div class="respondo-workspace-actions">
+        ${demo?'':'<button type="button" class="rs-workspace-find-toggle" data-workspace-nav="overview">'+choose('Hae toiminto','Sök funktion','Find a feature')+'</button>'}
         <div class="respondo-workspace-language"></div>
       </div>
     </header>
@@ -58,6 +59,7 @@ function ensureWorkspace(demo) {
         <h1>${choose('Yleisnäkymä','Översikt','Overview')}</h1>
         <p class="respondo-workspace-subtitle">${choose('Kaikki tärkeä yhdessä selkeässä työtilassa.','Allt viktigt i en tydlig arbetsyta.','Everything important in one clear workspace.')}</p>
         <div id="respondoWorkspaceOverviewStats" class="rs-overview-stats"></div>
+        <div id="respondoWorkspaceFeatureFinder" class="rs-feature-finder"></div>
         <div class="respondo-workspace-overview-grid">
           <div class="respondo-workspace-overview-card"><b>${choose('Kokeile bottiasi','Testa din bot','Test your bot')}</b><p>${choose('Katso, miten se vastaa kysymyksiin.','Se hur den svarar på frågor.','See how it answers questions.')}</p>${nav('bot','Avaa keskustelu →','Öppna chatten →','Open chat →')}</div>
           <div class="respondo-workspace-overview-card"><b>${choose('Yrityksen tiedot','Företagsuppgifter','Company details')}</b><p>${choose('Täydennä ja tarkista sivustolta löydetyt tiedot.','Komplettera och granska webbplatsens uppgifter.','Complete and review imported website information.')}</p>${nav('settings','Muokkaa tietoja →','Redigera uppgifter →','Edit details →')}</div>
@@ -201,6 +203,8 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   const showOverviewMetrics=()=>{
     if(!metricsHost)return;
     showOwnerTrafficWhenAuthorized();
+    ensureFeatureFinder();
+    workspace.querySelector('#respondoWorkspaceFeatureFinder')?.dispatchEvent(new Event('respondo:finder-refresh'));
     // Display the REAL tenant metrics, not demo numbers or a fabricated visitor count.
     for(const cls of overviewMetrics){
       const panel=[...modules.children].find(el=>el.classList?.contains(cls));
@@ -509,6 +513,106 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       button.setAttribute('aria-pressed',String(button.dataset.workspaceTab===id));
     });
   }
+  // Owner-facing feature finder: link to working, existing panels only. A
+  // disabled tile remains discoverable but never pretends that an unavailable
+  // provider OAuth connection or plan-locked module is ready to use.
+  function ensureFeatureFinder(){
+    const host=workspace.querySelector('#respondoWorkspaceFeatureFinder');
+    if(demo||!host||host.dataset.ready==='yes')return;
+    host.dataset.ready='yes';
+    const catalog=[
+      [['Kokeile bottia','Testa botten','Try the bot'],'bot',null,'chat testaa'],
+      [['Yrityksen ja botin asetukset','Företags- och botinställningar','Company and bot settings'],'setup',null,'avatar nimi logo'],
+      [['Tietopohja ja vastaukset','Kunskapsbas och svar','Knowledge base and answers'],'answers','knowledge','faq qa vastaukset'],
+      [['Puuttuvat vastaukset','Saknade svar','Unanswered questions'],'answers','unanswered','laatu virheet'],
+      [['Liidit ja yhteydenotot','Leads och kontakter','Leads and contacts'],'customers','leads','myynti crm'],
+      [['Keskusteluhistoria','Samtalshistorik','Conversation history'],'conversations','conversations','chat'],
+      [['Live-asiakaspalvelu','Livekundservice','Live customer support'],'conversations','live-inbox','henkilö vastaus'],
+      [['Ajanvaraus ja kalenteri','Bokningar och kalender','Bookings and calendar'],'integrations','booking-calendar','varaus aika'],
+      [['Sähköpostin yhdistäminen','Anslut e-post','Connect email'],'integrations','native-mail-connections','gmail outlook oauth'],
+      [['CRM-yhteydet','CRM-anslutningar','CRM connections'],'integrations','crm-integration','hubspot pipedrive'],
+      [['API ja webhookit','API och webhooks','API and webhooks'],'integrations','business-integrations','kehittaja'],
+      [['Verkkokauppayhteydet','Webbutiksanslutningar','Online store connections'],'integrations','commerce-integration','shopify woocommerce'],
+      [['Viestikanavien yhteydet','Meddelandekanaler','Messaging channels'],'integrations','meta-native-connections','instagram facebook whatsapp'],
+      [['Asiakaspyynnöt ja toiminnot','Kundförfrågningar och åtgärder','Customer requests and actions'],'automation','actions2','tarjous'],
+      [['Respondon työkalut ja laatu','Respondos verktyg och kvalitet','Respondo tools and quality'],'integrations','native-operations','automaatio analytiikka'],
+      [['Asennus ja asennustarkistus','Installation och kontroll','Installation and verification'],'install','install','widget script upotus'],
+      [['Henkilökunta','Personal','Team members'],'team','support-team','työntekijä'],
+      [['Laskutus ja tilaus','Fakturering och abonnemang','Billing and subscription'],'billing','billing','stripe'],
+      [['Yritystilien hallinta','Hantera företag','Manage companies'],'profile','workspaces','tyotilat'],
+      [['Tilin tietoturva','Kontosäkerhet','Account security'],'profile','account-security','salasana profiili']
+    ];
+    const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const heading=document.createElement('h2');
+    heading.textContent=translate('Löydä toiminto','Hitta en funktion','Find a feature');
+    const description=document.createElement('p');
+    description.textContent=translate('Hae nimellä tai valitse yleinen tehtävä. Vain käytettävissä olevat toiminnot voi avata.',
+      'Sök med namn eller välj en vanlig uppgift. Endast tillgängliga funktioner kan öppnas.',
+      'Search by name or pick a common task. Only available features can be opened.');
+    const label=document.createElement('label');
+    label.className='rs-feature-finder-label';
+    label.textContent=translate('Hae toimintoa','Sök funktion','Search features');
+    const search=document.createElement('input');
+    search.type='search';search.autocomplete='off';
+    search.placeholder=translate('Esim. sähköposti, kalenteri, asennus',
+      'T.ex. e-post, kalender, installation','E.g. email, calendar, installation');
+    label.appendChild(search);
+    const list=document.createElement('div');
+    list.className='rs-feature-finder-results';list.setAttribute('aria-live','polite');
+    const expand=document.createElement('button');
+    expand.type='button';expand.className='rs-feature-finder-expand';
+    let expanded=false;
+    function render(){
+      const needle=normalize(search.value.trim());
+      const matches=catalog.filter(([names,,,aliases])=>
+        !needle||normalize(names.join(' ')+' '+aliases).includes(needle));
+      list.replaceChildren();
+      for(const [names,view,tab] of (needle||expanded?matches:matches.slice(0,8))){
+        const available=!tab||moduleTabAvailable(tab);
+        const item=document.createElement('button');
+        item.type='button';item.className='rs-feature-finder-item';
+        item.disabled=!available;
+        const title=document.createElement('span');
+        title.textContent=translate(...names);
+        const state=document.createElement('small');
+        state.textContent=available?translate('Avaa →','Öppna →','Open →'):
+          translate('Ei käytettävissä tällä tilauksella tai yhteydellä',
+            'Inte tillgänglig med detta abonnemang eller denna anslutning',
+            'Unavailable with current plan or connection');
+        item.append(title,state);
+        if(available)item.addEventListener('click',()=>{
+          selectView(view);
+          if(tab)showModuleTab(tab);
+          requestAnimationFrame(()=>{
+            const destination=workspace.querySelector('[data-workspace-page="'+
+              (view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
+            if(!destination||destination.hidden)return;
+            orbit?.suspendPin?.();
+            destination.scrollIntoView({behavior:'auto',block:'start'});
+            const focus=workspace.querySelector(view==='bot'?'[data-workspace-page="bot"] h1':'#respondoWorkspaceModuleTitle');
+            if(focus){focus.setAttribute('tabindex','-1');focus.focus({preventScroll:true});}
+          });
+        });
+        list.appendChild(item);
+      }
+      if(!matches.length){
+        const empty=document.createElement('p');empty.className='rs-feature-finder-empty';
+        empty.textContent=translate('Toimintoa ei löytynyt. Kokeile toista hakusanaa.',
+          'Funktionen hittades inte. Prova ett annat sökord.',
+          'No matching feature. Try another search term.');
+        list.appendChild(empty);
+      }
+      expand.hidden=Boolean(needle)||matches.length<=8;
+      expand.textContent=expanded?translate('Näytä yleisimmät','Visa vanliga','Show common tasks'):
+        translate('Näytä kaikki toiminnot','Visa alla funktioner','Show all features');
+    }
+    search.addEventListener('input',render);
+    expand.addEventListener('click',()=>{expanded=!expanded;render();});
+    host.append(heading,description,label,list,expand);
+    render();
+    host.addEventListener('respondo:finder-refresh',render);
+    workspace.addEventListener('respondo:provider-availability',render);
+  }
   function selectView(next){
     restoreImportedReview();
     currentAvatarObserver?.disconnect();
@@ -629,6 +733,14 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
         selectView(button.dataset.workspaceNav);
         requestAnimationFrame(()=>{
           const view=workspace.dataset.currentView;
+          const finder=button.classList.contains('rs-workspace-find-toggle')
+            ?workspace.querySelector('#respondoWorkspaceFeatureFinder input'):null;
+          if(finder){
+            orbit?.suspendPin?.();
+            finder.scrollIntoView({behavior:'auto',block:'center'});
+            finder.focus({preventScroll:true});
+            return;
+          }
           const destination=workspace.querySelector('[data-workspace-page="'+(view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
           if(destination && !destination.hidden){
             orbit?.suspendPin?.();
