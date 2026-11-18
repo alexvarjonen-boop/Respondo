@@ -42,5 +42,6 @@ test('feature search stays readable on mobile and updated CSS/JS URLs defeat sta
   assert.match(css,/@media\(max-width:650px\)/);
   assert.match(css,/\.rs-feature-finder-results\{grid-template-columns:1fr\}/);
   assert.match(html,/workspace-continuation-v24\.css\?v=[^"]*feature-finder-v49/);
+  assert.match(html,/app\.js\?v=[^"]*feature-finder-v49/);
   assert.match(app,/workspace-continuation-v24\.js\?v=[^']*feature-finder-v49/);
 });
