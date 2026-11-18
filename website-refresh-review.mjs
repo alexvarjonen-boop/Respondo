@@ -30,10 +30,18 @@ export async function ensureWebsiteRefreshReviewSchema(db){
 }
 export async function stageWebsiteRefresh(db,tenantId,candidate){
   if(!uuid(tenantId))throw TypeError('Valid tenant required');
-  const sourceUrl=trim(candidate?.sourceUrl,2048),title=trim(candidate?.title,250);
+  let sourceUrl=trim(candidate?.sourceUrl,2048);
+  const title=trim(candidate?.title,250);
   const category=trim(candidate?.category,100),answer=trim(candidate?.answer,8000),
     keywords=Array.isArray(candidate?.keywords)?candidate.keywords.map(x=>trim(x,65)).slice(0,18):[];
-  if(!/^https?:\/\//i.test(sourceUrl)||title.length<2||answer.length<8)
+  let sourceValid=false;
+  try{
+    const url=new URL(sourceUrl);
+    sourceValid=['http:','https:'].includes(url.protocol)&&!url.username&&!url.password&&
+      Boolean(url.hostname);
+    if(sourceValid){url.hash='';sourceUrl=url.toString();}
+  }catch{}
+  if(!sourceValid||title.length<2||answer.length<8)
     throw TypeError('Verified website candidate required');
   const existing=await db.query(`SELECT id,answer,category,keywords FROM knowledge WHERE tenant_id=$1
     AND approved=TRUE AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3) LIMIT 1`,
@@ -68,8 +76,12 @@ export async function websiteRefreshReviewOverview(db,tenantId){
   if(!uuid(tenantId))throw TypeError('Valid tenant required');
   const result=await db.query(`SELECT r.id,r.source_url,r.title,r.category,r.answer,r.status,r.updated_at,
     k.answer AS current_answer FROM respondo_website_refresh_reviews r
-    LEFT JOIN knowledge k ON k.tenant_id=r.tenant_id AND k.source_type='website'
-      AND k.source_url=r.source_url AND LOWER(k.title)=LOWER(r.title)
+    LEFT JOIN LATERAL (
+      SELECT answer FROM knowledge k WHERE k.tenant_id=r.tenant_id
+        AND k.source_type='website' AND k.approved=TRUE
+        AND k.source_url=r.source_url AND LOWER(k.title)=LOWER(r.title)
+      ORDER BY k.verified_at DESC NULLS LAST,k.created_at DESC LIMIT 1
+    ) k ON TRUE
     WHERE r.tenant_id=$1 ORDER BY (r.status='pending') DESC,r.updated_at DESC LIMIT 80`,[tenantId]);
   return {reviews:result.rows||[],requiresOwnerApproval:true};
 }

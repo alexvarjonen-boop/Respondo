@@ -13,6 +13,8 @@ import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { readServiceRule,listServiceRules,saveServiceRule,serviceDialogue,estimateServiceDuration,fitServiceSlots } from './service-capacity.mjs';
+import { handoffBrief } from './handoff-brief.mjs';
+import { createResilientTranslationClient } from './resilient-translation.mjs';
 import { nativeOverview,createNativeContact,updateNativeContact,createNativeTicket,updateNativeTicket,
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
@@ -6862,53 +6864,10 @@ function buildProfileKnowledge(profile = {}) {
   return rows;
 }
 
-const freeTranslationCache = new Map();
-
-async function translateTextFree(text, lang, sourceLang = 'auto') {
-  const target = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
-  const source = ['fi','sv','en','auto'].includes(String(sourceLang || '').toLowerCase()) ? String(sourceLang).toLowerCase() : 'auto';
-  const input = String(text || '').trim();
-  if (!input) return '';
-  if (source === target) return input;
-
-  const key = source + '>' + target + ':' + input;
-  if (freeTranslationCache.has(key)) return freeTranslationCache.get(key);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5500);
-  try {
-    const url = new URL('https://translate.googleapis.com/translate_a/single');
-    url.search = new URLSearchParams({
-      client: 'gtx',
-      sl: source,
-      tl: target,
-      dt: 't',
-      q: input.slice(0, 5000),
-    }).toString();
-
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { Accept: 'application/json' },
-    });
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    const payload = await response.json();
-    const translated = Array.isArray(payload?.[0])
-      ? payload[0].map((part) => Array.isArray(part) ? String(part[0] || '') : '').join('').trim()
-      : '';
-    if (!translated) throw new Error('Empty translation');
-
-    freeTranslationCache.set(key, translated);
-    if (freeTranslationCache.size > 2500) {
-      [...freeTranslationCache.keys()].slice(0, 500).forEach((cacheKey) => freeTranslationCache.delete(cacheKey));
-    }
-    return translated;
-  } catch (e) {
-    console.warn('Free translation failed', target, e?.message || e);
-    return '';
-  } finally {
-    clearTimeout(timer);
-  }
-}
+const translateTextFree=createResilientTranslationClient({
+  timeoutMs:3000,cooldownMs:process.env.NODE_ENV==='test'?0:45000,
+  onError:(target,e)=>console.warn('Free translation failed',target,e?.message||e)
+});
 
 async function forceAnswerLanguage(answer, lang) {
   const target = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
@@ -13378,12 +13337,16 @@ app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
     const tenantId=req.user.tenantId, agentId=req.user.agentId;
     const agent=(await q('SELECT id,display_name,avatar,username,languages,status FROM support_agents WHERE id=$1 AND tenant_id=$2',[agentId,tenantId])).rows[0];
     if (!agent) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
-    const threads=await q(`SELECT ct.id,ct.source_channel,ct.external_contact_id,ct.visitor_ref,ct.mode,ct.status,ct.last_activity_at,ct.created_at,
-      COALESCE(json_agg(json_build_object('id',cm.id,'role',cm.role,'message',cm.message,'created_at',cm.created_at) ORDER BY cm.created_at ASC) FILTER (WHERE cm.id IS NOT NULL),'[]') AS messages
-      FROM chat_threads ct LEFT JOIN chat_messages cm ON cm.thread_id=ct.id
+    const threads=await q(`SELECT ct.id,ct.source_channel,ct.external_contact_id,ct.visitor_ref,ct.mode,ct.status,ct.assigned_agent_id,ct.last_activity_at,ct.created_at,
+      COALESCE((SELECT json_agg(msg ORDER BY msg.created_at ASC) FROM (
+        SELECT id,role,message,created_at FROM chat_messages
+        WHERE thread_id=ct.id AND tenant_id=ct.tenant_id
+        ORDER BY created_at DESC LIMIT 24
+      ) msg),'[]'::json) AS messages
+      FROM chat_threads ct
       WHERE ct.tenant_id=$1 AND (ct.assigned_agent_id=$2 OR (ct.assigned_agent_id IS NULL AND ct.language = ANY(COALESCE($3::text[],ARRAY['fi']::text[]))))
-      GROUP BY ct.id ORDER BY (ct.assigned_agent_id=$2) DESC,ct.last_activity_at DESC LIMIT 80`,[tenantId,agentId,agent.languages||['fi']]);
-    return res.json({agent,liveThreads:threads.rows,stats:{
+      ORDER BY (ct.assigned_agent_id=$2) DESC,ct.last_activity_at DESC LIMIT 80`,[tenantId,agentId,agent.languages||['fi']]);
+    return res.json({agent,liveThreads:threads.rows.map(t=>({...t,brief:handoffBrief(t.messages)})),stats:{
       conversations:threads.rowCount,
       open:threads.rows.filter(x=>x.status==='open').length,
       human:threads.rows.filter(x=>x.mode==='human').length
@@ -13487,7 +13450,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
                 FROM (
                   SELECT id,role,message,metadata,created_at
                     FROM chat_messages
-                   WHERE thread_id=ct.id
+                   WHERE thread_id=ct.id AND tenant_id=ct.tenant_id
                    ORDER BY created_at DESC
                    LIMIT 24
                 ) msg
@@ -13592,7 +13555,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
       leads: leads.rows,
       actionStats: actionStats.rows,
       actionRequests: actionRequests.rows,
-      liveThreads: liveThreads.rows,
+      liveThreads: liveThreads.rows.map(t=>({...t,brief:handoffBrief(t.messages)})),
       supportAgents: (await q(
         `SELECT sa.id,sa.display_name,sa.avatar,sa.username,sa.languages,sa.status,sa.created_at,sa.updated_at,
                 COUNT(DISTINCT ct.id)::int AS conversation_count,

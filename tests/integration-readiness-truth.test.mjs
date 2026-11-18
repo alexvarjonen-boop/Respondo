@@ -31,7 +31,8 @@ test('missing prerequisites block OAuth and report truthful reasons',()=>{
 
 test('saved credentials are not reported as proven working connections',()=>{
  for(const provider of ["'freshdesk'","'zendesk'"])assert.ok(ui.includes("next.set("+provider+",'partial')"));
- assert.match(ui,/next\.set\(account\.provider,'partial'\)/);
+ assert.match(ui,/next\.set\(account\.provider,account\.lastSyncError\?'attention':'partial'\)/);
+ assert.match(ui,/if\(s==='attention'\)/);
  assert.match(ui,/next\.set\(channel\.provider,'partial'\)/);
  assert.match(ui,/next\.set\(cloud\.provider,'partial'\)/);
  assert.match(ui,/next\.set\(result\.crm\.provider,'partial'\)/);

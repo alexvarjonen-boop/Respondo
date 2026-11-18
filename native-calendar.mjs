@@ -6,6 +6,16 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const validId=x=>UUID.test(String(x||''));
 const text=(x,n)=>String(x??'').trim().slice(0,n);
 const date=x=>new Date(x).getTime();
+export function pendingBookingEligibility(request,now=Date.now()){
+  const start=date(request?.requestedSlot?.startsAt);
+  const end=date(request?.requestedSlot?.endsAt);
+  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)
+    return {canConfirm:false,reason:'invalid_requested_time'};
+  if(start<=now+60000)return {canConfirm:false,reason:'requested_time_expired'};
+  if(request?.serviceCapacity?.approvalRequired!==true)
+    return {canConfirm:false,reason:'duration_unverified'};
+  return {canConfirm:true,reason:null};
+}
 export function validateInternalReservation(request,slot,now=Date.now(),manualDurationMinutes=null){
   const requested=request?.payload?.requestedSlot;
   const workload=request?.payload?.serviceCapacity;
@@ -79,7 +89,8 @@ export async function nativeCalendarOverview(db,tenantId){
         durationMinutes:Number(x.service_capacity?.durationMinutes)||null,
         approvalRequired:x.service_capacity?.approvalRequired===true,
         manualVerificationRequired:x.service_capacity?.manualVerificationRequired===true
-      }
+      },
+      ...pendingBookingEligibility({requestedSlot:x.requested_slot,serviceCapacity:x.service_capacity})
     })),
     events:events.rows||[],slots:slots.rows||[],
     externalCalendarSynchronized:false,

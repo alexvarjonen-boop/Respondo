@@ -8,6 +8,18 @@ test('detects quotation and booking requests', () => {
   assert.equal(classifyLeadIntent('Paljonko maksaa verkkosivusto?').intent, 'quote');
   assert.equal(classifyLeadIntent('Haluaisin varata ajan').intent, 'booking');
 });
+test('understands colloquial Finnish, Swedish and English sales requests',()=>{
+  for(const sentence of ['Paljo maksais muutto kolmiost keskustaan?', 'Vad kostar flytten?', 'How much would the move cost?'])
+    assert.equal(classifyLeadIntent(sentence).intent,'quote',sentence);
+  for(const sentence of ['Oisko huomiselle aikaa?', 'Finns det ledig tid?', 'Schedule an appointment please'])
+    assert.equal(classifyLeadIntent(sentence).intent,'booking',sentence);
+});
+test('negative buying intent does not generate a qualified sales lead',()=>{
+  for(const sentence of ['En halua ostaa vielä', "I don't want to buy this", 'Jag vill inte köpa']){
+    assert.equal(classifyLeadIntent(sentence).intent,'unknown',sentence);
+    assert.equal(qualifyLead({message:sentence,name:'Alex',email:'alex@example.com',consent:true}).qualified,false);
+  }
+});
 test('never qualifies or exposes contact details without consent', () => {
   const lead = qualifyLead({ message:'Haluan ostaa', name:'Test', email:'test@example.com', consent:false });
   assert.equal(lead.qualified, false);
