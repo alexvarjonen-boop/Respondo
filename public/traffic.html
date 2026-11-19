@@ -79,12 +79,17 @@
 .company-dialog-actions button:disabled{opacity:.5;cursor:wait}
 .company-dialog-error{min-height:0;color:#a92828;font-size:12px;font-weight:620}
 .company-dialog-error:empty{display:none}
+.vault-entry{margin:22px 0 0;background:#111617;border:1px solid #303c33;border-radius:22px;color:white;padding:23px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px;box-shadow:0 16px 35px #0001}
+.vault-entry-copy{display:flex;align-items:center;gap:17px;min-width:0}.vault-entry-icon{width:49px;height:49px;flex:0 0 49px;display:grid;place-items:center;border-radius:13px;background:#25312a;color:#b8fd8d;font-size:25px}
+.vault-entry small{display:block;margin-bottom:7px;color:#b8fd8d;letter-spacing:.13em;font-size:10px;font-weight:820}.vault-entry h2{margin:0 0 5px;font-size:19px;letter-spacing:-.035em}.vault-entry p{color:#b8bfc0;font-size:12px;line-height:1.5;margin:0}
+.vault-open{background:#b8fd8d;color:#142014;border-radius:12px;padding:13px 17px;text-decoration:none;font-size:12px;font-weight:840;white-space:nowrap}.vault-open:hover{background:#d7ffc2}
 @media(max-width:730px){
   .company-row{grid-template-columns:minmax(0,1fr) auto}
   .company-row .company-col:nth-child(4){grid-column:1;grid-row:2;margin-left:50px}
   .company-row .company-actions{grid-column:2;grid-row:2;margin-left:0}
   .company-action{padding:8px}
   .company-dialog{padding:19px}
+  .vault-entry{padding:19px;flex-direction:column;align-items:stretch}.vault-open{text-align:center}.vault-entry-copy{align-items:flex-start}
 }
 
 /* Owner-only manual setup workbench. No customer credentials are emailed here. */
@@ -158,7 +163,7 @@
 <body>
 <div class="wrap">
   <div class="top">
-    <div class="brand"><span class="mark">R</span><span id="brandLabel"></span></div>
+    <div class="brand"><span class="mark"><img src="/respondo-symbol.svg" width="28" height="28" alt=""></span><span id="brandLabel"></span></div>
     <div class="actions">
       <select id="lang" class="lang" aria-label="Language"><option value="fi">FI</option><option value="sv">SV</option><option value="en">EN</option></select>
       <button type="button" class="traffic-menu-toggle" id="trafficMenuToggle" aria-controls="trafficNavigation" aria-expanded="false" aria-label="Avaa valikko">
@@ -190,6 +195,12 @@ const L={
 const norm=v=>['fi','sv','en'].includes(String(v||'').toLowerCase())?String(v).toLowerCase():'fi';
 let lang=norm(localStorage.getItem('respondo_lang')||document.documentElement.lang||navigator.language.split('-')[0]);
 const t=k=>L[lang][k]||L.fi[k]||k;
+const vaultWords={
+  fi:{badge:'VAIN OMISTAJALLE',title:'Sisäinen arkisto',info:'Yrityksen luottamukselliset tiedot, sopimukset ja asiakirjat. Vain sinun Respondo-tunnuksillasi.',open:'Avaa arkisto →'},
+  sv:{badge:'ENDAST ÄGAREN',title:'Internt arkiv',info:'Företagets konfidentiella uppgifter, avtal och dokument. Endast med ditt Respondo-ägarkonto.',open:'Öppna arkivet →'},
+  en:{badge:'OWNER ACCESS ONLY',title:'Internal records',info:'Private company files, contracts and information. Only your Respondo owner account has access.',open:'Open archive →'}
+};
+function vaultEntry(){const x=vaultWords[lang];return '<section class="vault-entry" aria-label="'+e(x.title)+'"><div class="vault-entry-copy"><span class="vault-entry-icon">▣</span><div><small>'+e(x.badge)+'</small><h2>'+e(x.title)+'</h2><p>'+e(x.info)+'</p></div></div><a class="vault-open" href="/arkisto">'+e(x.open)+'</a></section>';}
 const root=document.getElementById('root');
 const locale=()=>lang==='sv'?'sv-SE':lang==='en'?'en-GB':'fi-FI';
 const n=v=>new Intl.NumberFormat(locale()).format(Number(v||0));
@@ -920,6 +931,7 @@ async function load(){
     root.innerHTML='<section class="traffic-view" id="trafficStatsView" aria-label="'+e(t('navVisitors'))+'">'+
       cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+languageList(d.languages||[])+
       list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div>'+
+      vaultEntry()+
       '<div class="note">'+e(d.note||'')+'</div></section>'+
       '<div class="traffic-view" id="companyView" hidden>'+companiesShell()+'</div>'+
       '<div class="traffic-view" id="setupView" hidden>'+setupShell()+'</div>';

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#090b0e">
+  <title>Respondo · Internal Records</title>
+  <link rel="icon" type="image/svg+xml" href="/respondo-symbol.svg">
+  <link rel="stylesheet" href="/vault.css?v=20261119-1">
+  <script src="/vault.js?v=20261119-1" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Records navigation">
+      <div class="brand"><img src="/respondo-symbol.svg" alt=""><span><strong>RESPONDO</strong><small>PRIVATE WORKSPACE</small></span></div>
+      <div class="environment"><span class="status-dot"></span><span data-i18n="restrictedSpace">Authorized personnel only</span><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v7H4v-7a2 2 0 0 1 2-2h1V8a5 5 0 0 1 5-5Zm-3 8h6V8a3 3 0 0 0-6 0Z" stroke-width="1.6"/></svg></div>
+      <div class="nav-label" data-i18n="workspace">WORKSPACE</div>
+      <nav id="nav">
+        <button data-screen="all" class="nav-item active"><span class="nav-icon">▦</span><span data-i18n="allDocs">All documents</span><small id="allCount">0</small></button>
+        <button data-screen="companies" class="nav-item" id="companiesNav" hidden><span class="nav-icon">◎</span><span data-i18n="companies">Customer companies</span></button>
+        <div class="nav-label" data-i18n="folders">FOLDERS</div>
+        <div id="categoryNav"></div>
+        <div class="nav-divider"></div>
+        <button data-screen="trash" class="nav-item"><span class="nav-icon">⌑</span><span data-i18n="trash">Trash</span></button>
+        <button data-screen="activity" class="nav-item" id="activityNav" hidden><span class="nav-icon">◷</span><span data-i18n="activity">Activity log</span></button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="profile"><span class="profile-avatar">R</span><span><b id="userRole">—</b><small data-i18n="secureAccount">Protected account</small></span></div>
+        <a href="/traffic.html" class="back-link"><span>←</span><span data-i18n="back">Back to Visitors</span></a>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumb"><span>RESPONDO</span><span class="slash">/</span><strong data-i18n="archive">Internal Records</strong></div>
+        <div class="top-actions"><span class="private-pill">● <span data-i18n="private">PRIVATE</span></span>
+          <select id="language" aria-label="Language"><option value="en">🇬🇧 EN</option><option value="fi">🇫🇮 FI</option><option value="sv">🇸🇪 SV</option></select>
+        </div>
+      </header>
+      <div class="main-inner">
+        <div class="headline"><div><div class="eyebrow">RES<span class="green">●</span>PONDO / RECORDS MANAGEMENT</div><h1 id="pageTitle" data-i18n="archive">Internal Records</h1><p id="pageIntro" data-i18n="intro">Your company's documents, information and decisions. One secure place.</p></div>
+          <div class="headline-buttons" id="writeActions" hidden><button class="button secondary" id="uploadButton"><span>↥</span> <span data-i18n="upload">Upload file</span></button><button class="button primary" id="newButton"><span>＋</span> <span data-i18n="newNote">New document</span></button></div>
+        </div>
+        <div class="summary" id="summary"><article><span data-i18n="documents">DOCUMENTS</span><strong id="countDocs">—</strong><small data-i18n="docsHint">Notes and files</small></article><article><span data-i18n="files">FILES</span><strong id="countFiles">—</strong><small data-i18n="filesHint">Uploaded files</small></article><article><span data-i18n="storage">STORAGE</span><strong id="storageCount">—</strong><small data-i18n="storageHint">Current versions</small></article></div>
+        <section class="content-panel">
+          <div class="panel-heading"><div><h2 id="listTitle" data-i18n="allDocs">All documents</h2><p id="listSubtitle" data-i18n="listHint">Only authorized team members can see this information.</p></div><div class="filters" id="filters"><div class="search"><span>⌕</span><input id="search" type="search" autocomplete="off" data-placeholder="search" placeholder="Search documents..."></div><select id="categoryFilter" aria-label="Filter folder"><option value="" data-i18n="allFolders">All folders</option></select></div></div>
+          <div id="panelContent" aria-live="polite"><div class="empty"><div class="empty-icon">▤</div><h3 data-i18n="loading">Loading records...</h3></div></div>
+        </section>
+        <div class="security-footer"><span>◈</span><span data-i18n="securityFooter">Access is checked on the server for every action. Downloads and changes are logged.</span></div>
+      </div>
+    </main>
+  </div>
+  <div class="modal-backdrop" id="modal" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><div class="eyebrow">RESPONDO / RECORDS</div><h2 id="modalTitle"></h2></div><button type="button" class="icon-button" id="closeModal" aria-label="Close">×</button></div><div id="modalBody"></div></section></div>
+  <div role="status" id="toast" class="toast" hidden></div>
+</body>
+</html>
