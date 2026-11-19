@@ -5,6 +5,13 @@ import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile
 const $ = (selector) => document.querySelector(selector);
 
 
+const workspaceGroups = [
+  ['bot', ['Botti', 'Botten', 'Bot'], ['bot','answers','setup','install']],
+  ['customers', ['Asiakkaat', 'Kunder', 'Customers'], ['conversations','customers','team']],
+  ['sales', ['Myynti ja työt', 'Försäljning och jobb', 'Sales and work'], ['automation']],
+  ['settings', ['Asetukset', 'Inställningar', 'Settings'], ['settings','integrations','billing','profile']]
+];
+
 function ensureWorkspace(demo) {
   const existing=$('#respondoWorkspace');
   if(existing)return existing;
@@ -27,7 +34,6 @@ function ensureWorkspace(demo) {
   workspace.dataset.lang=lang;
   workspace.dataset.demo=demo?'true':'false';
   workspace.setAttribute('aria-label',choose('Respondo-työtila','Respondo-arbetsyta','Respondo workspace'));
-  const nav=(id,fi,sv,en)=>'<button type="button" data-workspace-nav="'+id+'">'+choose(fi,sv,en)+'</button>';
   workspace.innerHTML=`
     <header class="respondo-workspace-header">
       <div class="respondo-workspace-brand"><span class="respondo-workspace-brand-logo"></span>
@@ -38,6 +44,10 @@ function ensureWorkspace(demo) {
         <div class="respondo-workspace-language"></div>
       </div>
     </header>
+    ${demo?'':`<nav class="rs-workspace-nav" aria-label="${choose('Hallintapaneelin osiot','Kontrollpanelens avsnitt','Dashboard sections')}">
+      ${[['all',['Yleisnäkymä','Översikt','Overview']],...workspaceGroups].map(([id,names])=>
+        `<button type="button" data-workspace-group="${id}">${choose(...names)}</button>`).join('')}
+    </nav>`}
     <div class="respondo-workspace-content">
       <div data-workspace-page="bot">
         <div class="respondo-workspace-bot-topline">
@@ -57,13 +67,8 @@ function ensureWorkspace(demo) {
       <div data-workspace-page="overview" hidden>
         <small class="respondo-workspace-kicker">RESPONDO OS</small>
         <h1>${choose('Yleisnäkymä','Översikt','Overview')}</h1>
-        <p class="respondo-workspace-subtitle">${choose('Kaikki tärkeä yhdessä selkeässä työtilassa.','Allt viktigt i en tydlig arbetsyta.','Everything important in one clear workspace.')}</p>
-        <div id="respondoWorkspaceOverviewStats" class="rs-overview-stats"></div>
         <div id="respondoWorkspaceFeatureFinder" class="rs-feature-finder"></div>
-        <div class="respondo-workspace-overview-grid">
-          <div class="respondo-workspace-overview-card"><b>${choose('Kokeile bottiasi','Testa din bot','Test your bot')}</b><p>${choose('Katso, miten se vastaa kysymyksiin.','Se hur den svarar på frågor.','See how it answers questions.')}</p>${nav('bot','Avaa keskustelu →','Öppna chatten →','Open chat →')}</div>
-          <div class="respondo-workspace-overview-card"><b>${choose('Yrityksen tiedot','Företagsuppgifter','Company details')}</b><p>${choose('Täydennä ja tarkista sivustolta löydetyt tiedot.','Komplettera och granska webbplatsens uppgifter.','Complete and review imported website information.')}</p>${nav('settings','Muokkaa tietoja →','Redigera uppgifter →','Edit details →')}</div>
-        </div>
+        <div id="respondoWorkspaceOverviewStats" class="rs-overview-stats"></div>
       </div>
       <div data-workspace-page="modules" hidden>
         <small class="respondo-workspace-kicker">RESPONDO OS</small>
@@ -135,6 +140,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   const translate=(fi,sv,en)=>workspace.dataset.lang==='fi'?fi:workspace.dataset.lang==='sv'?sv:en;
   const safe=(value)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let selected='bot';
+  let activeGroup='all';
   let orbit=null;
   let activePanel=null;
   let activePlaceholder=null;
@@ -203,8 +209,6 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   const showOverviewMetrics=()=>{
     if(!metricsHost)return;
     showOwnerTrafficWhenAuthorized();
-    ensureFeatureFinder();
-    workspace.querySelector('#respondoWorkspaceFeatureFinder')?.dispatchEvent(new Event('respondo:finder-refresh'));
     // Display the REAL tenant metrics, not demo numbers or a fabricated visitor count.
     for(const cls of overviewMetrics){
       const panel=[...modules.children].find(el=>el.classList?.contains(cls));
@@ -420,7 +424,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     conversations:translate('Keskustelut','Konversationer','Conversations'),
     team:translate('Henkilökunta','Personal','Team'),
     integrations:translate('Respondon työkalut','Respondos verktyg','Respondo tools'),
-    automation:translate('Toiminnot','Funktioner','Actions'),
+    automation:translate('Myynti ja työt','Försäljning och jobb','Sales and work'),
     install:translate('Asennus','Installation','Installation'),
     profile:translate('Profiili','Profil','Profile'),
     billing:translate('Laskutus','Fakturering','Billing'),
@@ -439,6 +443,15 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     automation:'actions2',install:'install',integrations:'native-operations',
     profile:'workspaces',billing:'billing'
   };
+  const groupFor=(view,tab)=>tab==='booking-calendar'?'sales':
+    workspaceGroups.find(([, ,views])=>views.includes(view))?.[0];
+  function updateGroupNavigation(){
+    const group=selected==='overview'?activeGroup:groupFor(selected,currentTab);
+    workspace.querySelectorAll('.rs-workspace-nav [data-workspace-group]').forEach(button=>{
+      if(button.dataset.workspaceGroup===group)button.setAttribute('aria-current','true');
+      else button.removeAttribute('aria-current');
+    });
+  }
   // Do not show connector tabs simply because the server rendered their
   // forms. The configured, tenant-accessible provider probe must succeed.
   const moduleTabAvailable=id=>{
@@ -508,6 +521,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
         card.appendChild(more);
       }
     }
+    updateGroupNavigation();
     workspace.querySelectorAll('[data-workspace-tab]').forEach(button=>{
       button.classList.toggle('active',button.dataset.workspaceTab===id);
       button.setAttribute('aria-pressed',String(button.dataset.workspaceTab===id));
@@ -522,78 +536,69 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     host.dataset.ready='yes';
     const catalog=[
       [['Kokeile bottia','Testa botten','Try the bot'],'bot',null,'chat testaa'],
-      [['Yrityksen ja botin asetukset','Företags- och botinställningar','Company and bot settings'],'setup',null,'avatar nimi logo'],
       [['Tietopohja ja vastaukset','Kunskapsbas och svar','Knowledge base and answers'],'answers','knowledge','faq qa vastaukset'],
+      [['Asennus ja asennustarkistus','Installation och kontroll','Installation and verification'],'install','install','widget script upotus'],
+      [['Muokkaa bottia','Redigera botten','Edit the bot'],'setup',null,'avatar nimi logo company'],
       [['Puuttuvat vastaukset','Saknade svar','Unanswered questions'],'answers','unanswered','laatu virheet'],
-      [['Liidit ja yhteydenotot','Leads och kontakter','Leads and contacts'],'customers','leads','myynti crm'],
       [['Keskusteluhistoria','Samtalshistorik','Conversation history'],'conversations','conversations','chat'],
+      [['Liidit ja yhteydenotot','Leads och kontakter','Leads and contacts'],'customers','leads','myynti crm'],
       [['Live-asiakaspalvelu','Livekundservice','Live customer support'],'conversations','live-inbox','henkilö vastaus'],
+      [['Henkilökunta','Personal','Team members'],'team','support-team','työntekijä'],
+      [['Asiakaspyynnöt ja toiminnot','Kundförfrågningar och åtgärder','Customer requests and actions'],'automation','actions2','tarjous'],
+      [['Hintalaskuri','Priskalkylator','Quote calculator'],'automation','quote-engine','tarjous tarjouslaskenta offert estimate ikkuna ikkunanpesu fönster window yksikköhinta €/ikkuna'],
+      [['Työkalut ja raportit','Verktyg och rapporter','Tools and reports'],'automation','native-operations','automaatio analytiikka crm tiketit tarjoukset orders tilaukset työtehtävät laatu'],
+      [['Yrityksen tiedot','Företagsuppgifter','Company details'],'settings',null,'aukioloajat yhteystiedot verkkosivu'],
+      [['Laskutus ja tilaus','Fakturering och abonnemang','Billing and subscription'],'billing','billing','stripe'],
+      [['Tilin tietoturva','Kontosäkerhet','Account security'],'profile','account-security','salasana profiili'],
+      [['Yritystilien hallinta','Hantera företag','Manage companies'],'profile','workspaces','tyotilat'],
       [['Ajanvaraus ja kalenteri','Bokningar och kalender','Bookings and calendar'],'integrations','booking-calendar','varaus aika'],
       [['CRM-yhteydet','CRM-anslutningar','CRM connections'],'integrations','crm-integration','hubspot pipedrive'],
       [['API ja webhookit','API och webhooks','API and webhooks'],'integrations','business-integrations','kehittaja'],
       [['Verkkokauppayhteydet','Webbutiksanslutningar','Online store connections'],'integrations','commerce-integration','shopify woocommerce'],
       [['Viestikanavien yhteydet','Meddelandekanaler','Messaging channels'],'integrations','meta-native-connections','instagram facebook whatsapp'],
-      [['Asiakaspyynnöt ja toiminnot','Kundförfrågningar och åtgärder','Customer requests and actions'],'automation','actions2','tarjous'],
-      [['Hintalaskuri','Priskalkylator','Quote calculator'],'automation','quote-engine','tarjous tarjouslaskenta offert estimate'],
-      [['Respondon työkalut ja laatu','Respondos verktyg och kvalitet','Respondo tools and quality'],'integrations','native-operations','automaatio analytiikka'],
-      [['Asennus ja asennustarkistus','Installation och kontroll','Installation and verification'],'install','install','widget script upotus'],
-      [['Henkilökunta','Personal','Team members'],'team','support-team','työntekijä'],
-      [['Laskutus ja tilaus','Fakturering och abonnemang','Billing and subscription'],'billing','billing','stripe'],
-      [['Yritystilien hallinta','Hantera företag','Manage companies'],'profile','workspaces','tyotilat'],
-      [['Tilin tietoturva','Kontosäkerhet','Account security'],'profile','account-security','salasana profiili']
+      [['Stripe-maksut','Stripe-betalningar','Stripe payments'],'integrations','stripe-connect','maksuyhteys betala'],
     ];
     const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    const heading=document.createElement('h2');
-    heading.textContent=translate('Löydä toiminto','Hitta en funktion','Find a feature');
-    const description=document.createElement('p');
-    description.textContent=translate('Hae nimellä tai valitse yleinen tehtävä. Vain käytettävissä olevat toiminnot voi avata.',
-      'Sök med namn eller välj en vanlig uppgift. Endast tillgängliga funktioner kan öppnas.',
-      'Search by name or pick a common task. Only available features can be opened.');
     const label=document.createElement('label');
     label.className='rs-feature-finder-label';
     label.textContent=translate('Hae toimintoa','Sök funktion','Search features');
     const search=document.createElement('input');
     search.type='search';search.autocomplete='off';
-    search.placeholder=translate('Esim. sähköposti, kalenteri, asennus',
-      'T.ex. e-post, kalender, installation','E.g. email, calendar, installation');
+    search.placeholder=translate('Esim. ikkuna, kalenteri tai asennus',
+      'T.ex. fönster, kalender eller installation','E.g. window, calendar or installation');
     label.appendChild(search);
     const list=document.createElement('div');
     list.className='rs-feature-finder-results';list.setAttribute('aria-live','polite');
-    const expand=document.createElement('button');
-    expand.type='button';expand.className='rs-feature-finder-expand';
-    let expanded=false;
     function render(){
       const needle=normalize(search.value.trim());
       const matches=catalog.filter(([names,,,aliases])=>
-        !needle||normalize(names.join(' ')+' '+aliases).includes(needle));
+        !needle||needle.split(/\s+/).every(word=>normalize(names.join(' ')+' '+aliases).includes(word)));
       list.replaceChildren();
-      for(const [names,view,tab] of (needle||expanded?matches:matches.slice(0,8))){
-        const available=!tab||moduleTabAvailable(tab);
-        const item=document.createElement('button');
-        item.type='button';item.className='rs-feature-finder-item';
-        item.disabled=!available;
-        const title=document.createElement('span');
+      list.dataset.layout=needle?'search':activeGroup==='all'?'overview':'section';
+      const groups=workspaceGroups.filter(([id])=>activeGroup==='all'||id===activeGroup);
+      if(needle){
+        for(const entry of matches)list.appendChild(makeItem(entry));
+      }else for(const [id,names] of groups){
+        const section=document.createElement('section');
+        section.className='rs-feature-group';
+        const title=document.createElement('h2');
         title.textContent=translate(...names);
-        const state=document.createElement('small');
-        state.textContent=available?translate('Avaa →','Öppna →','Open →'):
-          translate('Ei käytettävissä tällä tilauksella tai yhteydellä',
-            'Inte tillgänglig med detta abonnemang eller denna anslutning',
-            'Unavailable with current plan or connection');
-        item.append(title,state);
-        if(available)item.addEventListener('click',()=>{
-          selectView(view);
-          if(tab)showModuleTab(tab);
-          requestAnimationFrame(()=>{
-            const destination=workspace.querySelector('[data-workspace-page="'+
-              (view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
-            if(!destination||destination.hidden)return;
-            orbit?.suspendPin?.();
-            destination.scrollIntoView({behavior:'auto',block:'start'});
-            const focus=workspace.querySelector(view==='bot'?'[data-workspace-page="bot"] h1':'#respondoWorkspaceModuleTitle');
-            if(focus){focus.setAttribute('tabindex','-1');focus.focus({preventScroll:true});}
-          });
-        });
-        list.appendChild(item);
+        const entries=document.createElement('div');
+        entries.className='rs-feature-group-links';
+        const tools=matches.filter(([,view,tab])=>groupFor(view,tab)===id&&(!tab||moduleTabAvailable(tab)));
+        for(const entry of (activeGroup==='all'?tools.slice(0,3):tools))entries.appendChild(makeItem(entry));
+        if(activeGroup==='all'&&tools.length>3){
+          const more=document.createElement('button');
+          more.type='button';
+          more.dataset.workspaceGroup=id;
+          more.className='rs-feature-group-more';
+          more.textContent=translate('Näytä kaikki','Visa alla','View all');
+          more.setAttribute('aria-label',translate('Näytä kaikki osion toiminnot: ','Visa alla funktioner i: ','View all features in: ')+title.textContent);
+          entries.appendChild(more);
+        }
+        if(activeGroup==='all')section.append(title);
+        section.append(entries);
+        list.appendChild(section);
       }
       if(!matches.length){
         const empty=document.createElement('p');empty.className='rs-feature-finder-empty';
@@ -602,13 +607,38 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
           'No matching feature. Try another search term.');
         list.appendChild(empty);
       }
-      expand.hidden=Boolean(needle)||matches.length<=8;
-      expand.textContent=expanded?translate('Näytä yleisimmät','Visa vanliga','Show common tasks'):
-        translate('Näytä kaikki toiminnot','Visa alla funktioner','Show all features');
+    }
+    function makeItem([names,view,tab]){
+      const available=!tab||moduleTabAvailable(tab);
+      const item=document.createElement('button');
+      item.type='button';item.className='rs-feature-finder-item';
+      item.disabled=!available;
+      const title=document.createElement('span');
+      title.textContent=translate(...names);
+      const state=document.createElement('small');
+      if(available)state.setAttribute('aria-hidden','true');
+      state.textContent=available?'→':
+        translate('Ei käytettävissä tällä tilauksella tai yhteydellä',
+          'Inte tillgänglig med detta abonnemang eller denna anslutning',
+          'Unavailable with current plan or connection');
+      item.append(title,state);
+      if(available)item.addEventListener('click',()=>{
+        selectView(view);
+        if(tab)showModuleTab(tab);
+        requestAnimationFrame(()=>{
+          const destination=workspace.querySelector('[data-workspace-page="'+
+            (view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
+          if(!destination||destination.hidden)return;
+          orbit?.suspendPin?.();
+          destination.scrollIntoView({behavior:'auto',block:'start'});
+          const focus=workspace.querySelector(view==='bot'?'[data-workspace-page="bot"] h1':'#respondoWorkspaceModuleTitle');
+          if(focus){focus.setAttribute('tabindex','-1');focus.focus({preventScroll:true});}
+        });
+      });
+      return item;
     }
     search.addEventListener('input',render);
-    expand.addEventListener('click',()=>{expanded=!expanded;render();});
-    host.append(heading,description,label,list,expand);
+    host.append(label,list);
     render();
     host.addEventListener('respondo:finder-refresh',render);
     workspace.addEventListener('respondo:provider-availability',render);
@@ -617,17 +647,16 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     restoreImportedReview();
     currentAvatarObserver?.disconnect();
     currentAvatarObserver=null;
-    selected=Object.hasOwn(pages,next)?next:'bot';
+    selected=Object.hasOwn(pages,next)?next:demo?'bot':'overview';
     workspace.dataset.currentView=selected;
     orbit?.sync(selected);
     restoreOverviewMetrics();
     park();
     card.replaceChildren();
-    // The real bot preview always stays first. The sphere is immediately below
-    // it, and the selected account section appears *below* the sphere.
+    // The public demo keeps its chat and orbit together. Owner views show one destination at a time.
     workspace.querySelectorAll('[data-workspace-page]').forEach(element=>{
       const page=element.dataset.workspacePage;
-      element.hidden=!(page==='bot' ||
+      element.hidden=!((page==='bot' && (demo||selected==='bot')) ||
         (selected==='overview' && page==='overview') ||
         (selected!=='bot' && selected!=='overview' && page==='modules'));
     });
@@ -636,7 +665,18 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       button.classList.toggle('active',on);
       if(on)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
     });
-    if(selected==='overview' && !demo)showOverviewMetrics();
+    if(!demo){
+      currentTab=null;
+      updateGroupNavigation();
+      if(selected==='overview'){
+        const names=workspaceGroups.find(([id])=>id===activeGroup)?.[1];
+        const title=workspace.querySelector('[data-workspace-page="overview"] h1');
+        title.textContent=names?translate(...names):pages.overview;
+        ensureFeatureFinder();
+        workspace.querySelector('#respondoWorkspaceFeatureFinder')?.dispatchEvent(new Event('respondo:finder-refresh'));
+        if(activeGroup==='all')showOverviewMetrics();
+      }
+    }
     const heading=$('#respondoWorkspaceModuleTitle');
     if(heading)heading.textContent=pages[selected]||pages.bot;
     const empty=$('#respondoWorkspaceEmpty');
@@ -720,6 +760,18 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     workspace.dataset.initialized='1';
     workspace.addEventListener('respondo:provider-availability',refreshProviderTabs);
     workspace.addEventListener('click',(event)=>{
+      const groupButton=event.target.closest?.('[data-workspace-group]');
+      if(groupButton && workspace.contains(groupButton)){
+        activeGroup=groupButton.dataset.workspaceGroup;
+        const search=workspace.querySelector('#respondoWorkspaceFeatureFinder input');
+        if(search)search.value='';
+        selectView('overview');
+        const destination=workspace.querySelector('[data-workspace-page="overview"] h1');
+        destination?.setAttribute('tabindex','-1');
+        destination?.scrollIntoView({behavior:'auto',block:'start'});
+        destination?.focus({preventScroll:true});
+        return;
+      }
       const review=event.target.closest?.('[data-workspace-import-review]');
       if(review && workspace.contains(review)){
         event.preventDefault();
@@ -730,17 +782,17 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       if(tab && workspace.contains(tab)){showModuleTab(tab.dataset.workspaceTab);return;}
       const button=event.target.closest?.('[data-workspace-nav]');
       if(button && workspace.contains(button)){
+        if(button.classList.contains('rs-workspace-find-toggle'))activeGroup='all';
         selectView(button.dataset.workspaceNav);
+        const finder=button.classList.contains('rs-workspace-find-toggle')
+          ?workspace.querySelector('#respondoWorkspaceFeatureFinder input'):null;
+        if(finder){
+          finder.focus({preventScroll:true});
+          finder.scrollIntoView({behavior:'auto',block:'center'});
+          return;
+        }
         requestAnimationFrame(()=>{
           const view=workspace.dataset.currentView;
-          const finder=button.classList.contains('rs-workspace-find-toggle')
-            ?workspace.querySelector('#respondoWorkspaceFeatureFinder input'):null;
-          if(finder){
-            orbit?.suspendPin?.();
-            finder.scrollIntoView({behavior:'auto',block:'center'});
-            finder.focus({preventScroll:true});
-            return;
-          }
           const destination=workspace.querySelector('[data-workspace-page="'+(view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
           if(destination && !destination.hidden){
             orbit?.suspendPin?.();
@@ -770,9 +822,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     updateScan();
   }
 
-  // Opening /app again should return to the same clear, dark workspace rather
-  // than the legacy dashboard. Demo data is intentionally ephemeral.
-  orbit=createWorkspaceOrbit({workspace,navigate:selectView,translate});
+  if(demo)orbit=createWorkspaceOrbit({workspace,navigate:selectView,translate});
   selectView(view);
   // OAuth redirects and deep links must land on the requested module rather
   // than leaving the permanently bot-first workspace at the top of the page.

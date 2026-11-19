@@ -3,8 +3,8 @@ import { bindQuoteRuleHistory } from './quote-rule-history.mjs?v=2';
 import { bindProductStory } from './home-product-story.js?v=2';
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49-native-mail-disabled-v50-quote-navigation-v1';
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51-navigation-v52-verified-only-v1';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49-native-mail-disabled-v50-quote-navigation-v1-dashboard-groups-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51-navigation-v52-dashboard-groups-v1-verified-only-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -9345,7 +9345,7 @@ async function route() {
         e.currentTarget.textContent = appText('Valitse ja kopioi','Markera och kopiera','Select and copy');
       }
     });
-    // Existing customers always return to the clear, dark bot-first workspace.
+    // Existing customers start at the dashboard overview unless following a deep link.
     if (!$('#guidedSetup')) {
       const section=new URLSearchParams(location.search).get('section');
       // Preserve deep-link intent. Business & bot must open its editable setup,
@@ -9359,7 +9359,7 @@ async function route() {
         leads:'customers',
         actions2:'automation'
       };
-      const view=legacySectionAliases[section]||section||'bot';
+      const view=legacySectionAliases[section]||section||'overview';
       activateRespondoWorkspace({view});
     }
   }

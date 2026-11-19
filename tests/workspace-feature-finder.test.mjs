@@ -45,3 +45,13 @@ test('feature search stays readable on mobile and updated CSS/JS URLs defeat sta
   assert.match(html,/app\.js\?v=[^"]*feature-finder-v49/);
   assert.match(app,/workspace-continuation-v24\.js\?v=[^']*feature-finder-v49/);
 });
+
+test('owners get grouped navigation, while the demo keeps the bot and orbit flow',()=>{
+  const ui=read('workspace-continuation-v24.js'),app=read('app.js');
+  assert.match(app,/const view=legacySectionAliases\[section\]\|\|section\|\|'overview'/);
+  assert.match(ui,/if\(demo\)orbit=createWorkspaceOrbit/);
+  assert.match(ui,/page==='bot' && \(demo\|\|selected==='bot'\)/);
+  for(const name of ['Botti','Asiakkaat','Myynti ja työt','Asetukset'])assert.ok(ui.includes(name));
+  assert.match(ui,/'automation','quote-engine','[^']*€\/ikkuna/);
+  assert.match(ui,/groupFor\(view,tab\)===id&&\(!tab\|\|moduleTabAvailable\(tab\)\)/);
+});

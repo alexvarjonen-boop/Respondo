@@ -725,10 +725,10 @@ Object.assign(guides,{
   '/guides/dashboard-navigation-guide':{
     reading:'8',
     fi:{
-      title:'Respondo AI:n hallintapaneelin navigointiopas – pallovalikon 12 osiota',
-      subtitle:'Mistä löydät kävijätilastot, liidit, keskustelut, henkilökunnan, vastaukset, integraatiot ja laskutuksen? Käy läpi Respondo OS:n jokainen osio.',
+      title:'Respondo AI:n hallintapaneelin navigointiopas',
+      subtitle:'Löydä botin asetukset, asiakkaat, hintalaskuri, integraatiot, tilastot ja laskutus hallintapaneelin kautta.',
       sections:[
-        ['Näin käytät pallovalikkoa','Kirjaudu sisään osoitteessa respondoai.fi/app. Botin kokeilun alapuolella näkyy Respondo OS -pallo, jossa on 12 kuvaketta. Vieritä palloa vaihtaaksesi valittua osiota tai napsauta haluamaasi kuvaketta. Avaa osio painamalla sen alapuolella näkyvää nimeä. Profiilin jälkeen kierto alkaa uudelleen Yleiskatsauksesta. Hallintapaneelissa näytetään vain oman yrityksesi tiedot ja valitun tilauspaketin sekä käyttöoikeuksien sallimat toiminnot.'],
+        ['Näin löydät toiminnot','Kirjaudu osoitteessa respondoai.fi/app. Yleisnäkymä ryhmittelee toiminnot osioihin Botti, Asiakkaat, Myynti ja työt sekä Asetukset. Avaa osio yläreunasta tai kirjoita hakukenttään esimerkiksi ikkuna, kalenteri tai asennus.'],
         ['1. Yleiskatsaus – tulokset ja kävijät','Tämä on yrityksesi tilannekuva. Löydät keskeiset käyttö- ja keskustelutilastot, bottiin liittyvät mittarit ja linkit tärkeisiin toimintoihin. Sivustokävijöiden tarkemmat tilastot sekä Respondo AI:n sisäinen omistajakohtainen kävijäanalytiikka voivat näkyä erillisessä hallintanäkymässä vain oikeutetuilla käyttäjillä; älä sekoita niitä yksittäisen yrityksen chattilukuihin.'],
         ['2. Asiakkaat ja liidit – yhteydenottopyynnöt','Täältä tarkastelet botin keräämiä liidejä ja yhteydenottoja, esimerkiksi asiakkaan nimeä, sähköpostia tai puhelinnumeroa ja kysymyksen sisältöä silloin, kun tiedot on lähetetty. Osio on oikea paikka tarkistaa uusia tarjouspyyntöjä ja yhteydenottoja.'],
         ['3. Keskustelut – asiakashistoria ja livechat','Näet asiakaskeskustelujen historian sekä käytettävissä olevat live-keskustelut. Täältä voit seurata, mistä asiakkaat kysyivät ja milloin tarvittiin ihmisen apua. Todelliset viestit ja käsittelymahdollisuudet edellyttävät oikeaa yritystiliä.'],
@@ -740,21 +740,21 @@ Object.assign(guides,{
         ['9. Integraatiot – kalenteri, verkkokauppa, API ja Stripe','Tämän osion välilehdiltä löytyvät API ja webhookit, verkkokauppayhteydet, kalenteri sekä Stripe-yhteys silloin, kun ne ovat käytössä. Eri yhteydet vaativat omat asetuksensa ja mahdollisesti ulkopuolisen tilin. Tarkista yhteyden tila ennen kuin annat botin väittää tilausta, varausta tai maksua vahvistetuksi.'],
         ['10. Laskutus – tilaus ja maksujen hallinta','Katso yrityksen tilaus ja tilausjakso sekä laskutuksen hallintaan liittyvät toiminnot. Stripeä käyttävän tilauksen muutokset ja mahdollinen peruminen tehdään laskutushallinnan kautta. Erillisen käyttöönottopalvelun ehdot ja kokeilun aloitus löytyvät käyttöehdoista.'],
         ['11. Asetukset – palvelun määritykset','Avaa yritystilillä tarjolla olevat yleiset asetukset ja käyttöön liittyvät määritykset. Tarkista, että oikeudet, yhteystiedot ja käyttöön otetut toiminnot vastaavat yrityksen tarpeita. Tietyn asetuksen sijainti voi muuttua ominaisuuspäivityksessä.'],
-        ['12. Profiili – yritykset ja tilin turvallisuus','Täältä löytyvät omien yritystyötilojen hallinta sekä tilin asetukset ja tietoturva. Käyttäjä voi vaihtaa omia kirjautumistietojaan ja hallita niitä yrityksiä, joihin hänellä on käyttöoikeus. Laskutus on pallossa myös oma erillinen osionsa.'],
-        ['Miten löydän oikean toiminnon nopeasti?','Haluatko nähdä liidit? Valitse Asiakkaat ja liidit. Haluatko lukea viestit? Keskustelut. Tarvitsetko työntekijätunnuksen? Henkilökunta. Muokkaatko botin vastauksia? Vastaukset. Haluatko asentaa botin verkkosivulle? Asennus. Tilaus ja maksut löytyvät Laskutuksesta. Aloita aina Yleiskatsauksesta, jos et ole varma.']
+        ['12. Profiili – yritykset ja tilin turvallisuus','Täältä löytyvät omien yritystyötilojen hallinta sekä tilin asetukset ja tietoturva. Käyttäjä voi vaihtaa omia kirjautumistietojaan ja hallita niitä yrityksiä, joihin hänellä on käyttöoikeus. Laskutus ja tilaus löytyvät Asetukset-osion kautta.'],
+        ['Miten löydän oikean toiminnon nopeasti?','Liidit, viestit ja henkilökunta löytyvät Asiakkaat-osiosta. Vastaukset ja asennus löytyvät Botti-osiosta. Avaa Hintalaskuri kohdasta Myynti ja työt. Laskutus ja tilin tietoturva ovat Asetukset-osiossa.']
       ],
       faq:[
         ['Mistä näen kävijät ja liidit?','Yleiskatsaus sisältää keskeiset tilastot, mutta lähetetyt yhteystiedot löytyvät Asiakkaat ja liidit -osiosta. Osa omistajan kävijäanalytiikasta on rajattu erilliseen hallintaan.'],
-        ['Miten luon työntekijälle profiilin?','Avaa pallosta Henkilökunta ja käytä työntekijäprofiilien luontitoimintoja. Saatavilla olevat paikat riippuvat tilauksesta.'],
-        ['Voiko pallossa olevaa kuvaketta klikata suoraan?','Kyllä. Voit valita kuvakkeen suoraan tai vierittää palloa; paina valitun osion nimeä avataksesi sen.'],
-        ['Mistä löydän laskutuksen ja tilin asetukset?','Laskutus on erillinen osio. Profiilissa hallitaan yritystyötiloja ja tilin tietoja; yleiset asetukset löytyvät myös Asetukset-osiosta.']
+        ['Miten luon työntekijälle profiilin?','Valitse Asiakkaat ja avaa Henkilökunta ja käytä työntekijäprofiilien luontitoimintoja. Saatavilla olevat paikat riippuvat tilauksesta.'],
+        ['Miten löydän Hintalaskurin?','Valitse Myynti ja työt ja avaa Hintalaskuri. Voit myös hakea sanalla ikkuna tai hintalaskuri.'],
+        ['Mistä löydän laskutuksen ja tilin asetukset?','Avaa Asetukset. Sieltä löydät laskutuksen, yritystilit ja tilin tietoturvan.']
       ]
     },
     sv:{
-      title:'Navigeringsguide till Respondo AI – alla 12 delar av menykulan',
+      title:'Navigeringsguide till Respondo AI:s kontrollpanel',
       subtitle:'Hitta statistik, leads, chattar, personal, kunskapsbas, anslutningar och fakturering i Respondo OS.',
       sections:[
-        ['Så fungerar menykulan','Logga in på respondoai.fi/app. Under testchatten finns Respondo OS-kulan med 12 ikoner. Skrolla för att välja en annan del eller klicka på en ikon. Öppna delen genom att trycka på namnet nedanför. Efter Profil börjar rundan om från Översikt. Endast uppgifter och funktioner som hör till företagets konto, abonnemang och behörighet visas.'],
+        ['Så hittar du funktionerna','Logga in på respondoai.fi/app. Översikt grupperar funktionerna under Botten, Kunder, Försäljning och jobb samt Inställningar. Välj ett avsnitt överst eller sök efter fönster, kalender eller installation.'],
         ['1. Översikt – statistik och resultat','Översikt visar viktiga användnings- och chattmått och genvägar till centrala funktioner. Separat, ägarbegränsad besökarstatistik för själva Respondo-tjänsten är inte samma sak som ett kundföretags chattstatistik.'],
         ['2. Kunder och leads – kontaktförfrågningar','Granska inkomna leads, kontaktuppgifter och förfrågningar som besökare faktiskt har skickat via chatten. Här kan företaget följa upp förfrågningar och offertönskemål.'],
         ['3. Konversationer – historik och livechatt','Visa tidigare kundsamtal och aktiva chattar, om funktionen är tillgänglig. Här ser du vilka frågor kunden ställde och när personal kan behöva ta över.'],
@@ -766,21 +766,21 @@ Object.assign(guides,{
         ['9. Integrationer – API, webbutik, kalender och Stripe','Flikarna omfattar API och webhooks, webbutiker, kalender och Stripe när de är tillgängliga. Externa konton, behörigheter och inställningar kan krävas. Kontrollera systemets status innan en order eller bokning uppges vara bekräftad.'],
         ['10. Fakturering – abonnemang och betalningar','Visa företagets abonnemang och faktureringsinställningar. Ändringar och uppsägning av Stripe-abonnemang görs via faktureringshanteringen. Villkor för separat installation och provperiod finns i användarvillkoren.'],
         ['11. Inställningar – arbetsytans alternativ','Granska allmänna inställningar, behörigheter och konfigurerade funktioner för företagskontot. Vissa inställningar kan flyttas när tjänsten utvecklas.'],
-        ['12. Profil – företag och kontosäkerhet','Hantera företag som du har åtkomst till, egna kontouppgifter och säkerhetsinställningar. Fakturering finns dessutom som en separat del av kulan.'],
-        ['Snabbguide – vart ska jag gå?','Leads: Kunder och leads. Chatthistorik: Konversationer. Medarbetare: Personal. Felfrågor och fakta: Svar. Inbäddningskod: Installation. Abonnemang och betalningar: Fakturering. Börja med Översikt om du är osäker.']
+        ['12. Profil – företag och kontosäkerhet','Hantera företag som du har åtkomst till, egna kontouppgifter och säkerhetsinställningar. Fakturering och abonnemang finns under Inställningar.'],
+        ['Snabbguide – vart ska jag gå?','Leads, chatthistorik och personal finns under Kunder. Svar och installation finns under Botten. Priskalkylatorn finns under Försäljning och jobb. Fakturering och kontosäkerhet finns under Inställningar.']
       ],
       faq:[
         ['Var finns besökare och leads?','Viktiga mått visas i Översikt och skickade kundkontakter i Kunder och leads. Viss ägarstatistik är begränsad till en separat vy.'],
-        ['Hur skapar jag en personalprofil?','Öppna Personal och välj funktionen för att skapa en medarbetarprofil. Antalet platser beror på abonnemanget.'],
-        ['Kan jag klicka direkt på en ikon?','Ja. Välj en ikon eller skrolla i kulan och öppna sedan delen genom att trycka på dess namn.'],
-        ['Var finns fakturering och profil?','Fakturering är en separat del. Profil innehåller företag och kontoinställningar; allmänna alternativ finns under Inställningar.']
+        ['Hur skapar jag en personalprofil?','Välj Kunder, öppna Personal och välj funktionen för att skapa en medarbetarprofil. Antalet platser beror på abonnemanget.'],
+        ['Var finns priskalkylatorn?','Välj Försäljning och jobb och öppna Priskalkylatorn. Du kan också söka efter fönster eller priskalkylator.'],
+        ['Var finns fakturering och profil?','Öppna Inställningar för fakturering, företag och kontosäkerhet.']
       ]
     },
     en:{
-      title:'Respondo AI dashboard navigation guide – all 12 sections of the sphere',
+      title:'Respondo AI dashboard navigation guide',
       subtitle:'Find visitor analytics, leads, conversations, employees, bot knowledge, integrations and billing in Respondo OS.',
       sections:[
-        ['How the navigation sphere works','Sign in at respondoai.fi/app. Below the live bot preview, the Respondo OS sphere shows 12 icons. Scroll the sphere to change the selected section or click an icon. Open the selected section by pressing its name beneath the sphere. After Profile, the cycle starts again at Overview. Your business account only displays the data and functions allowed by its plan and permissions.'],
+        ['How to find features','Sign in at respondoai.fi/app. Overview groups features under Bot, Customers, Sales and work, and Settings. Choose a section at the top or search for a term such as window, calendar or installation.'],
         ['1. Overview – metrics and key actions','Overview is the business summary. It shows available usage, conversation and bot-related statistics and shortcuts to key tools. Detailed owner-only visitor analytics for Respondo itself may be available in a separate restricted view; those are not the same as a customer company’s conversation statistics.'],
         ['2. Customers & leads – contact requests','Review customer contact information and leads actually submitted through the bot, such as a name, phone number, email or quote request. Use this section to follow up on incoming enquiries.'],
         ['3. Conversations – chat history and live inbox','View past customer conversations and live chats when enabled. See what visitors asked, and whether a conversation requires human follow-up. Actual messages require an authorized business account.'],
@@ -792,14 +792,14 @@ Object.assign(guides,{
         ['9. Integrations – API, ecommerce, Calendar and Stripe','The tabs cover API and webhooks, online stores, calendars and Stripe where enabled. Connections may require separate accounts and authorization. Verify external system status before telling a customer an order, booking or payment is confirmed.'],
         ['10. Billing – subscription and payments','Check the business subscription, billing interval and the available Stripe subscription-management functions. Changes and cancellations are made using billing management. Assisted setup and trial start conditions are explained in the Terms of Service.'],
         ['11. Settings – workspace configuration','Review available workspace settings, account permissions and enabled feature options. Individual settings may move when the product is updated.'],
-        ['12. Profile – companies and account security','Manage the businesses you can access, your account details and security settings. Billing is also a separate section in the sphere.'],
-        ['Quick lookup – where do I click?','Leads: Customers & leads. Chat history: Conversations. Staff accounts: Team. Knowledge gaps: Answers. Embed code: Installation. Subscriptions and payments: Billing. Start from Overview if you are unsure.']
+        ['12. Profile – companies and account security','Manage the businesses you can access, your account details and security settings. Billing and subscription are available under Settings.'],
+        ['Quick lookup – where do I click?','Leads, chats and staff are under Customers. Answers and installation are under Bot. The quote calculator is in Sales and work. Billing and account security are under Settings.']
       ],
       faq:[
         ['Where are visitor numbers and leads?','Key available metrics are in Overview; submitted contacts are in Customers & leads. Some owner-only visitor analytics are restricted to a separate screen.'],
-        ['Where do I create support agent profiles?','Open Team and use the employee profile controls. Seat limits depend on your plan.'],
-        ['Can I click a sphere icon directly?','Yes. Click an icon or scroll to select it, then press the section name to open its content.'],
-        ['Where are billing and account settings?','Billing is its own sphere section. Profile contains companies and account security, while general options are also under Settings.']
+        ['Where do I create support agent profiles?','Choose Customers, then Team, and use the employee profile controls. Seat limits depend on your plan.'],
+        ['Where is the quote calculator?','Choose Sales and work, then Quote calculator. You can also search for window or quote calculator.'],
+        ['Where are billing and account settings?','Open Settings to find billing, companies and account security.']
       ]
     }
   }

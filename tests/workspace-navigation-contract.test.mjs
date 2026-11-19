@@ -43,7 +43,7 @@ test('every workspace tab points to a server-rendered or first-party native modu
 });
 
 test('deep link to integrations cannot be swallowed by the initial bot preview',()=>{
- assert.match(app,/const view=legacySectionAliases\[section\]\|\|section\|\|'bot'/);
+ assert.match(app,/const view=legacySectionAliases\[section\]\|\|section\|\|'overview'/);
  assert.match(app,/activateRespondoWorkspace\(\{view\}\)/);
  assert.match(workspace,/if\(!demo && initialSection==='integrations' && workspace\.dataset\.currentView==='integrations'\)/);
  assert.match(workspace,/target\.scrollIntoView\(\{behavior:'auto',block:'start'\}\)/);

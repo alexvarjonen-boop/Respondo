@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {GLOBAL_GUIDE_PATHS, globalGuideData, globalResourcesMarkup} from '../public/global-resources.mjs';
 const route='/guides/dashboard-navigation-guide';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const orbit=read('public/workspace-orbit-v28.js');
+const workspace=read('public/workspace-continuation-v24.js');
 const app=read('public/app.js');
 const html=read('public/index.html');
 const server=read('server.mjs');
@@ -30,48 +30,29 @@ test('dashboard guide route belongs to the existing Guides library in three lang
   assert.ok(server.includes('...GLOBAL_GUIDE_PATHS'), 'SEO discovery');
 });
 
-test('exactly 12 guide chapters follow the real sphere section order',()=>{
-  const idLabels=[
-    ['overview','Yleiskatsaus','Översikt','Overview'],
-    ['customers','Asiakkaat ja liidit','Kunder och leads','Customers & leads'],
-    ['conversations','Keskustelut','Konversationer','Conversations'],
-    ['team','Henkilökunta','Personal','Team'],
-    ['setup','Yritys ja botti','Företag och bot','Business & bot'],
-    ['answers','Vastaukset','Svar','Answers'],
-    ['automation','Toiminnot','Funktioner','Actions'],
-    ['install','Asennus','Installation','Installation'],
-    ['integrations','Integraatiot','Integrationer','Integrations'],
-    ['billing','Laskutus','Fakturering','Billing'],
-    ['settings','Asetukset','Inställningar','Settings'],
-    ['profile','Profiili','Profil','Profile'],
-  ];
-  const s=orbit.slice(orbit.indexOf('  const sections=['),orbit.indexOf('  const orb=',orbit.indexOf('  const sections=[')));
-  for(const [i,[id,fi,sv,en]] of idLabels.entries()){
-    assert.ok(s.includes("id:'"+id+"'"),id);
-    for(const [lang,label] of [['fi',fi],['sv',sv],['en',en]]){
-      const item=globalGuideData(route,lang);
-      const title=item.sections[i+1][0];
-      const expected=lang==='fi'?label:lang==='sv'?sv:en;
-      assert.ok(title.toLowerCase().includes(expected.toLowerCase()),lang+' '+title+' missing '+expected);
+test('the guide describes the owner navigation and localized group names',()=>{
+  for(const [lang,labels] of [
+    ['fi',['Botti','Asiakkaat','Myynti ja työt','Asetukset']],
+    ['sv',['Botten','Kunder','Försäljning och jobb','Inställningar']],
+    ['en',['Bot','Customers','Sales and work','Settings']]
+  ]){
+    const guide=globalGuideData(route,lang);
+    for(const label of labels){
+      assert.ok(guide.sections[0][1].includes(label),lang+' '+label);
+      assert.ok(workspace.includes(label),lang+' '+label);
     }
   }
-  const ids=[...s.matchAll(/\{id:'([^']+)'/g)].map(x=>x[1]);
-  assert.deepEqual(ids,idLabels.map(([id])=>id));
 });
 
 test('guide correctly distinguishes analytics, staff, billing and navigation behaviour',()=>{
   for(const lang of ['fi','sv','en']){
     const g=globalGuideData(route,lang);
     const content=g.sections.map(x=>x[1]).join(' ');
-    assert.match(content,/12/);
     assert.match(content,/Stripe/);
-    assert.match(content,/profile|Profiilin|Profil|Profile/i);
+    assert.match(content,/account security|tietoturva|kontosäkerhet/i);
     assert.match(content,/chat|chatt|keskustel/i);
     assert.match(content,/calendar|kalenteri|kalender/i);
   }
-  assert.match(orbit,/current\+1\)%count/);
-  assert.match(orbit,/orb\.querySelector\('#rsOrbitName'\)/);
-  assert.match(orbit,/data-rs-workspace-icon/);
   assert.match(app,/global-resources\.mjs\?v=[^']*navigation-v52/);
   assert.match(html,/app\.js\?v=[^"]*navigation-v52/);
 });

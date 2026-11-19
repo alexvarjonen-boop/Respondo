@@ -46,10 +46,10 @@ test('every workspace module tab points to an actual DOM panel',()=>{
 });
 
 test('dashboard deep links resolve to correct sections (including setup)',()=>{
-  const match=app.match(/const legacySectionAliases=\{([\s\S]*?)\};\s*const view=legacySectionAliases\[section\]\|\|section\|\|'bot';/);
+  const match=app.match(/const legacySectionAliases=\{([\s\S]*?)\};\s*const view=legacySectionAliases\[section\]\|\|section\|\|'overview';/);
   assert.ok(match,'Expected canonical workspace deep-link mapping');
   const resolve=new Function('section',
-    "const legacySectionAliases={"+match[1]+"};return legacySectionAliases[section]||section||'bot';");
+    "const legacySectionAliases={"+match[1]+"};return legacySectionAliases[section]||section||'overview';");
   const expected={
     setup:'setup',account:'profile',integrations:'integrations',
     automation:'automation',customers:'customers',answers:'answers',
@@ -62,7 +62,7 @@ test('dashboard deep links resolve to correct sections (including setup)',()=>{
     assert.equal(resolve(input),output,'Wrong target for ?section='+input);
     assert.ok(pageIds.has(output),'Unrecognized normalized workspace page '+output);
   }
-  assert.equal(resolve(null),'bot');
+  assert.equal(resolve(null),'overview');
   const drawerViews=drawer.match(/const views = \[([^\]]+)\]/)?.[1]||'';
   for(const view of drawerViews.match(/'([a-z]+)'/g)?.map(v=>v.slice(1,-1))||[]){
     assert.ok(pageIds.has(resolve(view)),'Drawer link points to missing page: '+view);
