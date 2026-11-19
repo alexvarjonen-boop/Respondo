@@ -16,8 +16,8 @@ function contrast(foreground,background) {
   return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
 }
 
-test('the screenshot ecommerce form and all enterprise integration fields are addressed',()=>{
-  for(const section of ['commerce-integration','business-integrations','booking-calendar','stripe-connect']) {
+test('ecommerce, integration, calendar and quote fields use the light control palette',()=>{
+  for(const section of ['commerce-integration','business-integrations','booking-calendar','stripe-connect','quote-engine']) {
     assert.ok(app.includes('id="'+section+'"'),'actual dashboard renders '+section);
     assert.ok(css.includes('#'+section),'contrast CSS includes '+section);
   }
@@ -53,7 +53,7 @@ test('overrides exclude checkboxes, uploads, range and buttons without changing 
 });
 
 test('fix is loaded only once after all older dark workspace styles',()=>{
-  const url='/workspace-form-contrast-v54.css?v=20261104-workspace-forms-v54';
+  const url='/workspace-form-contrast-v54.css?v=20261104-workspace-forms-v54-quote-contrast-v1';
   assert.equal(index.split(url).length,2);
   const before='/contrast-accessibility-v53.css?v=20261104-dark-text-contrast-v53';
   assert.ok(index.indexOf(url)>index.indexOf(before));
