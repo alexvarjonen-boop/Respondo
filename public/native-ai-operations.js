@@ -114,29 +114,37 @@
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
     let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,sales=null,scheduledQuality=null,capabilityStatus=null,feedbackSummary=null,websiteChanges=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,scheduleNotices=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
     const kinds=['contacts','tickets','quotes','rules','docs','inbox','calendar','tasks','flows','orders','quality','insights','helpdesk','zendesk'];
+    function selectTool(kind){
+      if(active!==kind)content.replaceChildren();
+      active=kind;
+      if(kind==='tasks'&&!taskboard)loadTasks();
+      else if(kind==='flows'&&!flows)loadFlows();
+      else if(kind==='orders'&&!orders)loadOrders();
+      else if(kind==='calendar'&&!schedule)loadSchedule();
+      else if(kind==='inbox'&&!inbox)loadInbox();
+      else if(kind==='quality'){
+        if(!report)loadQuality();
+        if(!repair)loadRepair();
+        if(!websiteChanges)loadWebsiteChanges();
+        else render();
+      }else if(kind==='zendesk'&&!zendesk)loadZendesk();
+      else if(kind==='helpdesk'&&!helpdesk)loadHelpdesk();
+      else if(kind==='insights'&&(!report||conversions?.days!==days))loadQuality();
+      else render();
+    }
     for(const kind of kinds){
       const b=button(t[kind],'button');
       b.dataset.tab=kind;b.setAttribute('role','tab');
       if(kind==='zendesk'){b.hidden=true;b.style.display='none';}
-      b.addEventListener('click',()=>{
-        active=kind;
-        if(kind==='tasks'&&!taskboard)loadTasks();
-        else if(kind==='flows'&&!flows)loadFlows();
-        else if(kind==='orders'&&!orders)loadOrders();
-        else if(kind==='calendar'&&!schedule)loadSchedule();
-        else if(kind==='inbox'&&!inbox)loadInbox();
-        else if(kind==='quality'){
-          if(!report)loadQuality();
-          if(!repair)loadRepair();
-          if(!websiteChanges)loadWebsiteChanges();
-          else render();
-        }else if(kind==='zendesk'&&!zendesk)loadZendesk();
-        else if(kind==='helpdesk'&&!helpdesk)loadHelpdesk();
-        else if(kind==='insights'&&(!report||conversions?.days!==days))loadQuality();
-        else render();
-      });
+      b.addEventListener('click',()=>selectTool(kind));
       tabs.appendChild(b);
     }
+    function selectRequestedTool(){
+      const kind=target.dataset.requestedTab;
+      delete target.dataset.requestedTab;
+      if(kinds.includes(kind)&&kind!=='zendesk')selectTool(kind);
+    }
+    target.addEventListener('respondo:select-native-tab',selectRequestedTool);
     async function request(method,path=API,payload){
       const response=await fetch(path,{
         method,credentials:'same-origin',cache:'no-store',
@@ -1803,6 +1811,7 @@
       }
       content.appendChild(list);
     }
+    selectRequestedTool();
     load();
     loadZendesk();
   }

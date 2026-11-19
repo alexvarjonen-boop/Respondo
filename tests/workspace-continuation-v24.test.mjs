@@ -55,9 +55,9 @@ test('iPhone onboarding card headings stay visible and the redundant light dashb
 
 
 test('each menu section has a real isolated destination instead of recycling the answers panel', () => {
-  assert.match(workspace,/function selectView\(next\)/);
+  assert.match(workspace,/function selectView\(next, tab=null\)/);
   assert.match(workspace,/const primary=\{/);
-  assert.match(workspace,/showModuleTab\(primary\[selected\]\)/);
+  assert.match(workspace,/showModuleTab\(tab\|\|primary\[selected\]\)/);
   assert.match(workspace,/park\(\);\s*card\.replaceChildren\(\)/);
   assert.match(workspace,/storage\.appendChild\(activePanel\)/);
   assert.match(workspace,/card\.appendChild\(target\)/);

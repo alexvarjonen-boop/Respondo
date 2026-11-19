@@ -53,8 +53,8 @@ test('minimal settings directory routes to existing live, not replacement, funct
     assert.match(workspace,new RegExp("'"+id+"'\\s*,translate\\("));
   }
   assert.match(workspace,/original\.requestSubmit\(\)/);
-  assert.match(workspace,/function selectView\(next\)/);
-  assert.match(workspace,/showModuleTab\(primary\[selected\]\)/);
+  assert.match(workspace,/function selectView\(next, tab=null\)/);
+  assert.match(workspace,/showModuleTab\(tab\|\|primary\[selected\]\)/);
 });
 
 test('minimal design is scoped to authenticated workspace and keeps the orbit and real inputs',()=>{

@@ -24,7 +24,7 @@ test('all twelve orbit buttons have real workspace pages and click handlers',()=
  assert.equal(new Set(ids).size,12);
  for(const id of ids)assert(pageIds.has(id),'missing page '+id);
  assert.match(orbit,/data-workspace-target/);
- assert.match(workspace,/selectView\(button\.dataset\.workspaceNav\)/);
+ assert.match(workspace,/navigateOwner\(group==='all'\?'overview':'section\/'\+group\)/);
  assert.match(workspace,/orbit=createWorkspaceOrbit\(\{workspace,navigate:selectView,translate\}\)/);
 });
 

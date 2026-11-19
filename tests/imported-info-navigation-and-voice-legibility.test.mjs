@@ -14,8 +14,8 @@ test('bot Review imported information opens the real import review, not settings
   assert.match(workspace,/data-workspace-import-review="true"/);
   assert.doesNotMatch(workspace,/class="respondo-workspace-review-link" data-workspace-nav="settings"/);
   assert.match(workspace,/function openImportedReview\(\)\{/);
-  assert.match(workspace,/selectView\('answers'\)/);
-  assert.match(workspace,/showModuleTab\('knowledge'\)/);
+  assert.match(workspace,/navigateOwner\('imported-information'\)/);
+  assert.match(workspace,/selectView\('answers','knowledge'\);\s*if\(!demo\)\{\s*park\(\);\s*card\.replaceChildren\(\)/);
   assert.match(workspace,/card\.prepend\(heading\)/);
   assert.match(workspace,/heading\.scrollIntoView\(\{behavior:'auto',block:'start'\}\)/);
   assert.match(workspace,/if\(review && workspace\.contains\(review\)\)\{/);
@@ -27,7 +27,7 @@ test('review uses the original interactive import candidates and restores them b
   assert.match(workspace,/source\.before\(importedReviewMarker\)/);
   assert.match(workspace,/heading\.append\(source\)/);
   assert.match(workspace,/importedReviewMarker\.replaceWith\(importedReviewNode\)/);
-  assert.match(workspace,/function selectView\(next\)\{\s*restoreImportedReview\(\)/);
+  assert.match(workspace,/function selectView\(next, tab=null\)\{\s*restoreImportedReview\(\)/);
   assert.match(workspace,/function showModuleTab\(id\)\{\s*restoreImportedReview\(\)/);
   // The real import approval and checkbox handlers are left intact on their
   // original nodes rather than creating fake copies of imported company data.

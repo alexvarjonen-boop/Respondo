@@ -54,7 +54,8 @@ test('clicking any icon keeps its correct chapter highlighted during panel smoot
 test('real tenant analytics, leads, conversations and staff editor are reachable',()=>{
   assert.match(account,/respondoWorkspaceOverviewStats/);
   assert.match(account,/const overviewMetrics=\['stats','respondo-intelligence','dashboard-insights'\]/);
-  assert.match(account,/if\(activeGroup==='all'\)showOverviewMetrics\(\)/);
+  assert.match(account,/metricsHost\.hidden=selected!=='metrics'/);
+  assert.match(account,/selected==='overview'\)renderDirectory\(\)/);
   assert.match(account,/restoreOverviewMetrics\(\)/);
   assert.match(account,/customers:'leads'/);
   assert.match(account,/conversations:'conversations'/);

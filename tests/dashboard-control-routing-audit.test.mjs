@@ -30,8 +30,7 @@ test('all 12 orbit buttons are mapped to real workspace destinations',()=>{
   assert.match(orbit,/icons\.forEach\(\(item,index\)=>item\.addEventListener\('click'/);
   assert.match(orbit,/navigateTo\(section\.id\)/);
   assert.match(workspace,/navigate:selectView/);
-  assert.match(workspace,/const button=event\.target\.closest\?\.\('\[data-workspace-nav\]'\)/);
-  assert.match(workspace,/selectView\(button\.dataset\.workspaceNav\)/);
+  assert.match(workspace,/if\(demo\)orbit=createWorkspaceOrbit/);
 });
 
 test('every workspace module tab points to an actual DOM panel',()=>{

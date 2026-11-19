@@ -3,7 +3,7 @@ import { bindQuoteRuleHistory } from './quote-rule-history.mjs?v=2';
 import { bindProductStory } from './home-product-story.js?v=2';
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49-native-mail-disabled-v50-quote-navigation-v1-dashboard-groups-v1';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49-native-mail-disabled-v50-quote-navigation-v1-dashboard-groups-v1-compact-pages-v1';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51-navigation-v52-dashboard-groups-v1-verified-only-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -5170,6 +5170,13 @@ async function dashboard(options = {}) {
           </div>
           <form id="quoteEngineForm" class="quote-engine-form">
             <input type="hidden" name="expectedVersion" value="${esc(quoteEngine.ruleVersion ?? 0)}">
+            <div class="field"><label for="quoteServiceName">${appText('Palvelun nimi','Tjänstens namn','Service name')}</label><input id="quoteServiceName" name="serviceName" value="${esc(quoteEngine.serviceName)}"></div>
+            <div class="quote-engine-grid quote-primary-fields">
+              <div class="field"><label for="quoteBasePrice">${appText('Perusmaksu €','Grundavgift €','Base fee €')}</label><input id="quoteBasePrice" name="basePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.basePrice)}"></div>
+              <div class="field"><label for="quoteUnitPrice">${appText('Hinta / yksikkö €','Pris / enhet €','Price / unit €')}</label><input id="quoteUnitPrice" name="unitPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.unitPrice)}"></div>
+              <div class="field"><label for="quoteUnitLabel">${appText('Yksikön nimi','Enhetens namn','Unit name')}</label><input id="quoteUnitLabel" name="unitLabel" value="${esc(quoteEngine.unitLabel || appText('kpl','st','pcs'))}" placeholder="h, km, m²"></div>
+              <div class="field"><label for="quoteVatPercent">${appText('ALV %','Moms %','VAT %')}</label><input id="quoteVatPercent" name="vatPercent" type="number" min="0" max="30" step="0.1" value="${esc(quoteEngine.vatPercent)}"></div>
+            </div>
             <details>
               <summary>${appText('Luonnostele hinnat lauseella','Skriv ett prisutkast i text','Draft prices in plain language')}</summary>
               <div class="field">
@@ -5180,26 +5187,26 @@ async function dashboard(options = {}) {
               <button class="btn" type="button" id="fillQuoteRuleDraft">${appText('Täytä kenttiin','Fyll i fälten','Fill in fields')}</button>
               <p id="quoteRuleDraftStatus" role="status"></p>
             </details>
-            <div class="field"><label for="quoteServiceName">${appText('Palvelun nimi','Tjänstens namn','Service name')}</label><input id="quoteServiceName" name="serviceName" value="${esc(quoteEngine.serviceName)}"></div>
-            <div class="quote-engine-grid">
-              <div class="field"><label for="quoteBasePrice">${appText('Perusmaksu €','Grundavgift €','Base fee €')}</label><input id="quoteBasePrice" name="basePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.basePrice)}"></div>
-              <div class="field"><label for="quoteUnitPrice">${appText('Hinta / yksikkö €','Pris / enhet €','Price / unit €')}</label><input id="quoteUnitPrice" name="unitPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.unitPrice)}"></div>
-              <div class="field"><label for="quoteUnitLabel">${appText('Yksikön nimi','Enhetens namn','Unit name')}</label><input id="quoteUnitLabel" name="unitLabel" value="${esc(quoteEngine.unitLabel || appText('kpl','st','pcs'))}" placeholder="h, km, m²"></div>
-              <div class="field"><label for="quoteDistancePrice">${appText('Matkaveloitus €/km','Reseavgift €/km','Travel fee €/km')}</label><input id="quoteDistancePrice" name="distancePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.distancePrice ?? 0)}"></div>
-              <div class="field"><label for="quoteMinPrice">${appText('Minimihinta €','Minimipris €','Minimum price €')}</label><input id="quoteMinPrice" name="minPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.minPrice)}"></div>
-              <div class="field"><label for="quoteVatPercent">${appText('ALV %','Moms %','VAT %')}</label><input id="quoteVatPercent" name="vatPercent" type="number" min="0" max="30" step="0.1" value="${esc(quoteEngine.vatPercent)}"></div>
-              <div class="field"><label for="quoteDiscountThreshold">${appText('Alennus tämän määrän ylittäessä','Rabatt över denna mängd','Discount above this quantity')}</label><input id="quoteDiscountThreshold" name="discountOverQuantity" type="number" min="0" max="100000" step="0.001" value="${esc(quoteEngine.discountOverQuantity ?? '')}"></div>
-              <div class="field"><label for="quoteDiscountPercent">${appText('Määräalennus %','Mängdrabatt %','Quantity discount %')}</label><input id="quoteDiscountPercent" name="discountPercent" type="number" min="0" max="100" step="0.01" value="${esc(quoteEngine.discountPercent ?? 0)}"></div>
-            </div>
-            <div class="field">
-              <label for="quoteExampleQuantity">${appText('Esimerkin määrä','Exempelmängd','Example quantity')}</label>
-              <input id="quoteExampleQuantity" type="number" min="0.001" max="100000" step="0.001" value="25">
-              <label for="quoteExampleDistance">${appText('Esimerkin kilometrit','Exempelkilometer','Example distance (km)')}</label><input id="quoteExampleDistance" type="number" min="0" max="100000" step="0.001">
-              <button class="btn" type="button" id="previewQuoteDraft">${appText('Laske esimerkki','Beräkna exempel','Calculate example')}</button>
-              <output id="quoteDraftEstimate" for="quoteExampleQuantity" aria-live="polite"></output>
-            </div>
+            <details>
+              <summary>${appText('Matkaveloitus, minimihinta ja alennus','Reseavgift, minimipris och rabatt','Travel fee, minimum and discount')}</summary>
+              <div class="quote-engine-grid">
+                <div class="field"><label for="quoteDistancePrice">${appText('Matkaveloitus €/km','Reseavgift €/km','Travel fee €/km')}</label><input id="quoteDistancePrice" name="distancePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.distancePrice ?? 0)}"></div>
+                <div class="field"><label for="quoteMinPrice">${appText('Minimihinta €','Minimipris €','Minimum price €')}</label><input id="quoteMinPrice" name="minPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.minPrice)}"></div>
+                <div class="field"><label for="quoteDiscountThreshold">${appText('Alennus tämän määrän ylittäessä','Rabatt över denna mängd','Discount above this quantity')}</label><input id="quoteDiscountThreshold" name="discountOverQuantity" type="number" min="0" max="100000" step="0.001" value="${esc(quoteEngine.discountOverQuantity ?? '')}"></div>
+                <div class="field"><label for="quoteDiscountPercent">${appText('Määräalennus %','Mängdrabatt %','Quantity discount %')}</label><input id="quoteDiscountPercent" name="discountPercent" type="number" min="0" max="100" step="0.01" value="${esc(quoteEngine.discountPercent ?? 0)}"></div>
+              </div>
+            </details>
+            <details>
+              <summary>${appText('Testaa hinta','Testa priset','Test a price')}</summary>
+              <div class="field">
+                <label for="quoteExampleQuantity">${appText('Esimerkin määrä','Exempelmängd','Example quantity')}</label>
+                <input id="quoteExampleQuantity" type="number" min="0.001" max="100000" step="0.001" value="25">
+                <label for="quoteExampleDistance">${appText('Esimerkin kilometrit','Exempelkilometer','Example distance (km)')}</label><input id="quoteExampleDistance" type="number" min="0" max="100000" step="0.001">
+                <button class="btn" type="button" id="previewQuoteDraft">${appText('Laske esimerkki','Beräkna exempel','Calculate example')}</button>
+                <output id="quoteDraftEstimate" for="quoteExampleQuantity" aria-live="polite"></output>
+              </div>
+            </details>
             <div class="quote-form-bottom">
-              <p class="quote-formula-preview">${appText('Alennus koskee yksikköhintojen summaa. Perusmaksu ja matkaveloitus lisätään, minimihinta tarkistetaan ja ALV lisätään viimeiseksi.','Rabatten gäller summan av enhetspriserna. Grundavgift och reseavgift läggs till, minimipriset kontrolleras och moms läggs till sist.','The discount applies to the unit subtotal. The base and travel fees are added, the minimum is checked, and VAT is applied last.')}</p>
               <button class="btn dashboard-action" type="submit">${appText('Tallenna hintalaskuri','Spara priskalkylatorn','Save quote calculator')} <span>→</span></button>
             </div>
             <div id="quoteEngineMsg" role="status"></div>
@@ -8510,6 +8517,10 @@ async function route() {
     });
 
     const quoteEngineForm = $('#quoteEngineForm');
+    quoteEngineForm?.addEventListener('invalid',event=>{
+      const details=event.target.closest('details');
+      if(details)details.open=true;
+    },true);
     const quoteDraftEstimate = $('#quoteDraftEstimate');
     const refreshQuoteRuleHistory = bindQuoteRuleHistory({
       details:$('#quoteRuleVersions'),form:quoteEngineForm,t:appText,api,locale:appLocale(),
