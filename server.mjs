@@ -104,6 +104,7 @@ import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
+import { installInternalVaultRoutes, ensureInternalVaultSchema } from './internal-vault.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -9486,6 +9487,13 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text({ type: 'text/plain', limit: '20kb' }));
 app.use(rateLimit({ windowMs:60000, limit:600, standardHeaders:true, legacyHeaders:false, keyGenerator:req=>publicRateKey(req,'global') }));
+installInternalVaultRoutes(app, {
+  auth,
+  q,
+  pool,
+  privateDir:path.join(__dirname, 'private'),
+  ownerEmail:()=>process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL || '',
+});
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
@@ -18808,6 +18816,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureFreeCommerceSchema(pool));
     await withRuntimeSchemaLock(() => ensureFreeWebhookSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
+    await withRuntimeSchemaLock(() => ensureInternalVaultSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
       await seedIntentPhraseTemplates();
