@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {generateGroundedAnswer} from '../server.mjs';
+import {once} from 'node:events';
+import {app,generateGroundedAnswer} from '../server.mjs';
 
 const phone={id:'phone',category:'Yhteystiedot',title:'Puhelinnumero',
   answer:'+358401234567',source_type:'profile'};
@@ -72,4 +73,75 @@ test('separate questions cannot turn a missing answer into another company fact'
   assert.equal(result.handoff,true);
   assert.deepEqual(result.sourceIds,['phone']);
   assert.doesNotMatch(result.answer,/2–4/);
+});
+
+const roofPrice = {
+  id:'roof-price', title:'Hinnat: Katon pesu', category:'Hinnat',
+  answer:'Katon pesu: 219 €.', source_type:'website',
+  source_url:'https://example.fi/palvelut'
+};
+const windowPrice = {
+  id:'window-price', title:'Hinnat: Ikkunanpesu', category:'Hinnat',
+  answer:'Ikkunanpesu: 79 €.', source_type:'website',
+  source_url:'https://example.fi/palvelut'
+};
+const windowHistory = [{
+  question:'Pesettekö ikkunoita?',
+  answer:'Kyllä, ikkunanpesu maksaa 999 euroa.'
+}];
+
+test('a multipart follow-up preserves the service subject from earlier turns',async()=>{
+  const result=await generateGroundedAnswer({
+    rows:[roofPrice,windowPrice,phone],
+    message:'Paljonko se maksaa ja mikä teidän puhelinnumero on?',
+    history:windowHistory,lang:'fi'
+  });
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.deepEqual(result.sourceIds,['window-price','phone']);
+  assert.match(result.answer,/79\s*€/);
+  assert.match(result.answer,/\+358401234567/);
+  assert.doesNotMatch(result.answer,/219|999/);
+});
+
+for (const [lang,previous,message] of [
+  ['fi','Pesettekö ikkunoita?','Paljonko se maksaa?'],
+  ['sv','Tvättar ni fönster?','Vad kostar det?'],
+  ['en','Do you wash windows?','How much does that cost?'],
+]) {
+  test('a contextual window-washing price cannot use a roof-washing price in '+lang,async()=>{
+    const result=await generateGroundedAnswer({
+      rows:[roofPrice],message,history:[{question:previous}],lang
+    });
+    assert.equal(result.handoff,true,JSON.stringify(result));
+    assert.deepEqual(result.sourceIds,[]);
+    assert.doesNotMatch(result.answer,/219/);
+  });
+}
+
+test('public demo keeps the earlier subject and answers both parts with company facts',async()=>{
+  const server=app.listen(0,'127.0.0.1');
+  await once(server,'listening');
+  try {
+    const response=await fetch('http://127.0.0.1:'+server.address().port+'/api/public/demo-chat',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        lang:'fi',
+        message:'Paljonko se maksaa ja mikä teidän puhelinnumero on?',
+        history:windowHistory,
+        profile:{
+          phone:phone.answer,
+          pricing:roofPrice.answer+'\n'+windowPrice.answer,
+        },
+      }),
+    });
+    assert.equal(response.status,200);
+    const result=await response.json();
+    assert.equal(result.handoff,false,JSON.stringify(result));
+    assert.match(result.answer,/79\s*€/);
+    assert.match(result.answer,/\+358401234567/);
+    assert.doesNotMatch(result.answer,/219|999/);
+  } finally {
+    await new Promise(resolve=>server.close(resolve));
+  }
 });

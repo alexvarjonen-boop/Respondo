@@ -427,7 +427,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     settings:translate('Asetukset','Inställningar','Settings')
   };
   const tabs={
-    automation:[['actions2',translate('Asiakaspyynnöt','Kundförfrågningar','Customer actions')],['native-operations',translate('Omat työkalut','Inbyggda verktyg','Built-in tools')]],
+    automation:[['actions2',translate('Asiakaspyynnöt','Kundförfrågningar','Customer actions')],['quote-engine',translate('Hintalaskuri','Priskalkylator','Quote calculator')],['native-operations',translate('Omat työkalut','Inbyggda verktyg','Built-in tools')]],
     answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
     customers:[['leads',translate('Liidit ja yhteydenotot','Leads och kontakter','Leads & contacts')],['conversations',translate('Keskustelut','Konversationer','Conversations')]],
     conversations:[['conversations',translate('Keskusteluhistoria','Samtalshistorik','Conversation history')],['live-inbox',translate('Live-keskustelut','Livekonversationer','Live conversations')]],
@@ -534,6 +534,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       [['Verkkokauppayhteydet','Webbutiksanslutningar','Online store connections'],'integrations','commerce-integration','shopify woocommerce'],
       [['Viestikanavien yhteydet','Meddelandekanaler','Messaging channels'],'integrations','meta-native-connections','instagram facebook whatsapp'],
       [['Asiakaspyynnöt ja toiminnot','Kundförfrågningar och åtgärder','Customer requests and actions'],'automation','actions2','tarjous'],
+      [['Hintalaskuri','Priskalkylator','Quote calculator'],'automation','quote-engine','tarjous tarjouslaskenta offert estimate'],
       [['Respondon työkalut ja laatu','Respondos verktyg och kvalitet','Respondo tools and quality'],'integrations','native-operations','automaatio analytiikka'],
       [['Asennus ja asennustarkistus','Installation och kontroll','Installation and verification'],'install','install','widget script upotus'],
       [['Henkilökunta','Personal','Team members'],'team','support-team','työntekijä'],

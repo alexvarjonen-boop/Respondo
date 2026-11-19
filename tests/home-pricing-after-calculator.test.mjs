@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { appleHomeMarkup } from '../public/apple-home.js';
 
-test('the same pricing cards follow the spiral directly without duplicate panels', () => {
+test('the same pricing cards follow the product story without duplicate panels', () => {
   const pricing = '<section class="pricing-section" id="pricing"><p>Advanced · Premium · Enterprise</p></section>';
   const markup = appleHomeMarkup((fi) => fi, 'fi', 0, pricing);
   const spiralStart = markup.indexOf('<section class="apple-hero rs-spiral-section"');
@@ -13,7 +13,7 @@ test('the same pricing cards follow the spiral directly without duplicate panels
   assert.ok(spiralStart >= 0 && spiralEnd > spiralStart, 'spiral is present');
   assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 10, 'ten feature chapters stay inside the spiral');
   assert.ok(pricingStart > spiralEnd, 'pricing follows the spiral');
-  assert.equal(markup.slice(spiralEnd, pricingStart).trim(), '', 'no extra sections before pricing');
+  assert.match(markup.slice(spiralEnd, pricingStart), /class="rs-product-story"/);
   assert.doesNotMatch(markup,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
   assert.doesNotMatch(markup, /apple-highlights|apple-lead-calculator|rg-growth-section/);
   assert.equal(markup.split(pricing).length - 1, 1, 'pricing is inserted once');

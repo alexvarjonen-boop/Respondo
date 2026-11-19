@@ -192,3 +192,26 @@ test('built-in tool UI is usable in three languages, displays no external creden
   assert.match(css,/background:#f7f8fa!important/);
   assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);
 });
+
+test('tenant quote draft reads the persisted volume discount and matches the widget estimator',async()=>{
+  const calls=[];
+  const db={query:async(sql,params)=>{
+    calls.push({sql,params});
+    if(sql.includes('FROM tenants'))return {rows:[{
+      quote_service_name:'Window cleaning',
+      quote_base_price:'25.00',
+      quote_unit_price:'15.00',
+      quote_discount_over_quantity:'20.000',
+      quote_discount_percent:'10.00'
+    }]};
+    return {rows:[{id:LEAD}]};
+  }};
+  await createNativeQuote(db,TENANT,25,'Needs approval');
+  const lookup=calls.find(x=>x.sql.includes('FROM tenants'));
+  assert.match(lookup.sql,/quote_discount_over_quantity,quote_discount_percent/);
+  assert.deepEqual(lookup.params,[TENANT]);
+  assert.deepEqual(calls.find(x=>x.sql.includes('INSERT INTO respondo_native_quotes')).params,
+    [TENANT,'Window cleaning',25,36250,'Needs approval']);
+  assert.equal(calculateNativeQuote({quote_unit_price:1},'1.001').quantity,1.001);
+  assert.throws(()=>calculateNativeQuote({quote_unit_price:1},'1.0001'),TypeError);
+});

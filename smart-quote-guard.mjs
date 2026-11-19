@@ -2,38 +2,108 @@
 // This module never confirms availability, accepts an order or collects payment.
 const MAX_QUANTITY = 100_000;
 const MAX_EUR = 10_000_000;
-const money = amount => Math.round((amount + Number.EPSILON) * 100) / 100;
+const PERCENT_SCALE = 10_000n;
 
-export function parseQuoteQuantity(input) {
-  const value = input === undefined || input === null || input === '' ? 0 : input;
-  if (typeof value === 'boolean' || (typeof value !== 'number' && typeof value !== 'string') ||
-      (typeof value === 'string' && !/^\s*\d+(?:\.\d+)?\s*$/.test(value))) {
-    throw new RangeError('Invalid quote quantity');
+function decimalAmount(input, max, errorMessage) {
+  if (typeof input !== 'number' &&
+      (typeof input !== 'string' || !/^\s*(?:\d+(?:\.\d+)?|\.\d+)\s*$/.test(input))) {
+    throw new RangeError(errorMessage);
   }
-  const quantity = Number(value);
-  if (!Number.isFinite(quantity) || quantity < 0 || quantity > MAX_QUANTITY) {
-    throw new RangeError('Invalid quote quantity');
-  }
-  return quantity;
+  const amount = Number(input);
+  if (!Number.isFinite(amount) || amount < 0 || amount > max) throw new RangeError(errorMessage);
+  return amount;
 }
 
-export function computeSafeQuote({ base = 0, unit = 0, minimum = 0, vatPercent = 0, quantity = 0 } = {}) {
-  const values = [base, unit, minimum, vatPercent].map(Number);
-  if (values.some(x => !Number.isFinite(x) || x < 0) || values[3] > 100 ||
-      values.slice(0,3).some(x => x > MAX_EUR)) {
-    throw new RangeError('Invalid quote pricing configuration');
-  }
+export function parseQuoteQuantity(input) {
+  return decimalAmount(input === undefined || input === null || input === '' ? 0 : input,
+    MAX_QUANTITY, 'Invalid quote quantity');
+}
+
+function fixedPrecision(input, max, scale) {
+  const message = 'Invalid quote pricing configuration';
+  const value = decimalAmount(input, max, message);
+  if (Math.round(value * scale) / scale !== value) throw new RangeError(message);
+  return value;
+}
+
+export function validateQuotePricing({
+  base = 0,
+  unit = 0,
+  minimum = 0,
+  vatPercent = 0,
+  discountOverQuantity = null,
+  discountPercent = 0
+} = {}) {
+  const threshold = discountOverQuantity === null || discountOverQuantity === ''
+    ? null
+    : fixedPrecision(discountOverQuantity, MAX_QUANTITY, 1000);
+  const rate = fixedPrecision(discountPercent, 100, 100);
+  if (rate > 0 && threshold === null) throw new RangeError('Quantity discount requires a threshold');
+  return {
+    base:fixedPrecision(base, MAX_EUR, 100),
+    unit:fixedPrecision(unit, MAX_EUR, 100),
+    minimum:fixedPrecision(minimum, MAX_EUR, 100),
+    vatPercent:fixedPrecision(vatPercent, 100, 100),
+    discountOverQuantity:threshold,
+    discountPercent:rate
+  };
+}
+
+// Use exact decimal ratios for fractional quantities. Prices are stored in
+// cents and tax/discount rates in hundredths of a percentage point.
+function quantityFraction(quantity) {
+  const [number, exponent = '0'] = String(quantity).split('e');
+  const [whole, fraction = ''] = number.split('.');
+  const places = fraction.length - Number(exponent);
+  const digits = BigInt(whole + fraction);
+  return places > 0 ? [digits, 10n ** BigInt(places)] : [digits * 10n ** BigInt(-places), 1n];
+}
+
+const hundredths = value => BigInt(Math.round(value * 100));
+const roundRatio = (numerator, denominator) => (numerator + denominator / 2n) / denominator;
+
+export function computeSafeQuote({ quantity = 0, ...configuration } = {}) {
+  const pricing = validateQuotePricing(configuration);
   const qty = parseQuoteQuantity(quantity);
-  const [fixed, perUnit, floor, vatRate] = values;
-  if (fixed === 0 && perUnit === 0 && floor === 0) return null;
-  const rawNet = Math.max(floor, fixed + perUnit * qty);
-  const rawVat = rawNet * vatRate / 100;
-  if (!Number.isFinite(rawNet) || !Number.isFinite(rawVat) || rawNet + rawVat > MAX_EUR) {
-    throw new RangeError('Quote estimate exceeds safe pricing limit');
-  }
-  const net = money(rawNet);
-  const vat = money(rawVat);
-  const total = money(net + vat);
-  return Object.freeze({ net, vatPercent: vatRate, vat, total,
-    totalCents: Math.round(total * 100), quantity: qty, currency: 'EUR' });
+  if (pricing.base === 0 && pricing.unit === 0 && pricing.minimum === 0) return null;
+
+  const discountApplies = pricing.discountPercent > 0 && pricing.unit > 0 &&
+    qty > pricing.discountOverQuantity;
+  const discountRate = discountApplies ? hundredths(pricing.discountPercent) : 0n;
+  const [qtyNumerator, qtyDenominator] = quantityFraction(qty);
+  const scale = qtyDenominator * PERCENT_SCALE;
+  const work = hundredths(pricing.unit) * qtyNumerator;
+  const subtotal = hundredths(pricing.base) * scale + work * (PERCENT_SCALE - discountRate);
+  const minimum = hundredths(pricing.minimum) * scale;
+  const minimumApplied = subtotal < minimum;
+  const netCents = roundRatio(minimumApplied ? minimum : subtotal, scale);
+  const vatCents = roundRatio(netCents * hundredths(pricing.vatPercent), PERCENT_SCALE);
+  const totalCents = netCents + vatCents;
+
+  if (totalCents > hundredths(MAX_EUR)) throw new RangeError('Quote estimate exceeds safe pricing limit');
+  return Object.freeze({
+    net:Number(netCents) / 100,
+    vatPercent:pricing.vatPercent,
+    vat:Number(vatCents) / 100,
+    total:Number(totalCents) / 100,
+    totalCents:Number(totalCents),
+    quantity:qty,
+    currency:'EUR',
+    ...(minimumApplied ? {minimumApplied:true} : {}),
+    ...(discountApplies ? {
+      workDiscountPercent:pricing.discountPercent,
+      workDiscount:Number(roundRatio(work * discountRate, scale)) / 100
+    } : {})
+  });
+}
+
+export function tenantQuotePricing(tenant) {
+  return {
+    base:tenant.quote_base_price ?? 0,
+    unit:tenant.quote_unit_price ?? 0,
+    minimum:tenant.quote_min_price ?? 0,
+    vatPercent:tenant.quote_vat_percent ?? 0,
+    discountOverQuantity:tenant.quote_discount_over_quantity ?? null,
+    discountPercent:tenant.quote_discount_percent ?? 0
+  };
 }

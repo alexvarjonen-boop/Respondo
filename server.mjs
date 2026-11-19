@@ -22,7 +22,7 @@ import { nativeOverview,createNativeContact,updateNativeContact,createNativeTick
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
 import { prepareQualifiedLead } from './lead-service.mjs';
-import { parseQuoteQuantity, computeSafeQuote } from './smart-quote-guard.mjs';
+import { parseQuoteQuantity, computeSafeQuote, tenantQuotePricing, validateQuotePricing } from './smart-quote-guard.mjs';
 import { createRequestTrackingToken, verifyRequestTrackingToken, renderRequestStatusPage } from './customer-portal-links.mjs';
 import {classifyRequestPriority} from './lead-priority.mjs';
 import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
@@ -56,6 +56,7 @@ import {classifyMainioSemanticIntent,mainioSemanticActions,interpretMainioLocalI
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
+import { CHAT_IMAGE_BODY_LIMIT, CHAT_IMAGE_MAX_BYTES, createChatImageTextReader } from './chat-image-text.mjs';
 import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-policy.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
@@ -4259,7 +4260,12 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
   const looksLikeService=
     queryTopic(previous)==='services' ||
     /leikka|hius|parta|pesu|puhdist|siivou|huol|asenn|korj|maal|raiva|kuljet|muutto|service|hair|cut|barber|clean|repair|install|maintenance|klipp|har\b|hår|skagg|skägg|tjanst|tjänst/.test(previous);
-  if(!looksLikeService) return null;
+  const concepts=multilingualServiceConcepts(previous);
+  // A shared cleaning verb cannot connect two different services to the same
+  // price. Require the named target and the operation in the pricing evidence.
+  const namedTargets=['window','roof','terrace','gutter'];
+  const cleaningTargets=concepts.has('clean') ? namedTargets.filter(target=>concepts.has(target)) : [];
+  if(!looksLikeService && !cleaningTargets.length) return null;
 
   const aliases=new Set();
   const addAlias=(value)=>{
@@ -4307,6 +4313,13 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
       const answer=cleanKnowledgeText(row.answer);
       const evidence=normalizeSearchText(String(row?.title||'')+' '+answer);
       if(!/[€$£]|\b\d+(?:[.,]\d+)?\s*(?:eur|usd|sek|nok|dkk|kr)\b/i.test(answer)) return null;
+      if(cleaningTargets.length){
+        const available=multilingualServiceConcepts(evidence);
+        if(!available.has('clean') || !cleaningTargets.every(target=>available.has(target))) return null;
+        const answerSubjects=multilingualServiceConcepts(answer);
+        if(namedTargets.some(target=>answerSubjects.has(target)) &&
+           !cleaningTargets.some(target=>answerSubjects.has(target))) return null;
+      }
       let score=20;
       // A generic price format and matching page URL are not proof that
       // the price belongs to the service mentioned in conversation.
@@ -4451,13 +4464,13 @@ function multilingualServiceConcepts(value) {
     ['hair',/(?:^|\b)(?:hiu(?:s|k|st)\w*|hair\w*|harklipp\w*)(?:\b|\w*)/],
     ['beard',/(?:^|\b)(?:parta|beard|skagg|skägg)(?:\b|\w*)/],
     ['cut',/(?:leikka|haircut|cut\b|klipp)/],
-    ['clean',/(?:puhdist|pesu|pese|wash|clean|tvatt|tvätt|rengor|rengör)/],
+    ['clean',/(?:puhdist|pesu|pese|wash|clean|tvatt|tvätt|rengor|rengör|fonsterputs|\bputs\w*)/],
     ['repair',/(?:korj|repair|reparera|reparer)/],
     ['install',/(?:asenn|install)/],
     ['paint',/(?:maala|paint|malning|målning|malar|målar)/],
     ['maintain',/(?:huol|maintain|maintenance|underhall|underhåll)/],
     ['window',/(?:ikkun|window|fonster|fönster)/],
-    ['roof',/(?:katto|katon|roof|tak\b)/],
+    ['roof',/(?:katto|katon|roof|tak\b|tak(?:tvatt|puts|rengor))/],
     ['terrace',/(?:terass|terrace|deck|altan)/],
     ['gutter',/(?:ranni|ränni|gutter|hangrann|hängränn)/],
     ['move',/(?:muutto|moving|move\b|flytt)/],
@@ -7579,7 +7592,8 @@ function conciseKnowledgeAnswer(row, query) {
 
 // Handle up to three independent customer questions in one message. All
 // questions require distinct named intents and genuine question openers.
-// Never split product/service lists, shared subjects or dependent pronouns.
+// Never split product/service lists, shared subjects or clauses which need
+// context from another clause in the same message.
 function splitIndependentCustomerQuestions(message) {
   const raw=String(message||'').trim();
   if(raw.length<20 || raw.length>500) return null;
@@ -7763,10 +7777,12 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
     const parts=splitIndependentCustomerQuestions(cleanMessage);
     if(parts){
       const results=[];
-      for(const part of parts){
+      for(const [index,part] of parts.entries()){
         results.push(await generateGroundedAnswer({
           companyName, rows, message:part, lang:responseLang, pageContext,
-          history:[], multiPart:true
+          // Only the first clause can refer back. Later clauses must be
+          // independent to pass the splitter, and receive no new context.
+          history:index===0?history:[], multiPart:true
         }));
       }
       const valid=results.map(result=>
@@ -9408,6 +9424,44 @@ function rejectCrossSiteAuthenticatedMutation(req,res,next) {
 
 app.use(rejectCrossSiteAuthenticatedMutation);
 
+const chatImageText = createChatImageTextReader();
+const chatImageTextLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 4,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+// The optional upload route uses a bounded plain-text envelope (a CORS-simple
+// request, like /chat). Limit requests before reading the envelope.
+app.post('/api/public/:slug/chat-image-text', chatImageTextLimiter,
+  (req, res, next) => {
+    if (!chatImageText.enabled) return res.status(404).json({status:'unavailable'});
+    return next();
+  },
+  express.text({type:'text/plain', limit:CHAT_IMAGE_BODY_LIMIT, inflate:false}),
+  async (req, res) => {
+    let body;
+    try {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : null;
+    } catch {}
+    if (!body || typeof body.widgetToken !== 'string') return res.status(400).json({status:'invalid'});
+    const tenants = await publicTenant(req.params.slug);
+    const tenant = tenants.rows[0];
+    if (!tenant || !validWidgetToken(req, tenant, body.widgetToken)) {
+      return res.status(403).json({status:'unavailable'});
+    }
+    setWidgetCors(req, res);
+    res.setHeader('Cache-Control', 'no-store');
+    const result = await chatImageText.read(body.image, body.type, body.lang);
+    const code = {read:200, unreadable:422, invalid:400, busy:429, unavailable:503}[result.status];
+    return res.status(code).json(result);
+  },
+  (error, req, res, next) => {
+    if (res.headersSent) return next(error);
+    const status = [400, 413, 415].includes(error?.status) ? error.status : 503;
+    return res.status(status).json({status: status === 503 ? 'unavailable' : 'invalid'});
+  }
+);
 app.use('/api/public/setup-image-upload', express.raw({
   type:['image/png','image/jpeg','image/webp'],limit:'8mb',
 }));
@@ -13629,6 +13683,8 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
         unitPrice: Number(tenant.quote_unit_price || 0),
         minPrice: Number(tenant.quote_min_price || 0),
         vatPercent: Number(tenant.quote_vat_percent || 0),
+        discountOverQuantity: tenant.quote_discount_over_quantity == null ? null : Number(tenant.quote_discount_over_quantity),
+        discountPercent: Number(tenant.quote_discount_percent ?? 0),
         unitLabel: tenant.quote_unit_label || 'kpl',
       } : { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' },
       integrations: planAccess.allCurrentFeatures ? {
@@ -13946,6 +14002,9 @@ async function runScheduledWebsiteRefresh(){
     let reviewCount=0,unchanged=0;
     try{
       await client.query('BEGIN');
+      // Match the owner approval transaction's lock order so a refresh cannot
+      // compare a stale published fact while an approval is writing it.
+      await client.query('SELECT id FROM tenants WHERE id=$1 FOR UPDATE',[tenant.id]);
       for(const item of items){
         // All new or changed information requires explicit company approval.
         const result=await stageWebsiteRefresh(client,tenant.id,item);
@@ -15162,6 +15221,7 @@ app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) =>
       greeting,
       accent: tenant.accent,
       quickReplies,
+      ...(chatImageText.enabled ? {imageTextMaxBytes:CHAT_IMAGE_MAX_BYTES} : {}),
     });
   } catch (e) {
     console.error('Widget token failed', e);
@@ -16888,16 +16948,14 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest) {
       let safeEstimate;
       try {
-        safeEstimate = computeSafeQuote({
-          base:tenant.quote_base_price || 0,
-          unit:tenant.quote_unit_price || 0,
-          minimum:tenant.quote_min_price || 0,
-          vatPercent:tenant.quote_vat_percent || 0,
-          quantity:fields.quantity,
-        });
+        const pricing = tenantQuotePricing(tenant);
+        // A unit-price request without quantity still reaches the company for review.
+        safeEstimate = Number(pricing.unit) > 0 && fields.quantity === 0
+          ? null
+          : computeSafeQuote({ ...pricing, quantity:fields.quantity });
       } catch (error) {
-        console.error('Unsafe quote pricing configuration',error);
-        return res.status(503).json({ error:'Tarjouslaskenta ei ole tällä hetkellä käytettävissä. Pyydä henkilökunnalta tarjous.' });
+        console.error('Unsafe quote pricing configuration',error?.name || 'error');
+        // Preserve the request for human review when configured pricing cannot be applied safely.
       }
       if (safeEstimate) {
         const sourceServiceName = String(tenant.quote_service_name || 'Tarjous').trim();
@@ -17203,7 +17261,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 
     let checkoutUrl = '';
     let paymentAvailable = false;
-    if (actionAccess.allCurrentFeatures && type === 'quote' && computedQuote && stripe && tenant.stripe_connected_account_id) {
+    if (actionAccess.allCurrentFeatures && type === 'quote' && computedQuote?.totalCents > 0 && stripe && tenant.stripe_connected_account_id) {
       try {
         const connected = await stripe.accounts.retrieve(tenant.stripe_connected_account_id);
         paymentAvailable = Boolean(connected.charges_enabled);
@@ -17310,27 +17368,61 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 });
 
 
-app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) => {
-  if(!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
-  try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
-    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
-    const basePrice = Math.max(0, Number(req.body.basePrice || 0));
-    const unitPrice = Math.max(0, Number(req.body.unitPrice || 0));
-    const minPrice = Math.max(0, Number(req.body.minPrice || 0));
-    const vatPercent = Math.min(30, Math.max(0, Number(req.body.vatPercent || 0)));
-    const serviceName = String(req.body.serviceName || '').trim().slice(0,120);
-    const unitLabel = String(req.body.unitLabel || 'kpl').trim().slice(0,40) || 'kpl';
+function readDashboardQuotePricing(body) {
+  const zeroIfBlank = value => value == null || value === '' ? 0 : value;
+  const pricing = validateQuotePricing({
+    base:zeroIfBlank(body.basePrice),
+    unit:zeroIfBlank(body.unitPrice),
+    minimum:zeroIfBlank(body.minPrice),
+    vatPercent:zeroIfBlank(body.vatPercent),
+    discountOverQuantity:body.discountOverQuantity,
+    discountPercent:zeroIfBlank(body.discountPercent),
+  });
+  if (pricing.vatPercent > 30) throw new RangeError('VAT exceeds allowed percentage');
+  return pricing;
+}
 
-    await q(
+app.post('/api/app/quote-engine/preview', auth, ownerOnly, subscribed, async (req,res) => {
+  try {
+    if (!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
+    const body = req.body || {};
+    const quantity = parseQuoteQuantity(body.quantity);
+    if (quantity <= 0 || Math.round(quantity*1000)/1000 !== quantity) throw new RangeError('Invalid quote quantity');
+    const quote = computeSafeQuote({...readDashboardQuotePricing(body),quantity});
+    if (!quote) throw new RangeError('Configure prices first');
+    return res.json({quote});
+  } catch (error) {
+    if (error instanceof RangeError) return res.status(400).json({code:'invalid_quote_pricing'});
+    console.error('Quote preview failed',error);
+    return res.status(500).json({code:'quote_preview_unavailable'});
+  }
+});
+
+app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) => {
+  try {
+    const access = await requirePlanCapability(req,res,'allCurrentFeatures');
+    if (!access) return;
+    const body = req.body || {};
+    const saveDiscount = Object.hasOwn(body,'discountOverQuantity') || Object.hasOwn(body,'discountPercent');
+    const pricing = readDashboardQuotePricing(body);
+    const serviceName = String(body.serviceName || '').trim().slice(0,120);
+    const unitLabel = String(body.unitLabel || 'kpl').trim().slice(0,40) || 'kpl';
+
+    const saved = await q(
       `UPDATE tenants
           SET quote_service_name=$1,quote_base_price=$2,quote_unit_price=$3,
-              quote_min_price=$4,quote_vat_percent=$5,quote_unit_label=$6,updated_at=NOW()
-        WHERE id=$7`,
-      [serviceName,basePrice,unitPrice,minPrice,vatPercent,unitLabel,tr.rows[0].id],
+              quote_min_price=$4,quote_vat_percent=$5,quote_unit_label=$6,
+              quote_discount_over_quantity=CASE WHEN $9 THEN $7::numeric ELSE quote_discount_over_quantity END,
+              quote_discount_percent=CASE WHEN $9 THEN $8::numeric ELSE quote_discount_percent END,
+              updated_at=NOW()
+        WHERE id=$10 AND owner_user_id=$11`,
+      [serviceName,pricing.base,pricing.unit,pricing.minimum,pricing.vatPercent,unitLabel,
+        pricing.discountOverQuantity,pricing.discountPercent,saveDiscount,access.tenant.id,req.user.sub],
     );
+    if (!saved.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     return res.json({ ok:true });
   } catch (e) {
+    if (e instanceof RangeError) return res.status(400).json({ error:'Tarkista hintalaskurin arvot.', code:'invalid_quote_pricing' });
     console.error('Quote engine save failed',e); return res.status(400).json({ error:'Hintalaskuria ei voitu tallentaa.' });
   }
 });
@@ -18336,6 +18428,8 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_price NUMERIC(12,2) NOT NULL DEFAULT 0");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_discount_over_quantity NUMERIC(12,3) CHECK (quote_discount_over_quantity BETWEEN 0 AND 100000)");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_discount_percent NUMERIC(6,2) NOT NULL DEFAULT 0 CHECK (quote_discount_percent BETWEEN 0 AND 100 AND (quote_discount_percent = 0 OR quote_discount_over_quantity IS NOT NULL))");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_label TEXT NOT NULL DEFAULT 'kpl'");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_access_token TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_refresh_token TEXT");

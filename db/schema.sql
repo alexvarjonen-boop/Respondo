@@ -51,6 +51,11 @@ CREATE TABLE IF NOT EXISTS tenants (
   quote_unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0,
+  quote_discount_over_quantity NUMERIC(12,3) CHECK (quote_discount_over_quantity BETWEEN 0 AND 100000),
+  quote_discount_percent NUMERIC(6,2) NOT NULL DEFAULT 0 CHECK (
+    quote_discount_percent BETWEEN 0 AND 100
+    AND (quote_discount_percent = 0 OR quote_discount_over_quantity IS NOT NULL)
+  ),
   quote_unit_label TEXT NOT NULL DEFAULT 'kpl',
   google_calendar_access_token TEXT,
   google_calendar_refresh_token TEXT,

@@ -262,6 +262,10 @@
       .composer button:focus-visible{outline:3px solid var(--bot-accent,#111113);outline-offset:2px}
       .voice-note{padding:0 14px 8px;background:#fff;color:#5d6470;font-size:11px;line-height:1.35}
       .voice-note[hidden]{display:none}
+      .image-text-tools{display:flex;align-items:center;gap:8px;padding:0 12px 8px;background:#fff;color:#333;font-size:12px}
+      .image-text-tools[hidden]{display:none}
+      .image-text-tools button{flex:none;max-width:52%;min-height:32px;padding:5px 8px;border:1px solid #d9d9dc;border-radius:8px;background:#f2f3f5;color:#27272a;font:inherit;text-align:left;cursor:pointer}
+      .image-text-tools button:disabled{cursor:wait}
       /* The collapsed widget is the customer's own bot identity, not a generic CTA. */
       .launcher{appearance:none;max-width:min(290px,calc(100vw - 36px));min-height:66px;border:1px solid rgba(20,22,24,.10);border-radius:20px;padding:9px 13px 9px 9px;background:#fff;color:#18191c;cursor:pointer;box-shadow:0 14px 42px rgba(12,16,20,.19),0 2px 10px rgba(12,16,20,.08);display:flex;align-items:center;gap:11px;text-align:left;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
       .launcher:hover{transform:translateY(-2px);box-shadow:0 18px 46px rgba(12,16,20,.22),0 3px 12px rgba(12,16,20,.08);border-color:rgba(20,22,24,.18)}
@@ -418,6 +422,11 @@
           <button type="submit" aria-label="${t('Lähetä', 'Send')}">→</button>
         </form>
         <div class="voice-note" id="voiceNote" role="status" aria-live="polite" hidden></div>
+        <div class="image-text-tools" id="imageTextTools" hidden>
+          <input type="file" id="imageTextFile" accept="image/png,image/jpeg" hidden>
+          <button type="button" id="imageTextButton" aria-describedby="imageTextStatus">${experienceText('Lue teksti kuvasta','Läs text från bild','Read text from an image')}</button>
+          <span id="imageTextStatus" role="status">${experienceText('Teksti lisätään luonnokseen.','Texten läggs till i utkastet.','Text is added to your draft.')}</span>
+        </div>
         <div class="powered">RESPONDO AI</div>
       </section>
       <button class="launcher" id="launcher" type="button" aria-controls="respondo-chat-panel" aria-expanded="false" aria-label="${t('Avaa chat', 'Open chat')}">
@@ -453,6 +462,11 @@
   const status = $('#status');
   const form = $('#form');
   const input = $('#input');
+  const imageTextTools = $('#imageTextTools');
+  const imageTextFile = $('#imageTextFile');
+  const imageTextButton = $('#imageTextButton');
+  const imageTextStatus = $('#imageTextStatus');
+  let imageTextMaxBytes = 0;
   const voiceButton = $('#voiceBtn');
   const voiceLanguageSelect = $('#voiceLang');
   const voiceNote = $('#voiceNote');
@@ -1252,11 +1266,20 @@
         if (data.quote) {
           const q = data.quote;
           const locale = widgetLang === 'en' ? 'en-IE' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
-          const total = new Intl.NumberFormat(locale, { style:'currency', currency:q.currency || 'EUR' }).format(Number(q.total || 0));
+          const currency = new Intl.NumberFormat(locale, { style:'currency', currency:q.currency || 'EUR' });
+          const total = currency.format(Number(q.total || 0));
+          const discountText = q.workDiscountPercent > 0 && q.workDiscount > 0
+            ? experienceText('Työn määräalennus', 'Mängdrabatt på arbetet', 'Volume discount on work') +
+              ' ' + new Intl.NumberFormat(locale, {maximumFractionDigits:2}).format(q.workDiscountPercent) +
+              ' % · −' + currency.format(q.workDiscount)
+            : '';
           resultHtml +=
             '<div class="quote-result">' +
-              '<small>' + escapeHtml(q.serviceName || t('Tarjous', 'Quote')) + '</small>' +
+              '<small>' + escapeHtml(q.serviceName || experienceText('Palvelu', 'Tjänst', 'Service')) + '</small>' +
+              (!data.checkoutUrl ? '<small>' + experienceText('Hinta-arvio', 'Prisuppskattning', 'Estimated price') + '</small>' : '') +
               '<strong>' + escapeHtml(total) + '</strong>' +
+              (discountText ? '<span>' + escapeHtml(discountText) + '</span>' : '') +
+              (q.minimumApplied ? '<span>' + experienceText('Vähimmäisveloitus käytössä', 'Minimidebitering tillämpas', 'Minimum charge applies') + '</span>' : '') +
               '<span>' + escapeHtml(
                 q.vatPercent > 0
                   ? (widgetLang === 'en'
@@ -1273,7 +1296,7 @@
               '</a>';
           } else {
             resultHtml += '<small class="action-pay-note">' +
-              t('Yritys ei ole vielä yhdistänyt maksutiliä. Tarjouspyyntö on silti lähetetty.', 'The company has not connected payments yet. The quote request was still sent.') +
+              experienceText('Yritys käsittelee tarjouspyynnön ja voi vahvistaa hinnan.', 'Företaget behandlar offertförfrågan och kan bekräfta priset.', 'The company can confirm the price after reviewing the quote request.') +
               '</small>';
           }
         }
@@ -1547,6 +1570,10 @@
       if (!res.ok) throw new Error('Widget not allowed');
       const data = await res.json();
       token = data.token;
+      if (Number.isSafeInteger(data.imageTextMaxBytes) && data.imageTextMaxBytes > 0) {
+        imageTextMaxBytes = data.imageTextMaxBytes;
+        imageTextTools.hidden = false;
+      }
       ready = true;
       humanHelp.hidden=false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
@@ -1581,6 +1608,75 @@
   // Touch devices should not unexpectedly open their software keyboard or
   // scroll the host website when the widget opens or a reply arrives.
   const restoreKeyboardFocus = () => !window.matchMedia?.('(pointer:coarse), (hover:none)')?.matches;
+  imageTextButton.addEventListener('click', () => {
+    if (ready && imageTextMaxBytes) imageTextFile.click();
+  });
+  imageTextFile.addEventListener('change', async () => {
+    const [file] = imageTextFile.files;
+    imageTextFile.value = '';
+    if (!file || !ready || !imageTextMaxBytes || imageTextButton.disabled) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > imageTextMaxBytes) {
+      imageTextStatus.textContent = experienceText(
+        'Valitse JPEG- tai PNG-kuva (enintään ' + imageTextMaxBytes / 1e6 + ' Mt).',
+        'Välj en JPEG- eller PNG-bild (högst ' + imageTextMaxBytes / 1e6 + ' MB).',
+        'Choose a JPEG or PNG image (up to ' + imageTextMaxBytes / 1e6 + ' MB).'
+      );
+      return;
+    }
+    imageTextButton.disabled = true;
+    imageTextStatus.textContent = experienceText('Luetaan tekstiä…','Läser text…','Reading text…');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 18_000);
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(reader.error);
+        reader.onload = () => resolve(String(reader.result).split(',', 2)[1]);
+        reader.readAsDataURL(file);
+      });
+      const response = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/chat-image-text', {
+        method:'POST', mode:'cors', credentials:'omit', signal:controller.signal,
+        headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body:JSON.stringify({widgetToken:token, type:file.type, image, lang:widgetLang}),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (result.status === 'unreadable' || result.status === 'invalid') {
+        imageTextStatus.textContent = experienceText(
+          'Kokeile terävämpää, tekstiin rajattua kuvaa.',
+          'Prova en skarpare bild beskuren till texten.',
+          'Try a sharper image cropped to the text.'
+        );
+        return;
+      }
+      if (!response.ok || result.status !== 'read' || typeof result.text !== 'string' || !result.text.trim()) {
+        throw new Error('Image text unavailable');
+      }
+      const draft = [input.value.trim(), result.text].filter(Boolean).join(' ');
+      if (draft.length > 1200) {
+        imageTextStatus.textContent = experienceText(
+          'Luonnos on liian pitkä. Lyhennä sitä ja yritä uudelleen.',
+          'Utkastet är för långt. Korta det och försök igen.',
+          'Your draft is too long. Shorten it and try again.'
+        );
+        return;
+      }
+      delete input.dataset.respondoVoiceLang;
+      input.value = draft;
+      imageTextStatus.textContent = result.truncated
+        ? experienceText('Osa tekstistä lisätty. Tarkista ennen lähetystä.','En del av texten lades till. Kontrollera före sändning.','Part of the text was added. Review before sending.')
+        : experienceText('Tarkista kuvasta luettu teksti ennen lähetystä.','Kontrollera den lästa texten före sändning.','Review the image text before sending.');
+      if (!input.disabled && panel.classList.contains('open') && restoreKeyboardFocus()) input.focus({preventScroll:true});
+    } catch {
+      imageTextStatus.textContent = experienceText(
+        'Kuvan lukeminen ei onnistunut. Yritä hetken päästä tai kirjoita teksti.',
+        'Bilden kunde inte läsas. Försök igen om en stund eller skriv texten.',
+        'Could not read the image. Try again shortly or type the text.'
+      );
+    } finally {
+      clearTimeout(timer);
+      imageTextButton.disabled = false;
+    }
+  });
   launcher.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
     launcher.setAttribute('aria-expanded',String(open));

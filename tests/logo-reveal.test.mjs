@@ -1,34 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 
-const source = async (file) => readFile(new URL('../public/' + file, import.meta.url), 'utf8');
+const source = file => readFileSync(new URL('../public/' + file, import.meta.url), 'utf8');
 
-test('logo reveal uses the actual approved white Respondo arrow', async () => {
-  const [official, code] = await Promise.all([source('respondo-symbol.svg'), source('logo-reveal.js')]);
-  const path = official.match(/<path d="([^"]+)"/)?.[1];
-  assert.ok(path, 'approved logo path exists');
-  assert.ok(code.includes(path), 'animation must use exactly the approved arrow geometry');
-  assert.match(code, /viewBox="0 0 256 256"/);
-  assert.doesNotThrow(() => new Function(code));
+test('the inline homepage reveal uses the approved white Respondo arrow', () => {
+  const path = source('respondo-symbol.svg').match(/<path d="([^"]+)"/)?.[1];
+  assert.ok(path && source('spiral-hero.js').includes(path));
+  assert.match(source('index.html'), /src="\/logo-reveal\.js\?v=20261119-inline-orbit-v1"/);
 });
 
-test('opening animation stays on homepage without a scroll logo chapter', async () => {
-  const [index, code, css] = await Promise.all([source('index.html'),source('logo-reveal.js'),source('logo-reveal.css')]);
-  assert.match(index, /href="\/logo-reveal\.css\?v=/);
-  assert.match(index, /src="\/logo-reveal\.js\?v=/);
-  assert.match(code, /location\.pathname !== '\/'/);
-  assert.match(code, /prefers-reduced-motion: reduce/);
-  // The opening must replay on each homepage navigation, not just the first session visit.
-  assert.doesNotMatch(code, /sessionStorage\.(?:setItem|getItem)/);
-  assert.match(code, /if \(!force && introPlayed\) return/);
-  assert.match(code, /introPlayed = true/);
-  assert.match(code, /event\.persisted/);
-  assert.match(code, /aria-modal/);
-  assert.match(code, /playIntro\(false\)/);
-  assert.doesNotMatch(code, /createChapter|rl-chapter|rl-replay|Jatka selaamista|Keep scrolling|Fortsätt skrolla/);
-  assert.doesNotMatch(code, /rl-intro-skip|Ohita animaatio|Skip animation|Hoppa över/);
-  assert.doesNotMatch(css, /\.rl-intro-skip/);
-  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.doesNotMatch(css, /rl-chapter|rl-replay|rl-scroll-prompt|rl-logo-film-active/);
+test('the arrow animates on entry and history restore, without blocking the hero', () => {
+  for (const reduced of [false, true]) {
+    const calls = [];
+    let changed;
+    let restore;
+    const arrow = {animate: (...args) => calls.push(args)};
+    vm.runInNewContext(source('logo-reveal.js'), {
+      document: {getElementById: () => ({querySelector: () => arrow})},
+      location: {pathname:'/'},
+      matchMedia: () => ({matches:reduced}),
+      MutationObserver: class {
+        constructor(callback) { changed = callback; }
+        observe() {}
+      },
+      addEventListener: (_, listener) => { restore = listener; }
+    });
+    changed();
+    restore({persisted:false});
+    assert.equal(calls.length, reduced ? 0 : 1);
+    restore({persisted:true});
+    assert.equal(calls.length, reduced ? 0 : 2);
+  }
 });

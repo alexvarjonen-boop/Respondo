@@ -32,7 +32,9 @@
     returnHome.hidden=true;
     returnHome.innerHTML='<span aria-hidden="true">←</span><span>'+
       words('Takaisin yleiskatsaukseen','Tillbaka till översikten','Back to overview')+'</span>';
-    main?.insertBefore(returnHome,main.querySelector('.dashboard-head')||main.querySelector('.dashboard-view-section'));
+    // Workspace activation can move the old dashboard sections into nested panels.
+    const anchor=main?.querySelector(':scope > .dashboard-head, :scope > .dashboard-view-section, :scope > #respondoWorkspace');
+    main?.insertBefore(returnHome,anchor || null);
     returnHome.addEventListener('click',()=>{
       select.value='overview';
       select.dispatchEvent(new Event('change',{bubbles:true}));

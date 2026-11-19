@@ -50,6 +50,10 @@ before deployment and checks `/api/health` before the new deployment becomes liv
 
 The application must keep server-side subscription entitlement checks. Frontend-only feature hiding is not sufficient.
 
+## Optional website-chat image text
+
+Set `RESPONDO_CHAT_IMAGE_OCR_DIR` to an absolute directory on the app server with readable, uncompressed `fin.traineddata`, `swe.traineddata` and `eng.traineddata` files. The upload control appears only when the app starts with all three files. The server reads text from PNG and JPEG images locally. The customer can review and edit the text before sending it as a chat message.
+
 ## Database security
 
 The public Supabase schema uses Row Level Security as a deny-by-default boundary for Data API access. The application itself connects to PostgreSQL server-side.

@@ -11,9 +11,9 @@ const home=read('apple-home.js');
 
 test('homepage describes concrete website-grounded AI answers and enquiries in FI/SV/EN',()=>{
   const copy=[
-    ['fi','Respondo vastaa asiakkaidesi kysymyksiin yrityksesi tiedoilla 24/7 ja ottaa yhteydenotot talteen.'],
-    ['sv','Respondo svarar på kundfrågor med företagets information dygnet runt och tar emot förfrågningar.'],
-    ['en','Respondo answers questions using your business information, 24/7, and captures customer enquiries.']
+    ['fi','Tekoälyasiakaspalvelu verkkosivuillesi. Respondo vastaa yrityksesi tiedoilla 24/7 ja ottaa yhteydenotot talteen.'],
+    ['sv','AI-kundservice på din webbplats. Respondo svarar dygnet runt med företagets information och tar emot förfrågningar.'],
+    ['en','AI customer service for your website. Respondo answers with your business information, 24/7, and captures enquiries.']
   ];
   for(const [lang,phrase] of copy){
     const i=['fi','sv','en'].indexOf(lang);

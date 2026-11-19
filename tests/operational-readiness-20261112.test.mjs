@@ -85,8 +85,7 @@ test('unapproved knowledge cannot suppress a pending website change review',asyn
  const inserted=queries.find(x=>x.sql.includes('INSERT INTO respondo_website_refresh_reviews'));
  assert(inserted);
  assert.match(inserted.sql,/respondo_website_refresh_reviews.status='approved'/);
- assert.match(inserted.sql,/respondo_website_refresh_reviews.category=EXCLUDED.category/);
- assert.match(inserted.sql,/respondo_website_refresh_reviews.keywords=EXCLUDED.keywords/);
+ assert.match(inserted.sql,/IS DISTINCT FROM \(EXCLUDED.answer,EXCLUDED.category,EXCLUDED.keywords\)/);
  assert(!queries.some(x=>x.sql.includes('UPDATE knowledge SET verified_at')));
 });
 

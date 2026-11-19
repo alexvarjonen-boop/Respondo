@@ -43,34 +43,46 @@ export async function stageWebsiteRefresh(db,tenantId,candidate){
   }catch{}
   if(!sourceValid||title.length<2||answer.length<8)
     throw TypeError('Verified website candidate required');
+  const fingerprint=websiteCandidateFingerprint({sourceUrl,title});
   const existing=await db.query(`SELECT id,answer,category,keywords FROM knowledge WHERE tenant_id=$1
-    AND approved=TRUE AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3) LIMIT 1`,
+    AND approved=TRUE AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3)
+    ORDER BY verified_at DESC NULLS LAST,created_at DESC,id DESC LIMIT 1`,
     [tenantId,sourceUrl,title]);
   // Only an *approved*, fully unchanged fact can be reverified without review.
   // An unapproved record must never suppress the review queue.
   const old=existing.rows?.[0];
   if(old?.answer===answer && old.category===category &&
      JSON.stringify(old.keywords||[])===JSON.stringify(keywords)){
-    await db.query(`UPDATE knowledge SET verified_at=NOW()
-      WHERE tenant_id=$1 AND id=$2 AND approved=TRUE AND source_type='website'`,
-      [tenantId,old.id]);
+    // The website has returned to the published fact. Retire any pending
+    // proposal without recording an owner decision.
+    await db.query(`WITH verified AS (
+      UPDATE knowledge SET verified_at=NOW()
+      WHERE tenant_id=$1 AND id=$2 AND approved=TRUE AND source_type='website'
+      RETURNING id
+    )
+    UPDATE respondo_website_refresh_reviews
+      SET status='dismissed',reviewed_by=NULL,reviewed_at=NULL,updated_at=NOW()
+      WHERE tenant_id=$1 AND fingerprint=$3 AND status='pending'
+        AND EXISTS (SELECT 1 FROM verified)`,[tenantId,old.id,fingerprint]);
     return {status:'unchanged'};
   }
-  const fp=websiteCandidateFingerprint({sourceUrl,title});
+  // An ID identifies the displayed proposal. A dashboard that has loaded an
+  // earlier proposal must not approve replacement content using the old ID.
   const result=await db.query(`INSERT INTO respondo_website_refresh_reviews
     (tenant_id,fingerprint,source_url,title,category,answer,keywords,status)
     VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,'pending')
     ON CONFLICT(tenant_id,fingerprint) DO UPDATE SET
-      category=EXCLUDED.category,answer=EXCLUDED.answer,keywords=EXCLUDED.keywords,
-      status=CASE WHEN respondo_website_refresh_reviews.status='approved'
-        THEN 'pending'
-        WHEN respondo_website_refresh_reviews.answer=EXCLUDED.answer
-         AND respondo_website_refresh_reviews.category=EXCLUDED.category
-         AND respondo_website_refresh_reviews.keywords=EXCLUDED.keywords
-        THEN respondo_website_refresh_reviews.status ELSE 'pending' END,
-      updated_at=NOW()
-    RETURNING id,status`,[tenantId,fp,sourceUrl,title,category,answer,JSON.stringify(keywords)]);
-  return {status:result.rows?.[0]?.status||'pending'};
+      id=EXCLUDED.id,title=EXCLUDED.title,category=EXCLUDED.category,answer=EXCLUDED.answer,
+      keywords=EXCLUDED.keywords,status='pending',reviewed_by=NULL,reviewed_at=NULL,updated_at=NOW()
+    WHERE respondo_website_refresh_reviews.status='approved'
+       OR (respondo_website_refresh_reviews.status='dismissed' AND respondo_website_refresh_reviews.reviewed_at IS NULL)
+       OR (respondo_website_refresh_reviews.answer,respondo_website_refresh_reviews.category,respondo_website_refresh_reviews.keywords)
+          IS DISTINCT FROM (EXCLUDED.answer,EXCLUDED.category,EXCLUDED.keywords)
+    RETURNING status`,[tenantId,fingerprint,sourceUrl,title,category,answer,JSON.stringify(keywords)]);
+  if(result.rows?.length)return {status:result.rows[0].status};
+  const previous=await db.query(`SELECT status FROM respondo_website_refresh_reviews
+    WHERE tenant_id=$1 AND fingerprint=$2`,[tenantId,fingerprint]);
+  return {status:previous.rows?.[0]?.status||'pending'};
 }
 export async function websiteRefreshReviewOverview(db,tenantId){
   if(!uuid(tenantId))throw TypeError('Valid tenant required');
@@ -80,7 +92,7 @@ export async function websiteRefreshReviewOverview(db,tenantId){
       SELECT answer FROM knowledge k WHERE k.tenant_id=r.tenant_id
         AND k.source_type='website' AND k.approved=TRUE
         AND k.source_url=r.source_url AND LOWER(k.title)=LOWER(r.title)
-      ORDER BY k.verified_at DESC NULLS LAST,k.created_at DESC LIMIT 1
+      ORDER BY k.verified_at DESC NULLS LAST,k.created_at DESC,k.id DESC LIMIT 1
     ) k ON TRUE
     WHERE r.tenant_id=$1 ORDER BY (r.status='pending') DESC,r.updated_at DESC LIMIT 80`,[tenantId]);
   return {reviews:result.rows||[],requiresOwnerApproval:true};
@@ -98,7 +110,8 @@ export async function decideWebsiteRefreshReview(db,tenantId,id,ownerId,decision
     if(!item){await client.query('ROLLBACK');return null;}
     if(decision==='approve'){
       const old=await client.query(`SELECT id FROM knowledge WHERE tenant_id=$1
-        AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3) LIMIT 1 FOR UPDATE`,
+        AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3)
+        ORDER BY approved DESC,verified_at DESC NULLS LAST,created_at DESC,id DESC LIMIT 1 FOR UPDATE`,
         [tenantId,item.source_url,item.title]);
       if(old.rows?.[0]?.id){
         await client.query(`UPDATE knowledge SET category=$1,answer=$2,keywords=$3,

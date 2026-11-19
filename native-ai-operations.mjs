@@ -1,6 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import { enqueueNativeTask,leadFollowupTiming } from './native-taskboard.mjs';
 import {runFreeWorkflowEvent} from './respondo-free-actions.mjs';
+import {computeSafeQuote,parseQuoteQuantity,tenantQuotePricing} from './smart-quote-guard.mjs';
 
 const RULES=[['lead_captured','save_contact'],['action_requested','open_ticket']];
 const STATES=new Set(['new','contacted','qualified','won','lost']);
@@ -16,16 +17,17 @@ export function validateContact(value={}){
     stage:STATES.has(value.stage)?value.stage:'new'};
 }
 export function calculateNativeQuote(tenant,quantity){
-  const n=Number(quantity);
-  if(!Number.isFinite(n)||n<=0||n>100000||!Number.isInteger(n*1000))throw new TypeError('Invalid quantity');
-  const money=v=>Number.isFinite(Number(v))&&Number(v)>=0?Number(v):0;
-  const base=money(tenant.quote_base_price),unit=money(tenant.quote_unit_price);
-  const min=money(tenant.quote_min_price),vat=Math.min(30,money(tenant.quote_vat_percent));
-  if(!(base>0||unit>0||min>0))throw new TypeError('Configure verified service prices first');
-  const cents=Math.round(Math.max(min,base+unit*n)*(1+vat/100)*100);
-  if(!Number.isSafeInteger(cents)||cents>100000000)throw new TypeError('Quote value out of bounds');
+  let n;
+  try { n=parseQuoteQuantity(quantity); }
+  catch { throw new TypeError('Invalid quantity'); }
+  if(n<=0||Math.round(n*1000)/1000!==n)throw new TypeError('Invalid quantity');
+  let quote;
+  try { quote=computeSafeQuote({...tenantQuotePricing(tenant),quantity:n}); }
+  catch(error) { throw new TypeError(error.message); }
+  if(!quote)throw new TypeError('Configure verified service prices first');
+  if(quote.totalCents>100000000)throw new TypeError('Quote value out of bounds');
   return {service:text(tenant.quote_service_name||'Service',120),quantity:n,
-    totalCents:cents,currency:'EUR'};
+    totalCents:quote.totalCents,currency:quote.currency};
 }
 export async function ensureNativeOperationsSchema(db){
   const tables=[
@@ -141,7 +143,8 @@ export async function updateNativeTicket(db,tenantId,id,payload){
 }
 export async function createNativeQuote(db,tenantId,quantity,note=''){
   const tr=await db.query(`SELECT quote_base_price,quote_unit_price,quote_min_price,
-    quote_vat_percent,quote_service_name FROM tenants WHERE id=$1`,[tenantId]);
+    quote_vat_percent,quote_service_name,quote_discount_over_quantity,quote_discount_percent
+    FROM tenants WHERE id=$1`,[tenantId]);
   if(!tr.rows[0])throw new TypeError('Workspace not found');
   const x=calculateNativeQuote(tr.rows[0],quantity);
   const r=await db.query(`INSERT INTO respondo_native_quotes

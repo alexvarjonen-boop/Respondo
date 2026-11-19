@@ -85,10 +85,11 @@ export function spiralHeroMarkup(t, lang) {
       <div class="rs-spiral-heading">
         <div class="rs-hero-eyebrow">RESPONDO AI <span aria-hidden="true">/</span> 24/7</div>
         <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')} <span>${t('asiakaspalvelua.','kundservice.','customer service.')}</span></h1>
-        <p class="rs-hero-description">${t('Respondo vastaa asiakkaidesi kysymyksiin yrityksesi tiedoilla 24/7 ja ottaa yhteydenotot talteen.','Respondo svarar på kundfrågor med företagets information dygnet runt och tar emot förfrågningar.','Respondo answers questions using your business information, 24/7, and captures customer enquiries.')}</p>
+        <p class="rs-hero-description">${t('Tekoälyasiakaspalvelu verkkosivuillesi. Respondo vastaa yrityksesi tiedoilla 24/7 ja ottaa yhteydenotot talteen.','AI-kundservice på din webbplats. Respondo svarar dygnet runt med företagets information och tar emot förfrågningar.','AI customer service for your website. Respondo answers with your business information, 24/7, and captures enquiries.')}</p>
         <a class="rs-first-order-link" href="/assistant?lang=${lang}" aria-label="${t('Kokeile bottia','Testa botten','Try the bot')}">
           <span>${t('Kokeile bottia','Testa botten','Try the bot')}</span>
         </a>
+        <a class="rs-product-jump" href="#product-story">${t('Katso esimerkki','Se ett exempel','See an example')} <span aria-hidden="true">↓</span></a>
         <a class="rs-chat-navigation-note" href="/ominaisuudet?lang=${lang}">${t('Katso kaikki ominaisuudet →','Se alla funktioner →','Explore all features →')}</a>
       </div>
       <div class="rs-spiral-orbit" role="group" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">

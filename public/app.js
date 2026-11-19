@@ -1,6 +1,8 @@
+import { parseQuoteRuleDraft } from './quote-rule-draft.mjs?v=1';
+import { bindProductStory } from './home-product-story.js?v=2';
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49-native-mail-disabled-v50';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2-feature-finder-v49-native-mail-disabled-v50-quote-navigation-v1';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51-navigation-v52-verified-only-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -8,7 +10,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1-booking-request-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1-direct-features-v35';
+import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1-direct-features-v35-product-story-v2';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261107-movexa-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -5129,30 +5131,48 @@ async function dashboard(options = {}) {
           </div>
         </article>
 
-        ${!planAccess.allCurrentFeatures ? `<article class="panel quote-engine-panel plan-locked-panel"><div class="panel-head"><div><small>ENTERPRISE</small><h2>${appText('Automaattinen hintalaskuri','Automatisk prisberäkning','Automatic quote calculator')}</h2><p>${appText('Tarjouspyynnöt toimivat kaikissa paketeissa. Automaattinen hinnan laskenta kuuluu Enterprise-tilaukseen.','Offertförfrågningar fungerar i alla abonnemang. Automatisk prisberäkning ingår i Business.','Quote requests work on every plan. Automatic quote calculation is included in Enterprise.')}</p></div><span class="install-badge">Enterprise</span></div></article>` : ''}
-        <article class="panel quote-engine-panel" id="quote-engine" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+        ${!planAccess.allCurrentFeatures ? `<article class="panel quote-engine-panel plan-locked-panel"><div class="panel-head"><div><small>ENTERPRISE</small><h2>${appText('Automaattinen hintalaskuri','Automatisk prisberäkning','Automatic quote calculator')}</h2><p>${appText('Tarjouspyynnöt toimivat kaikissa paketeissa. Automaattinen hinnan laskenta kuuluu Enterprise-tilaukseen.','Offertförfrågningar fungerar i alla abonnemang. Automatisk prisberäkning ingår i Enterprise.','Quote requests work on every plan. Automatic quote calculation is included in Enterprise.')}</p></div><span class="install-badge">Enterprise</span></div></article>` : ''}
+        <article class="panel quote-engine-panel" id="quote-engine" ${planAccess.allCurrentFeatures ? '' : 'hidden data-respondo-plan-locked="yes"'}>
           <div class="panel-head">
             <div>
-              <small>HINTALASKURI</small>
-              <h2>Anna Respondon laskea hinta</h2>
-              <p>Määritä palvelun hinnat. Respondo laskee asiakkaalle hinnan antamiesi hintojen perusteella.</p>
+              <small>${appText('HINTALASKURI','PRISKALKYLATOR','QUOTE CALCULATOR')}</small>
+              <h2>${appText('Anna Respondon laskea hinta','Låt Respondo beräkna priset','Let Respondo calculate the price')}</h2>
+              <p>${appText('Määritä palvelun hinta-arvion säännöt.','Ange reglerna för tjänstens prisuppskattning.','Set the rules for estimating this service’s price.')}</p>
             </div>
-            <span class="install-badge">${quoteEngine.basePrice || quoteEngine.unitPrice || quoteEngine.minPrice ? 'Käytössä' : 'Ei asetettu'}</span>
+            <span class="install-badge">${quoteEngine.basePrice || quoteEngine.unitPrice || quoteEngine.minPrice ? appText('Käytössä','Aktiv','Active') : appText('Ei asetettu','Ej konfigurerad','Not configured')}</span>
           </div>
           <form id="quoteEngineForm" class="quote-engine-form">
-            <div class="field"><label>Palvelun nimi</label><input name="serviceName" value="${esc(quoteEngine.serviceName)}" placeholder="Esim. Muuttopalvelu"></div>
+            <details>
+              <summary>${appText('Luonnostele hinnat lauseella','Skriv ett prisutkast i text','Draft prices in plain language')}</summary>
+              <div class="field">
+                <label for="quoteRuleDraft">${appText('Yhden yksikön hinnasto','Prislista för en enhet','Price list for one unit')}</label>
+                <textarea id="quoteRuleDraft" maxlength="420" rows="3" aria-describedby="quoteRuleExample"></textarea>
+              </div>
+              <p id="quoteRuleExample">${appText('Esimerkki: 15 €/ikkuna; matkakulu 25 €; yli 20 ikkunasta 10 % alennus. Tarkista kentät ennen tallennusta.','Exempel: 15 € per fönster; reseavgift 25 €; över 20 fönster 10 % rabatt. Kontrollera fälten före sparning.','Example: €15 per window; travel fee €25; over 20 windows 10% discount. Review the fields before saving.')}</p>
+              <button class="btn" type="button" id="fillQuoteRuleDraft">${appText('Täytä kenttiin','Fyll i fälten','Fill in fields')}</button>
+              <p id="quoteRuleDraftStatus" role="status"></p>
+            </details>
+            <div class="field"><label for="quoteServiceName">${appText('Palvelun nimi','Tjänstens namn','Service name')}</label><input id="quoteServiceName" name="serviceName" value="${esc(quoteEngine.serviceName)}"></div>
             <div class="quote-engine-grid">
-              <div class="field"><label>Perusmaksu €</label><input name="basePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.basePrice)}"></div>
-              <div class="field"><label>Hinta / yksikkö €</label><input name="unitPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.unitPrice)}"></div>
-              <div class="field"><label>Yksikön nimi</label><input name="unitLabel" value="${esc(quoteEngine.unitLabel || 'kpl')}" placeholder="h, km, m², kpl"></div>
-              <div class="field"><label>Minimihinta €</label><input name="minPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.minPrice)}"></div>
-              <div class="field"><label>ALV %</label><input name="vatPercent" type="number" min="0" max="30" step="0.1" value="${esc(quoteEngine.vatPercent)}"></div>
+              <div class="field"><label for="quoteBasePrice">${appText('Perusmaksu €','Grundavgift €','Base fee €')}</label><input id="quoteBasePrice" name="basePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.basePrice)}"></div>
+              <div class="field"><label for="quoteUnitPrice">${appText('Hinta / yksikkö €','Pris / enhet €','Price / unit €')}</label><input id="quoteUnitPrice" name="unitPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.unitPrice)}"></div>
+              <div class="field"><label for="quoteUnitLabel">${appText('Yksikön nimi','Enhetens namn','Unit name')}</label><input id="quoteUnitLabel" name="unitLabel" value="${esc(quoteEngine.unitLabel || appText('kpl','st','pcs'))}" placeholder="h, km, m²"></div>
+              <div class="field"><label for="quoteMinPrice">${appText('Minimihinta €','Minimipris €','Minimum price €')}</label><input id="quoteMinPrice" name="minPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.minPrice)}"></div>
+              <div class="field"><label for="quoteVatPercent">${appText('ALV %','Moms %','VAT %')}</label><input id="quoteVatPercent" name="vatPercent" type="number" min="0" max="30" step="0.1" value="${esc(quoteEngine.vatPercent)}"></div>
+              <div class="field"><label for="quoteDiscountThreshold">${appText('Alennus tämän määrän ylittäessä','Rabatt över denna mängd','Discount above this quantity')}</label><input id="quoteDiscountThreshold" name="discountOverQuantity" type="number" min="0" max="100000" step="0.001" value="${esc(quoteEngine.discountOverQuantity ?? '')}"></div>
+              <div class="field"><label for="quoteDiscountPercent">${appText('Määräalennus %','Mängdrabatt %','Quantity discount %')}</label><input id="quoteDiscountPercent" name="discountPercent" type="number" min="0" max="100" step="0.01" value="${esc(quoteEngine.discountPercent ?? 0)}"></div>
+            </div>
+            <div class="field">
+              <label for="quoteExampleQuantity">${appText('Esimerkin määrä','Exempelmängd','Example quantity')}</label>
+              <input id="quoteExampleQuantity" type="number" min="0.001" max="100000" step="0.001" value="25">
+              <button class="btn" type="button" id="previewQuoteDraft">${appText('Laske esimerkki','Beräkna exempel','Calculate example')}</button>
+              <output id="quoteDraftEstimate" for="quoteExampleQuantity" aria-live="polite"></output>
             </div>
             <div class="quote-form-bottom">
-              <div class="quote-formula-preview">Hinta = max(minimi, perusmaksu + määrä × yksikköhinta) + ALV</div>
-              <button class="btn dashboard-action" type="submit">Tallenna hintalaskuri <span>→</span></button>
+              <p class="quote-formula-preview">${appText('Alennus koskee yksikköhintojen summaa. Perusmaksu lisätään, minimihinta tarkistetaan ja ALV lisätään viimeiseksi.','Rabatten gäller summan av enhetspriserna. Grundavgiften läggs till, minimipriset kontrolleras och moms läggs till sist.','The discount applies to the unit subtotal. The base fee is added, the minimum is checked, and VAT is applied last.')}</p>
+              <button class="btn dashboard-action" type="submit">${appText('Tallenna hintalaskuri','Spara priskalkylatorn','Save quote calculator')} <span>→</span></button>
             </div>
-            <div id="quoteEngineMsg"></div>
+            <div id="quoteEngineMsg" role="status"></div>
           </form>
         </article>
 
@@ -5382,7 +5402,7 @@ async function dashboard(options = {}) {
           </select>
           <small style="line-height:1.5;opacity:.76">${appText('Valinta päivittää alla olevan asennuskoodin. Smart Assist toimii myös jo asennetuissa boteissa automaattisesti.','Valet uppdaterar installationskoden nedan. Smart Assist fungerar också automatiskt i befintliga installationer.','Your choice updates the embed code below. Existing installations also receive Smart Assist automatically.')}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1-quote-image-text-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Koodi lisätty','✓ Koden tillagd','✓ Code added') : appText('Olen lisännyt koodin','Jag har lagt till koden','I added the code')}</button>
         <button type="button" class="btn" id="verifyInstallation" ${t.website?'':'disabled'}>${appText('Tarkista asennus oikealta sivulta','Kontrollera installationen på webbplatsen','Verify installation on the live website')}</button>
         <p id="installationProofResult" class="field-hint" role="status" aria-live="polite">${appText('Koodin lisääminen ei vielä todista, että se näkyy julkaistulla sivulla.','Att lägga till koden bevisar inte att den finns på den publicerade sidan.','Adding the code does not prove it appears on the published website.')}</p>
@@ -5758,6 +5778,8 @@ function initImmersiveHomeMotion() {
   });
 }
 
+let unbindProductStory;
+
 async function route() {
   const path = location.pathname.replace(/\/+$/, '') || '/';
   const workspacePage = ['/assistant', '/app', '/demo'].includes(path);
@@ -5787,6 +5809,8 @@ async function route() {
   else if (['/kayttoehdot', '/yritystiedot', '/tietosuoja', '/evasteet', '/dpa', '/tietoturva'].includes(path)) html = legal(path.slice(1));
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>${appText('Tätä sivua ei löytynyt.','Sidan hittades inte.','Page not found.')}</h1><a class="btn ink" href="/">${appText('Palaa etusivulle','Till startsidan','Back to home')}</a></div></main>${footer()}</div>`;
 
+  unbindProductStory?.();
+  unbindProductStory = undefined;
   $('#app').innerHTML = html;
   if (path === '/app') {
     const receipt=new URLSearchParams(location.search).get('setup_service');
@@ -5828,6 +5852,7 @@ async function route() {
   if (path === '/' || path === '/hinnat') bindPricingPeriodSwitch();
   if (path === '/') {
     bindHomeHeroActions();
+    unbindProductStory = bindProductStory(document.querySelector('.apple-home'));
     // No sticky free-trial CTA; hero only links to the working demo.
   }
 
@@ -7276,6 +7301,7 @@ async function route() {
 
     const guidedForm = $('#guidedSetupForm');
     if (guidedForm) {
+      guidedForm.noValidate = true;
       const guidedQaController=initGuidedQaRows(guidedForm);
       let guidedStep = 1;
       let existingProfile = {};
@@ -7376,7 +7402,7 @@ async function route() {
           if (validateGuidedStep()) showGuidedStep(guidedStep + 1);
           return;
         }
-        if (!validateGuidedStep()) return;
+        if (!validateGuidedStep() || guidedForm.querySelector('.guided-submit').disabled) return;
         const values = new FormData(guidedForm);
         const submit = guidedForm.querySelector('.guided-submit');
         const message = guidedCards[4]?.querySelector('.guided-step-message');
@@ -8416,7 +8442,55 @@ async function route() {
       }
     });
 
-    $('#quoteEngineForm')?.addEventListener('submit', async (e) => {
+    const quoteEngineForm = $('#quoteEngineForm');
+    const quoteDraftEstimate = $('#quoteDraftEstimate');
+    quoteEngineForm?.addEventListener('input', () => { quoteDraftEstimate.textContent = ''; });
+    $('#previewQuoteDraft')?.addEventListener('click', async (event) => {
+      const form = quoteEngineForm;
+      const quantity = $('#quoteExampleQuantity');
+      if (!quantity.value || !quantity.reportValidity()) {
+        quoteDraftEstimate.textContent = appText('Anna esimerkin määrä.','Ange exempelmängden.','Enter the example quantity.');
+        return;
+      }
+      const payload = () => JSON.stringify({...Object.fromEntries(new FormData(form)),quantity:quantity.value});
+      const submitted = payload();
+      const button = event.currentTarget;
+      button.disabled = true;
+      quoteDraftEstimate.textContent = appText('Lasketaan…','Beräknar…','Calculating…');
+      try {
+        const {quote} = await api('/api/app/quote-engine/preview',{method:'POST',body:submitted});
+        if (submitted !== payload()) return;
+        const currency = new Intl.NumberFormat(currentLang(),{style:'currency',currency:quote.currency});
+        quoteDraftEstimate.textContent = appText(
+          `Arvio ${currency.format(quote.total)} · ALV ${currency.format(quote.vat)}`,
+          `Uppskattning ${currency.format(quote.total)} · Moms ${currency.format(quote.vat)}`,
+          `Estimate ${currency.format(quote.total)} · VAT ${currency.format(quote.vat)}`
+        );
+      } catch {
+        if (submitted === payload()) quoteDraftEstimate.textContent = appText(
+          'Esimerkkilaskelma ei onnistunut. Tarkista määrä ja hinnat.',
+          'Exemplet kunde inte beräknas. Kontrollera mängd och priser.',
+          'Could not calculate the example. Check quantity and prices.'
+        );
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#fillQuoteRuleDraft')?.addEventListener('click', () => {
+      const form = $('#quoteEngineForm');
+      const status = $('#quoteRuleDraftStatus');
+      const draft = parseQuoteRuleDraft($('#quoteRuleDraft').value);
+      if (!draft) {
+        status.textContent = appText('Luonnos ei kelpaa kokonaisena. Käytä esimerkin muotoa tai täytä kentät käsin.','Utkastet kunde inte läsas i sin helhet. Följ exemplet eller fyll i fälten manuellt.','The full draft could not be read. Follow the example or fill in the fields manually.');
+        return;
+      }
+      for (const [field, value] of Object.entries(draft)) form.elements[field].value = value;
+      quoteDraftEstimate.textContent = '';
+      status.textContent = appText('Luonnos lisätty kenttiin. Tarkista hinnat ja tallenna, kun ne ovat oikein.','Utkastet fyller i fälten. Kontrollera priserna och spara när de stämmer.','Draft entered. Review the prices and save when they are correct.');
+    });
+
+    quoteEngineForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
       const button = e.currentTarget.querySelector('button[type="submit"]');
@@ -8433,6 +8507,8 @@ async function route() {
             minPrice:form.get('minPrice'),
             vatPercent:form.get('vatPercent'),
             unitLabel:form.get('unitLabel'),
+            discountOverQuantity:form.get('discountOverQuantity'),
+            discountPercent:form.get('discountPercent'),
           }),
         });
         $('#quoteEngineMsg').innerHTML = '<div class="notice success">' + appText('Quote Engine tallennettu ✓','Quote Engine sparad ✓','Quote Engine saved ✓') + '</div>';
@@ -9142,7 +9218,7 @@ async function route() {
           if(!html.includes('data-sites-key=')){
             html=html.replace('></script>',' data-sites-key="'+key+'"></script>');
           }
-          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261109-smart-experience-v1');
+          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261109-smart-experience-v1-quote-image-text-v1');
           code.textContent=html;
         }
         if(message)message.innerHTML='<div class="notice success">'+appText(

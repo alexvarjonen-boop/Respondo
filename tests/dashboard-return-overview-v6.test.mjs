@@ -7,7 +7,8 @@ const js=read('dashboard-drawer.js'),css=read('dashboard-entry.css'),html=read('
 test('section navigation exposes a localized return-to-overview action on mobile',()=>{
  assert.doesNotThrow(()=>new Script(js));
  for(const s of ['dashboard-return-home','Takaisin yleiskatsaukseen','Tillbaka till översikten','Back to overview','returnHome.hidden=select.value']) assert.ok(js.includes(s),s);
- assert.match(js,/main\?\.insertBefore\(returnHome/);
+ assert.match(js,/querySelector\(':scope > \.dashboard-head, :scope > \.dashboard-view-section, :scope > #respondoWorkspace'\)/);
+ assert.match(js,/main\?\.insertBefore\(returnHome,anchor \|\| null\)/);
  assert.match(js,/select\.dispatchEvent\(new Event\('change',\{bubbles:true\}\)\)/);
  assert.match(js,/viewObserver\.observe\(document\.body,\{attributes:true,attributeFilter:\['data-dashboard-view'\]\}\)/);
  assert.match(js,/viewObserver\.disconnect\(\)/);
