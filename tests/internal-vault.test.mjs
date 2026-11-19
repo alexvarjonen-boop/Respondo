@@ -86,3 +86,16 @@ test('Visitors shows the archive card only after the owner traffic endpoint succ
   assert.match(html,/href=\"\/arkisto\"/);
   assert.doesNotMatch(html,/data-traffic-view=\"archive\"/);
 });
+
+test('private archive UI includes the polished layout and working category navigation',async()=>{
+  const html=await readFile(new URL('../private/vault.html',import.meta.url),'utf8');
+  const js=await readFile(new URL('../public/vault.js',import.meta.url),'utf8');
+  const css=await readFile(new URL('../public/vault-premium.css',import.meta.url),'utf8');
+  assert.match(html,/href="\/vault-premium\.css\?v=/);
+  assert.match(html,/id="categoryNav"/);
+  assert.match(html,/id="categoryFilter"/);
+  assert.match(html,/id="newButton"/);
+  assert.match(js,/state\.categories=Array\.isArray\(session\.categories\)/);
+  assert.match(js,/filter\.replaceChildren\(all,\.\.\.state\.categories\.map/);
+  assert.match(css,/@media \(max-width: 600px\)/);
+});
