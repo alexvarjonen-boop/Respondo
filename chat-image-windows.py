@@ -23,6 +23,7 @@ Image.MAX_IMAGE_PIXELS = 8_000_000
 # BERT token IDs from the pinned model for:
 # "building window. door. vehicle window. mirror."
 TOKENS = [[101, 2311, 3332, 1012, 2341, 1012, 4316, 3332, 1012, 5259, 1012, 102]]
+BUILDING_TOKEN = 1
 WINDOW_TOKEN = 2
 COMPETING_TOKENS = [4, 6, 7, 9]
 WINDOW_THRESHOLD = 0.30
@@ -50,7 +51,7 @@ def input_data(image):
     }
 
 
-def candidate_boxes(logits, boxes):
+def candidate_boxes(logits, boxes, image_aspect):
     selected = []
     window_scores = logits[:, WINDOW_TOKEN]
     cutoff = math.log(WINDOW_THRESHOLD / (1 - WINDOW_THRESHOLD))
@@ -60,12 +61,19 @@ def candidate_boxes(logits, boxes):
             continue
         if np.max(logits[index, COMPETING_TOKENS]) >= score:
             continue
+        # The window token must be more specific than the general building
+        # cue. This avoids counting large facade regions and text blocks.
+        if score - logits[index, BUILDING_TOKEN] < .35:
+            continue
         x, y, width, height = boxes[index]
         if not np.isfinite(boxes[index]).all() or min(width, height) < .015 or width * height > .70:
             continue
         left, top = max(0., x - width / 2), max(0., y - height / 2)
         right, bottom = min(1., x + width / 2), min(1., y + height / 2)
         if right - left < .015 or bottom - top < .015:
+            continue
+        observed_aspect = (right - left) * image_aspect / (bottom - top)
+        if not .20 <= observed_aspect <= 4:
             continue
         area = (right - left) * (bottom - top)
         duplicate = False
@@ -99,7 +107,7 @@ def main():
             raise ValueError("Unsupported image dimensions")
         image = ImageOps.exif_transpose(photo).convert("RGB")
     logits, boxes = model_session(model).run(None, input_data(image))
-    print(json.dumps({"count": len(candidate_boxes(logits[0], boxes[0]))}))
+    print(json.dumps({"count": len(candidate_boxes(logits[0], boxes[0], image.width / image.height))}))
 
 
 if __name__ == "__main__":
