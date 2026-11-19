@@ -734,6 +734,73 @@
   #app .respondo-workspace-bot-home{transition:none!important}
 }
 
+/* Keep the owner’s main destinations available while working in a module. */
+#app .rs-workspace-nav{
+  position:sticky;
+  top:0;
+  z-index:15;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:5px;
+  width:min(100%,920px);
+  margin:12px auto 0;
+  padding:6px;
+  border:1px solid #343942;
+  border-radius:16px;
+  background:#181b21;
+}
+#app .rs-workspace-nav button{
+  min-height:42px;
+  padding:6px 5px;
+  border:1px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  color:#c5cbd6;
+  font-size:13px;
+  font-weight:650;
+  line-height:1.25;
+}
+#app .rs-workspace-nav button[aria-current]{
+  border-color:#526883;
+  background:#283b52;
+  color:#f4f8ff;
+}
+#app .rs-workspace-nav button:hover,
+#app .rs-feature-group-more:hover{background:#303b4b;color:#fff}
+#app .rs-workspace-nav ~ .respondo-workspace-content [data-workspace-page],
+#app .rs-workspace-nav ~ .respondo-workspace-content h1,
+#app .rs-workspace-nav ~ .respondo-workspace-content .rs-imported-review{scroll-margin-top:78px}
+#app .rs-feature-finder-results[data-layout="section"]{grid-template-columns:minmax(0,1fr)}
+#app .rs-feature-group{
+  min-width:0;
+  padding:16px;
+  border:1px solid #343942;
+  border-radius:15px;
+  background:#1d2027;
+}
+#app .rs-feature-group h2{margin:0 0 12px;font-size:16px}
+#app .rs-feature-group-links{display:grid;gap:6px}
+#app .rs-feature-group-links .rs-feature-finder-item{min-height:44px}
+#app .rs-feature-group-more{
+  justify-self:start;
+  min-height:40px;
+  padding:5px 10px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:#c1d9ff;
+  font-size:13px;
+  font-weight:650;
+}
+@media(max-width:540px){
+  #app .rs-workspace-nav{grid-template-columns:repeat(6,minmax(0,1fr));margin-top:8px}
+  #app .rs-workspace-nav button{grid-column:span 2}
+  #app .rs-workspace-nav button:nth-child(n+4){grid-column:span 3}
+  #app .rs-workspace-nav ~ .respondo-workspace-content [data-workspace-page],
+  #app .rs-workspace-nav ~ .respondo-workspace-content h1,
+  #app .rs-workspace-nav ~ .respondo-workspace-content .rs-imported-review{scroll-margin-top:112px}
+}
+
 /* V47: the integrations modules are dark while the legacy form labels were
    designed for a white dashboard. Keep all changes inside the real workspace
    so the public demo, checkout and account forms are unaffected. */
@@ -811,71 +878,4 @@
   #booking-calendar .weekday-picker input:not(:checked) + span{
   color:#424d5c!important;
   -webkit-text-fill-color:#424d5c!important;
-}
-
-/* Keep the owner’s main destinations available while working in a module. */
-#app .rs-workspace-nav{
-  position:sticky;
-  top:0;
-  z-index:15;
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:5px;
-  width:min(100%,920px);
-  margin:12px auto 0;
-  padding:6px;
-  border:1px solid #343942;
-  border-radius:16px;
-  background:#181b21;
-}
-#app .rs-workspace-nav button{
-  min-height:42px;
-  padding:6px 5px;
-  border:1px solid transparent;
-  border-radius:10px;
-  background:transparent;
-  color:#c5cbd6;
-  font-size:13px;
-  font-weight:650;
-  line-height:1.25;
-}
-#app .rs-workspace-nav button[aria-current]{
-  border-color:#526883;
-  background:#283b52;
-  color:#f4f8ff;
-}
-#app .rs-workspace-nav button:hover,
-#app .rs-feature-group-more:hover{background:#303b4b;color:#fff}
-#app .rs-workspace-nav ~ .respondo-workspace-content [data-workspace-page],
-#app .rs-workspace-nav ~ .respondo-workspace-content h1,
-#app .rs-workspace-nav ~ .respondo-workspace-content .rs-imported-review{scroll-margin-top:78px}
-#app .rs-feature-finder-results[data-layout="section"]{grid-template-columns:minmax(0,1fr)}
-#app .rs-feature-group{
-  min-width:0;
-  padding:16px;
-  border:1px solid #343942;
-  border-radius:15px;
-  background:#1d2027;
-}
-#app .rs-feature-group h2{margin:0 0 12px;font-size:16px}
-#app .rs-feature-group-links{display:grid;gap:6px}
-#app .rs-feature-group-links .rs-feature-finder-item{min-height:44px}
-#app .rs-feature-group-more{
-  justify-self:start;
-  min-height:40px;
-  padding:5px 10px;
-  border:0;
-  border-radius:8px;
-  background:transparent;
-  color:#c1d9ff;
-  font-size:13px;
-  font-weight:650;
-}
-@media(max-width:540px){
-  #app .rs-workspace-nav{grid-template-columns:repeat(6,minmax(0,1fr));margin-top:8px}
-  #app .rs-workspace-nav button{grid-column:span 2}
-  #app .rs-workspace-nav button:nth-child(n+4){grid-column:span 3}
-  #app .rs-workspace-nav ~ .respondo-workspace-content [data-workspace-page],
-  #app .rs-workspace-nav ~ .respondo-workspace-content h1,
-  #app .rs-workspace-nav ~ .respondo-workspace-content .rs-imported-review{scroll-margin-top:112px}
 }
