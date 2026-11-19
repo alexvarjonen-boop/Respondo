@@ -1,3 +1,4 @@
+import { groundedSupportedServiceLanguages } from './supported-service-languages.mjs';
 import { approvedProductLinkAnswer } from './product-url-match.mjs';
 import { approvedCurrentPageProduct } from './page-context-product.mjs';
 import { isPhysicalClubProduct, groundedBudgetProductAnswer } from './product-budget.mjs';
@@ -22,7 +23,9 @@ import { nativeOverview,createNativeContact,updateNativeContact,createNativeTick
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
 import { prepareQualifiedLead } from './lead-service.mjs';
+import { advanceIndustryIntake, industryIntakeKind, INDUSTRY_INTAKE_INTENT } from './industry-intake.mjs';
 import { parseQuoteQuantity, computeSafeQuote, tenantQuotePricing, validateQuotePricing } from './smart-quote-guard.mjs';
+import { ensureQuoteRuleVersionsSchema, listTenantQuoteRuleVersions, saveTenantQuoteRules } from './quote-rule-versions.mjs';
 import { createRequestTrackingToken, verifyRequestTrackingToken, renderRequestStatusPage } from './customer-portal-links.mjs';
 import {classifyRequestPriority} from './lead-priority.mjs';
 import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
@@ -57,6 +60,7 @@ import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mj
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
 import { CHAT_IMAGE_BODY_LIMIT, CHAT_IMAGE_MAX_BYTES, createChatImageTextReader } from './chat-image-text.mjs';
+import { createChatImageObjectDetector } from './chat-image-objects.mjs';
 import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-policy.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
@@ -8176,6 +8180,9 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
       intent:'Tilauksen seuranta',sourceIds:[],selected:[]};
   }
 
+  const supportedLanguages=groundedSupportedServiceLanguages(rows,cleanMessage,responseLang);
+  if(supportedLanguages) return supportedLanguages;
+
   const productFollowUp=referencedProductFollowUp(rows,cleanMessage,history,responseLang);
   if(productFollowUp) return productFollowUp;
 
@@ -9424,7 +9431,7 @@ function rejectCrossSiteAuthenticatedMutation(req,res,next) {
 
 app.use(rejectCrossSiteAuthenticatedMutation);
 
-const chatImageText = createChatImageTextReader();
+const chatImageText = createChatImageTextReader({objectDetector:createChatImageObjectDetector()});
 const chatImageTextLimiter = rateLimit({
   windowMs: 60_000,
   limit: 4,
@@ -9433,9 +9440,13 @@ const chatImageTextLimiter = rateLimit({
 });
 // The optional upload route uses a bounded plain-text envelope (a CORS-simple
 // request, like /chat). Limit requests before reading the envelope.
-app.post('/api/public/:slug/chat-image-text', chatImageTextLimiter,
+app.post(['/api/public/:slug/chat-image-text', '/api/public/:slug/chat-image-objects'], chatImageTextLimiter,
   (req, res, next) => {
-    if (!chatImageText.enabled) return res.status(404).json({status:'unavailable'});
+    const objects = /\/chat-image-objects\/?$/i.test(req.path);
+    if (objects ? !chatImageText.objectsEnabled : !chatImageText.enabled) {
+      return res.status(404).json({status:'unavailable'});
+    }
+    res.locals.imageAnalysisMode = objects ? 'objects' : 'text';
     return next();
   },
   express.text({type:'text/plain', limit:CHAT_IMAGE_BODY_LIMIT, inflate:false}),
@@ -9452,7 +9463,7 @@ app.post('/api/public/:slug/chat-image-text', chatImageTextLimiter,
     }
     setWidgetCors(req, res);
     res.setHeader('Cache-Control', 'no-store');
-    const result = await chatImageText.read(body.image, body.type, body.lang);
+    const result = await chatImageText.read(body.image, body.type, body.lang, res.locals.imageAnalysisMode);
     const code = {read:200, unreadable:422, invalid:400, busy:429, unavailable:503}[result.status];
     return res.status(code).json(result);
   },
@@ -10833,6 +10844,8 @@ app.get('/api/health', async (req, res) => {
     service: 'RESPONDO AI',
     database: Boolean(pool),
     stripe: stripeConfigured,
+    chatImageText: chatImageText.enabled,
+    chatImageObjects: chatImageText.objectsEnabled,
   };
   if (pool) {
     try {
@@ -13469,6 +13482,10 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
     const tenant = t.rows[0];
     const k = await q('SELECT * FROM knowledge WHERE tenant_id=$1 ORDER BY created_at DESC', [tenant.id]);
+    if (req.query.section === 'knowledge') {
+      res.set('Cache-Control', 'private, no-store');
+      return res.json({ tenant:{id:tenant.id}, knowledge:k.rows });
+    }
     const s = await q(
       `SELECT count(*)::int total,
               count(*) FILTER(WHERE handoff=false)::int answered,
@@ -13685,6 +13702,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
         vatPercent: Number(tenant.quote_vat_percent || 0),
         discountOverQuantity: tenant.quote_discount_over_quantity == null ? null : Number(tenant.quote_discount_over_quantity),
         discountPercent: Number(tenant.quote_discount_percent ?? 0),
+        ruleVersion: tenant.quote_rule_version || 0,
         unitLabel: tenant.quote_unit_label || 'kpl',
       } : { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' },
       integrations: planAccess.allCurrentFeatures ? {
@@ -15222,6 +15240,7 @@ app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) =>
       accent: tenant.accent,
       quickReplies,
       ...(chatImageText.enabled ? {imageTextMaxBytes:CHAT_IMAGE_MAX_BYTES} : {}),
+      ...(chatImageText.objectsEnabled ? {imageObjectMaxBytes:CHAT_IMAGE_MAX_BYTES} : {}),
     });
   } catch (e) {
     console.error('Widget token failed', e);
@@ -16004,15 +16023,32 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     const name = String(body.name || '').trim().slice(0, 120);
     const email = cleanEmail(body.email).slice(0, 220);
     const phone = String(body.phone || '').trim().slice(0, 80);
-    const message = String(body.message || '').trim().slice(0, 1200);
+    const visitorRef = String(body.visitorRef || '').trim().slice(0,160) || null;
+    const intakeId = String(body.intakeId || '').trim();
+    let message = String(body.message || '').trim().slice(0, 1200);
     if (body.consent !== true) return res.status(400).json({ error: 'Yhteystietojen lähettäminen edellyttää suostumusta.' });
     if (!email && !phone) return res.status(400).json({ error: 'Anna sähköposti tai puhelinnumero.' });
 
-    const capturedLeadId=uid();
-    await q(
-      'INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message) VALUES($1,$2,$3,$4,$5,$6,$7)',
-      [capturedLeadId,tenant.id,String(body.visitorRef || '').slice(0,160)||null,name||null,email||null,phone||null,message||null],
+    if(intakeId){
+      if(!visitorRef || !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(intakeId))
+        return res.status(422).json({error:'Kartoituksen vahvistus puuttuu.'});
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !/^\+?[\d .()\-]{6,30}$/.test(phone))
+        return res.status(422).json({error:'Anna kelvollinen sähköposti tai puhelinnumero.'});
+      const confirmed=await q(`SELECT metadata->>'intakeSummary' AS summary FROM chat_messages
+        WHERE id=$1 AND tenant_id=$2 AND visitor_ref=$3 AND source_channel='website' AND role='assistant'
+          AND metadata->'industryIntake'->>'stage'='confirmed'
+          AND created_at>NOW()-INTERVAL '45 minutes'`,[intakeId,tenant.id,visitorRef]);
+      message=String(confirmed.rows[0]?.summary || '').trim().slice(0,1200);
+      if(!message) return res.status(422).json({error:'Kartoituksen vahvistus puuttuu tai on vanhentunut.'});
+    }
+    // A confirmed intake can be submitted again after a lost response without
+    // sending a second lead or starting another automation.
+    const capturedLeadId=intakeId||uid();
+    const saved=await q(
+      'INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO NOTHING RETURNING id',
+      [capturedLeadId,tenant.id,visitorRef,name||null,email||null,phone||null,message||null],
     );
+    if(!saved.rowCount) return res.json({ok:true});
     // Consent already checked on this endpoint. Store the contact only in
     // this company's Respondo database; no external subscription is needed.
     try {
@@ -16330,7 +16366,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     let history = [];
     if (visitorRef) {
       const hr = await q(
-        `SELECT question, answer, handoff
+        `SELECT question, answer, handoff, intent
            FROM conversations
           WHERE tenant_id=$1 AND visitor_ref=$2
           ORDER BY created_at DESC
@@ -16396,10 +16432,28 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       }
     }
 
-    // Safe, deterministic service dialogue runs before generic AI answers.
-    // If company duration standards are missing, the existing Q&A flow remains.
-    const serviceReply=await serviceDialogue(pool,t.id,visitorRef,message,detectedLang,
-      minutes=>configuredServiceSlots(t,minutes));
+    const activeIntake=history.at(-1)?.intent===INDUSTRY_INTAKE_INTENT;
+    const requestedIntake=industryIntakeKind(message);
+    let knowledgeResult;
+    let industryReply;
+    if(thread && (activeIntake || requestedIntake) && !isFirstPartyRespondoTenant(t) && !isMainioMovingTenant(t)){
+      knowledgeResult=await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC',[t.id]);
+      const serviceRows=knowledgeResult.rows.filter(usableWebsiteRow)
+        .filter(row=>['services','products'].includes(knowledgeRowTopic(row)));
+      const previous=activeIntake ? await q(`SELECT metadata->'industryIntake' AS state
+        FROM chat_messages WHERE tenant_id=$1 AND thread_id=$2 AND role='assistant'
+          AND created_at>NOW()-INTERVAL '45 minutes'
+        ORDER BY created_at DESC LIMIT 1`,[t.id,thread.id]) : null;
+      industryReply=advanceIndustryIntake({
+        message,language:detectedLang,serviceRows,isProduct:parseProductKnowledgeRow,
+        previous:previous?.rows[0]?.state,topic:queryTopic(message)
+      });
+    }
+    // An enabled duration rule still takes precedence for new booking requests.
+    // Quote and purchase intake never calls a calendar or confirms a booking.
+    const serviceReply=industryReply && (activeIntake || requestedIntake!=='booking')
+      ? null : await serviceDialogue(pool,t.id,visitorRef,message,detectedLang,
+        minutes=>configuredServiceSlots(t,minutes));
     if(serviceReply){
       const answer=serviceReply.answer;
       if(thread)await appendChatMessage({tenantId:t.id,threadId:thread.id,sourceChannel:'website',
@@ -16421,7 +16475,25 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         canLeaveContact:serviceReply.status!=='needs_details',
         serviceCapacityStatus:serviceReply.status});
     }
-    const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
+    if(industryReply){
+      const {answer,state,summary}=industryReply;
+      const conversationId=uid();
+      const stored=await appendChatMessage({
+        tenantId:t.id,threadId:thread.id,sourceChannel:'website',
+        externalContactId:visitorRef,visitorRef,role:'assistant',text:answer,
+        metadata:{industryIntake:state,...(summary?{intakeSummary:summary}:{})}
+      });
+      await q(`INSERT INTO conversations
+        (id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
+        VALUES($1,$2,$3,$4,$5,1,'{}',false,$6,$7,$8,'website',$6)`,
+        [conversationId,t.id,message,answer,INDUSTRY_INTAKE_INTENT,visitorRef,
+          String(body.pageContext?.url||'').slice(0,1000)||null,
+          String(body.pageContext?.title||'').slice(0,300)||null]);
+      return res.json({answer,conversationId,handoff:false,confidence:1,intent:INDUSTRY_INTAKE_INTENT,
+        verified:false,actions:[],products:[],canLeaveContact:state.stage==='confirmed',
+        industryIntake:{status:state.stage,language:detectedLang,...(summary?{confirmationId:stored.id}:{})}});
+    }
+    const kr = knowledgeResult || await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
     try{
       kr.rows=await qualityAliasesForTenant(pool,t.id,kr.rows);
     }catch(error){
@@ -16972,6 +17044,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           serviceName:localizedServiceName,
           unitLabel:localizedUnitLabel,
           ...safeEstimate,
+          ...(tenant.quote_rule_version > 0 ? {ruleVersion:tenant.quote_rule_version} : {}),
         };
       }
     }
@@ -17398,6 +17471,21 @@ app.post('/api/app/quote-engine/preview', auth, ownerOnly, subscribed, async (re
   }
 });
 
+app.get('/api/app/quote-engine/versions', auth, ownerOnly, subscribed, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  try {
+    const access = await requirePlanCapability(req,res,'allCurrentFeatures');
+    if (!access) return;
+    return res.json(await listTenantQuoteRuleVersions(pool,{
+      tenantId:access.tenant.id,ownerId:req.user.sub,before:req.query.before
+    }));
+  } catch (error) {
+    if (error instanceof RangeError) return res.status(400).json({code:'invalid_quote_rule_version'});
+    console.error('Quote rule history failed',error);
+    return res.status(500).json({code:'quote_rule_history_unavailable'});
+  }
+});
+
 app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const access = await requirePlanCapability(req,res,'allCurrentFeatures');
@@ -17408,19 +17496,13 @@ app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) =
     const serviceName = String(body.serviceName || '').trim().slice(0,120);
     const unitLabel = String(body.unitLabel || 'kpl').trim().slice(0,40) || 'kpl';
 
-    const saved = await q(
-      `UPDATE tenants
-          SET quote_service_name=$1,quote_base_price=$2,quote_unit_price=$3,
-              quote_min_price=$4,quote_vat_percent=$5,quote_unit_label=$6,
-              quote_discount_over_quantity=CASE WHEN $9 THEN $7::numeric ELSE quote_discount_over_quantity END,
-              quote_discount_percent=CASE WHEN $9 THEN $8::numeric ELSE quote_discount_percent END,
-              updated_at=NOW()
-        WHERE id=$10 AND owner_user_id=$11`,
-      [serviceName,pricing.base,pricing.unit,pricing.minimum,pricing.vatPercent,unitLabel,
-        pricing.discountOverQuantity,pricing.discountPercent,saveDiscount,access.tenant.id,req.user.sub],
-    );
-    if (!saved.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
-    return res.json({ ok:true });
+    const saved = await saveTenantQuoteRules(pool,{
+      tenantId:access.tenant.id,ownerId:req.user.sub,serviceName,unitLabel,pricing,saveDiscount,
+      expectedVersion:body.expectedVersion
+    });
+    if (!saved) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    if (saved.conflict) return res.status(409).json({code:'quote_rule_version_conflict'});
+    return res.json({ok:true,...saved});
   } catch (e) {
     if (e instanceof RangeError) return res.status(400).json({ error:'Tarkista hintalaskurin arvot.', code:'invalid_quote_pricing' });
     console.error('Quote engine save failed',e); return res.status(400).json({ error:'Hintalaskuria ei voitu tallentaa.' });
@@ -18431,6 +18513,7 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_discount_over_quantity NUMERIC(12,3) CHECK (quote_discount_over_quantity BETWEEN 0 AND 100000)");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_discount_percent NUMERIC(6,2) NOT NULL DEFAULT 0 CHECK (quote_discount_percent BETWEEN 0 AND 100 AND (quote_discount_percent = 0 OR quote_discount_over_quantity IS NOT NULL))");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_label TEXT NOT NULL DEFAULT 'kpl'");
+  await ensureQuoteRuleVersionsSchema(pool);
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_access_token TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_refresh_token TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_token_expires_at TIMESTAMPTZ");

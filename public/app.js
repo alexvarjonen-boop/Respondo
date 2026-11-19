@@ -1,4 +1,5 @@
 import { parseQuoteRuleDraft } from './quote-rule-draft.mjs?v=1';
+import { bindQuoteRuleHistory } from './quote-rule-history.mjs?v=1';
 import { bindProductStory } from './home-product-story.js?v=2';
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
@@ -4085,6 +4086,43 @@ function dashboardWithoutCompany(me, workspaces = []) {
   </div>`;
 }
 
+function knowledgeItemsMarkup(knowledge) {
+  if (!knowledge.length) {
+    return `<div class="empty-state">
+      <b>${appText('Et ole lisännyt vielä omia vastauksia.','Du har inte lagt till egna svar ännu.','You have not added any answers yet.')}</b>
+      <p>${appText('Lisää ensimmäinen vastaus tästä.','Lägg till ditt första svar här.','Add your first answer here.')}</p>
+    </div>`;
+  }
+  const sourceLabels = new Map([
+    ['profile', appText('Yrityksen tiedot','Företagsuppgifter','Company details')],
+    ['website', appText('Verkkosivulta tuotu','Importerad från webbplatsen','Imported from website')],
+    ['owner_answer', appText('Omistajan hyväksymä','Godkänd av ägaren','Owner approved')],
+  ]);
+  return knowledge.map((item, index) => {
+    const featured = Boolean(item.quick_reply_order);
+    const featureLabel = featured
+      ? appText('✓ Etusivulla','✓ På startsidan','✓ On home screen') + ' ' + item.quick_reply_order
+      : appText('+ Lisää etusivulle','+ Lägg till på startsidan','+ Add to home screen');
+    const sourceLabel = sourceLabels.get(item.source_type) || appText('Manuaalinen','Manuell','Manual');
+    return `<div class="knowledge-item ${featured ? 'featured' : ''}" data-knowledge-id="${esc(item.id)}">
+      <span class="knum">${String(index + 1).padStart(2, '0')}</span>
+      <div>
+        <div class="knowledge-item-top">
+          <b>${esc(item.title)}</b>
+          ${item.source_type !== 'profile' ? `<div class="knowledge-item-actions">
+            <button type="button" class="knowledge-feature-btn ${featured ? 'active' : ''}" data-featured="${featured}">${featureLabel}</button>
+            <button type="button" class="knowledge-edit-btn">${appText('Muokkaa','Redigera','Edit')}</button>
+            <button type="button" class="knowledge-delete-btn">${appText('Poista','Ta bort','Delete')}</button>
+          </div>` : ''}
+        </div>
+        <small>${esc(item.category || appText('Yleinen','Allmänt','General'))} · ${sourceLabel} · ${appText('tarkistettu','kontrollerad','verified')} ${item.verified_at ? new Date(item.verified_at).toLocaleDateString(appLocale()) : '—'}</small>
+        <p>${esc(item.answer)}</p>
+      </div>
+      <span class="approved" title="${appText('Hyväksytty botille','Godkänd för boten','Approved for the bot')}">✓</span>
+    </div>`;
+  }).join('');
+}
+
 async function dashboard(options = {}) {
   const isDemo = Boolean(options.demo);
   let me;
@@ -4851,7 +4889,7 @@ async function dashboard(options = {}) {
 
       <section class="dashboard-grid dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers" id="knowledge">
         <div class="panel knowledge-panel">
-          <div class="panel-head"><div><small>${appText('TIETOPOHJA','KUNSKAPSBAS','KNOWLEDGE BASE')}</small><h2>${appText('Vastaukset, joita botti saa käyttää','Svar som botten kan använda','Answers your bot can use')}</h2></div><span>${knowledge.length} ${appText('kohdetta','poster','items')}</span></div>
+          <div class="panel-head"><div><small>${appText('TIETOPOHJA','KUNSKAPSBAS','KNOWLEDGE BASE')}</small><h2>${appText('Vastaukset, joita botti saa käyttää','Svar som botten kan använda','Answers your bot can use')}</h2></div><span id="knowledgeCount">${knowledge.length} ${appText('kohdetta','poster','items')}</span></div>
           <div class="knowledge-feature-summary">
             <div>
               <b>${appText('Botin etusivun kysymykset','Frågor på botens startsida','Bot home questions')}</b>
@@ -4860,25 +4898,13 @@ async function dashboard(options = {}) {
             <span id="knowledgeQuickCount">${knowledge.filter((x) => x.source_type !== 'profile' && x.quick_reply_order).length}/3 ${appText('valittu','valda','selected')}</span>
           </div>
           <div id="knowledgeFeatureMsg"></div>
-          ${knowledge.length ? `<div class="knowledge-toolbar">
+          <div class="knowledge-toolbar" id="knowledgeToolbar"${knowledge.length ? '' : ' hidden'}>
             <label for="knowledgeSearch">${appText('Hae tallennetuista vastauksista','Sök bland sparade svar','Search saved answers')}</label>
             <input id="knowledgeSearch" type="search" autocomplete="off" placeholder="${appText('Hae kysymyksellä, vastauksella tai kategorialla…','Sök på fråga, svar eller kategori…','Search by question, answer or category…')}">
             <small id="knowledgeVisibleCount" role="status" aria-live="polite"></small>
-          </div>` : ''}
-          <div id="knowledgeList" class="knowledge-list">
-            ${knowledge.length ? knowledge.map((x, i) => `
-              <div class="knowledge-item ${x.quick_reply_order ? 'featured' : ''}" data-knowledge-id="${esc(x.id)}">
-                <span class="knum">${String(i + 1).padStart(2, '0')}</span>
-                <div>
-                  <div class="knowledge-item-top">
-                    <b>${esc(x.title)}</b>
-                    ${x.source_type !== 'profile' ? `<div class="knowledge-item-actions"><button type="button" class="knowledge-feature-btn ${x.quick_reply_order ? 'active' : ''}" data-featured="${x.quick_reply_order ? 'true' : 'false'}">${x.quick_reply_order ? '✓ Etusivulla ' + x.quick_reply_order : '+ Lisää etusivulle'}</button><button type="button" class="knowledge-edit-btn">${appText('Muokkaa','Redigera','Edit')}</button><button type="button" class="knowledge-delete-btn">${appText('Poista','Ta bort','Delete')}</button></div>` : ''}
-                  </div>
-                  <small>${esc(x.category || appText('Yleinen','Allmänt','General'))} · ${x.source_type === 'profile' ? appText('Yrityksen tiedot','Företagsuppgifter','Company details') : x.source_type === 'owner_answer' ? appText('Omistajan hyväksymä','Godkänd av ägaren','Owner approved') : appText('Manuaalinen','Manuell','Manual')} · ${appText('tarkistettu','kontrollerad','verified')} ${x.verified_at ? new Date(x.verified_at).toLocaleDateString(appLocale()) : '—'}</small>
-                  <p>${esc(x.answer)}</p>
-                </div>
-                <span class="approved" title="Hyväksytty Truth Engineen">✓</span>
-              </div>`).join('') : `<div class="empty-state"><b>Et ole lisännyt vielä omia vastauksia.</b><p>Lisää ensimmäinen vastaus tästä.</p></div>`}
+          </div>
+          <div id="knowledgeList" class="knowledge-list" data-tenant-id="${esc(t.id)}">
+            ${knowledgeItemsMarkup(knowledge)}
           </div>
           <button type="button" id="knowledgeLoadMore" class="knowledge-load-more" hidden>${appText('Näytä lisää vastauksia','Visa fler svar','Show more answers')}</button>
         </div>
@@ -5106,6 +5132,7 @@ async function dashboard(options = {}) {
                   <div class="action-quote-summary">
                     <span>${appText('RESPONDO-TARJOUS','RESPONDO-OFFERT','RESPONDO QUOTE')}</span>
                     <b>${formatMoney(x.result.quote.total || 0)}</b>
+                    ${x.result.quote.ruleVersion ? `<small>${appText('Hintasääntö','Prisregel','Pricing rule')} · ${appText('versio','version','version')} ${esc(x.result.quote.ruleVersion)}</small>` : ''}
                     <small>${x.result?.paid ? appText('Maksettu ✓','Betald ✓','Paid ✓') : appText('Odottaa hyväksyntää / maksua','Väntar på godkännande / betalning','Awaiting approval / payment')}</small>
                   </div>
                 ` : ''}
@@ -5142,6 +5169,7 @@ async function dashboard(options = {}) {
             <span class="install-badge">${quoteEngine.basePrice || quoteEngine.unitPrice || quoteEngine.minPrice ? appText('Käytössä','Aktiv','Active') : appText('Ei asetettu','Ej konfigurerad','Not configured')}</span>
           </div>
           <form id="quoteEngineForm" class="quote-engine-form">
+            <input type="hidden" name="expectedVersion" value="${esc(quoteEngine.ruleVersion ?? 0)}">
             <details>
               <summary>${appText('Luonnostele hinnat lauseella','Skriv ett prisutkast i text','Draft prices in plain language')}</summary>
               <div class="field">
@@ -5174,6 +5202,12 @@ async function dashboard(options = {}) {
             </div>
             <div id="quoteEngineMsg" role="status"></div>
           </form>
+          <details id="quoteRuleVersions">
+            <summary>${appText('Hintasääntöjen versiohistoria','Versionshistorik för prisregler','Pricing rule history')}</summary>
+            <p role="status"></p>
+            <ul></ul>
+            <button class="btn" type="button" hidden>${appText('Näytä vanhemmat versiot','Visa äldre versioner','Show older versions')}</button>
+          </details>
         </article>
 
         <article class="panel booking-calendar-panel" id="booking-calendar">
@@ -5402,7 +5436,7 @@ async function dashboard(options = {}) {
           </select>
           <small style="line-height:1.5;opacity:.76">${appText('Valinta päivittää alla olevan asennuskoodin. Smart Assist toimii myös jo asennetuissa boteissa automaattisesti.','Valet uppdaterar installationskoden nedan. Smart Assist fungerar också automatiskt i befintliga installationer.','Your choice updates the embed code below. Existing installations also receive Smart Assist automatically.')}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1-quote-image-text-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1-quote-image-text-v1-objects-intake-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Koodi lisätty','✓ Koden tillagd','✓ Code added') : appText('Olen lisännyt koodin','Jag har lagt till koden','I added the code')}</button>
         <button type="button" class="btn" id="verifyInstallation" ${t.website?'':'disabled'}>${appText('Tarkista asennus oikealta sivulta','Kontrollera installationen på webbplatsen','Verify installation on the live website')}</button>
         <p id="installationProofResult" class="field-hint" role="status" aria-live="polite">${appText('Koodin lisääminen ei vielä todista, että se näkyy julkaistulla sivulla.','Att lägga till koden bevisar inte att den finns på den publicerade sidan.','Adding the code does not prove it appears on the published website.')}</p>
@@ -8021,8 +8055,10 @@ async function route() {
                 ? {jobId:result.jobId,indexes:selectedIndexes}
                 : {items:selected};
               const saved = await api('/api/app/import-website/approve',{method:'POST',body:JSON.stringify(approvalPayload)});
+              if (!approveButton.isConnected) return;
               approveButton.textContent = appText('Lisätty bottiin ✓','Tillagt i botten ✓','Added to bot ✓');
               $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText(String(saved.added || 0) + ' verkkosivulta löydettyä tietoa lisättiin botin tietopohjaan.','Valda webbplatsuppgifter lades till i bottens kunskapsbas.','Selected website information was added to the bot knowledge base.') + '</div>';
+              void refreshApprovedKnowledge(approveButton, review);
               // Retest automatically after approval, comparing the same FI/SV/EN
               // questions to the earlier import snapshot. Never block approval.
               if(result?.jobId){
@@ -8078,6 +8114,7 @@ async function route() {
 
 
             } catch(err) {
+              if (!approveButton.isConnected) return;
               approveButton.disabled = false;
               approveButton.textContent = previous;
               $('#businessProfileMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -8263,7 +8300,7 @@ async function route() {
     // Keep large imported knowledge bases usable on mobile without a
     // multi-thousand-row initial scroll. Items stay mounted so existing
     // edit, delete and quick-reply listeners continue working.
-    const knowledgeItems = Array.from(document.querySelectorAll('#knowledgeList > .knowledge-item'));
+    const knowledgeList = $('#knowledgeList');
     const knowledgeSearch = $('#knowledgeSearch');
     const knowledgeLoadMore = $('#knowledgeLoadMore');
     const knowledgeVisibleCount = $('#knowledgeVisibleCount');
@@ -8273,7 +8310,7 @@ async function route() {
       const term = String(knowledgeSearch?.value || '').trim().toLocaleLowerCase();
       let matches = 0;
       let showing = 0;
-      for (const item of knowledgeItems) {
+      for (const item of knowledgeList?.querySelectorAll(':scope > .knowledge-item') || []) {
         const text = term ? String(item.textContent || '').toLocaleLowerCase() : '';
         const match = !term || text.includes(term);
         if (match) matches++;
@@ -8297,101 +8334,129 @@ async function route() {
     });
     updateKnowledgeVisibility();
 
-    document.querySelectorAll('.knowledge-edit-btn').forEach((button) => {
-      button.addEventListener('click', () => {
-        const item = button.closest('.knowledge-item');
-        const id = item?.dataset.knowledgeId;
-        const title = item?.querySelector('.knowledge-item-top > b')?.textContent?.trim() || '';
-        const answer = item?.querySelector('p')?.textContent?.trim() || '';
-        if (!id) return;
-        const old = item.querySelector('.knowledge-inline-editor');
-        if (old) { old.remove(); return; }
-        const editor = document.createElement('form');
-        editor.className = 'knowledge-inline-editor';
-        editor.innerHTML = '<label>' + appText('Otsikko','Rubrik','Title') + '<input name="title" required></label>' +
-          '<label>' + appText('Vastaus','Svar','Answer') + '<textarea name="answer" required></textarea></label>' +
-          '<div class="knowledge-editor-actions"><button class="btn knowledge-save-edit" type="submit">' + appText('Tallenna muutokset','Spara ändringar','Save changes') + '</button>' +
-          '<button class="btn ghost knowledge-cancel-edit" type="button">' + appText('Peruuta','Avbryt','Cancel') + '</button></div><div class="knowledge-edit-msg"></div>';
-        editor.elements.title.value = title;
-        editor.elements.answer.value = answer;
-        item.querySelector('div:nth-child(2)')?.appendChild(editor);
-        editor.querySelector('.knowledge-cancel-edit')?.addEventListener('click', () => editor.remove());
-        editor.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const save = editor.querySelector('.knowledge-save-edit');
-          save.disabled = true;
-          save.textContent = appText('Tallennetaan…','Sparar…','Saving…');
-          try {
-            await api('/api/app/knowledge/' + encodeURIComponent(id), {
-              method:'PUT',
-              body:JSON.stringify({ title:editor.elements.title.value, answer:editor.elements.answer.value }),
-            });
-            location.reload();
-          } catch (err) {
-            save.disabled = false;
-            save.textContent = appText('Tallenna muutokset','Spara ändringar','Save changes');
-            editor.querySelector('.knowledge-edit-msg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-          }
-        });
-      });
-    });
+    async function refreshApprovedKnowledge(approveButton, review) {
+      const stillCurrent = () => approveButton.isConnected && knowledgeList?.isConnected;
+      try {
+        const data = await api('/api/app/dashboard?section=knowledge');
+        if (!stillCurrent()) return;
+        if (data.tenant?.id !== knowledgeList.dataset.tenantId || !Array.isArray(data.knowledge)) throw new Error('Unexpected knowledge response');
+        const panel = knowledgeList.closest('.knowledge-panel');
+        const items = data.knowledge;
+        const selected = items.filter(item => item.source_type !== 'profile' && item.quick_reply_order).length;
+        panel.querySelector('#knowledgeCount').textContent = items.length + ' ' + appText('kohdetta','poster','items');
+        panel.querySelector('#knowledgeQuickCount').textContent = selected + '/3 ' + appText('valittu','valda','selected');
+        panel.querySelector('#knowledgeToolbar').hidden = !items.length;
+        knowledgeList.innerHTML = knowledgeItemsMarkup(items);
+        updateKnowledgeVisibility();
+      } catch {
+        if (!stillCurrent()) return;
+        const notice = document.createElement('p');
+        notice.className = 'notice';
+        notice.setAttribute('role','status');
+        notice.textContent = appText(
+          'Tiedot tallennettiin. Päivitä sivu nähdäksesi päivitetyn tietopohjan.',
+          'Uppgifterna sparades. Ladda om sidan för att se den uppdaterade kunskapsbasen.',
+          'The information was saved. Reload the page to see your updated knowledge base.'
+        );
+        review.querySelector('.website-import-review-head')?.after(notice);
+      }
+    }
 
-    document.querySelectorAll('.knowledge-delete-btn').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const item = button.closest('.knowledge-item');
-        const id = item?.dataset.knowledgeId;
-        if (!id) return;
-        if (!confirm(appText('Poistetaanko tämä vastaus?','Ta bort det här svaret?','Delete this answer?'))) return;
-        button.disabled = true;
+    knowledgeList?.addEventListener('click', (event) => {
+      const button = event.target.closest?.('.knowledge-edit-btn');
+      if (!button) return;
+      const item = button.closest('.knowledge-item');
+      const id = item?.dataset.knowledgeId;
+      const title = item?.querySelector('.knowledge-item-top > b')?.textContent?.trim() || '';
+      const answer = item?.querySelector('p')?.textContent?.trim() || '';
+      if (!id) return;
+      const old = item.querySelector('.knowledge-inline-editor');
+      if (old) { old.remove(); return; }
+      const editor = document.createElement('form');
+      editor.className = 'knowledge-inline-editor';
+      editor.innerHTML = '<label>' + appText('Otsikko','Rubrik','Title') + '<input name="title" required></label>' +
+        '<label>' + appText('Vastaus','Svar','Answer') + '<textarea name="answer" required></textarea></label>' +
+        '<div class="knowledge-editor-actions"><button class="btn knowledge-save-edit" type="submit">' + appText('Tallenna muutokset','Spara ändringar','Save changes') + '</button>' +
+        '<button class="btn ghost knowledge-cancel-edit" type="button">' + appText('Peruuta','Avbryt','Cancel') + '</button></div><div class="knowledge-edit-msg"></div>';
+      editor.elements.title.value = title;
+      editor.elements.answer.value = answer;
+      item.querySelector('div:nth-child(2)')?.appendChild(editor);
+      editor.querySelector('.knowledge-cancel-edit')?.addEventListener('click', () => editor.remove());
+      editor.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const save = editor.querySelector('.knowledge-save-edit');
+        save.disabled = true;
+        save.textContent = appText('Tallennetaan…','Sparar…','Saving…');
         try {
-          await api('/api/app/knowledge/' + encodeURIComponent(id), { method:'DELETE' });
+          await api('/api/app/knowledge/' + encodeURIComponent(id), {
+            method:'PUT',
+            body:JSON.stringify({ title:editor.elements.title.value, answer:editor.elements.answer.value }),
+          });
           location.reload();
         } catch (err) {
-          button.disabled = false;
-          $('#knowledgeFeatureMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+          save.disabled = false;
+          save.textContent = appText('Tallenna muutokset','Spara ändringar','Save changes');
+          editor.querySelector('.knowledge-edit-msg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
         }
       });
     });
 
-    document.querySelectorAll('.knowledge-feature-btn').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const item = button.closest('.knowledge-item');
-        const knowledgeId = item?.dataset.knowledgeId;
-        if (!knowledgeId) return;
+    knowledgeList?.addEventListener('click', async (event) => {
+      const button = event.target.closest?.('.knowledge-delete-btn');
+      if (!button) return;
+      const item = button.closest('.knowledge-item');
+      const id = item?.dataset.knowledgeId;
+      if (!id) return;
+      if (!confirm(appText('Poistetaanko tämä vastaus?','Ta bort det här svaret?','Delete this answer?'))) return;
+      button.disabled = true;
+      try {
+        await api('/api/app/knowledge/' + encodeURIComponent(id), { method:'DELETE' });
+        location.reload();
+      } catch (err) {
+        button.disabled = false;
+        $('#knowledgeFeatureMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+      }
+    });
 
-        const nextFeatured = button.dataset.featured !== 'true';
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = nextFeatured ? appText('Lisätään…','Lägger till…','Adding…') : appText('Poistetaan…','Tar bort…','Removing…');
-        $('#knowledgeFeatureMsg').innerHTML = '';
+    knowledgeList?.addEventListener('click', async (event) => {
+      const button = event.target.closest?.('.knowledge-feature-btn');
+      if (!button) return;
+      const item = button.closest('.knowledge-item');
+      const knowledgeId = item?.dataset.knowledgeId;
+      if (!knowledgeId) return;
 
-        try {
-          const result = await api('/api/app/knowledge/' + encodeURIComponent(knowledgeId) + '/quick-reply', {
-            method:'POST',
-            body:JSON.stringify({ featured:nextFeatured }),
-          });
-          button.dataset.featured = result.featured ? 'true' : 'false';
-          button.classList.toggle('active', Boolean(result.featured));
-          item?.classList.toggle('featured', Boolean(result.featured));
-          button.textContent = result.featured
-            ? appText('✓ Etusivulla','✓ På startsidan','✓ On home screen') + ' ' + result.quickReplyOrder
-            : appText('+ Lisää etusivulle','+ Lägg till på startsidan','+ Add to home screen');
-          const counter = $('#knowledgeQuickCount');
-          if (counter) counter.textContent = Number(result.selected || 0) + '/3 ' + appText('valittu','valda','selected');
-          $('#knowledgeFeatureMsg').innerHTML = '<div class="notice success">' +
-            (result.featured ? appText('Kysymys näkyy nyt botin etusivulla.','Frågan visas nu på botens startsida.','The question now appears on the bot home screen.') : appText('Kysymys poistettiin botin etusivulta.','Frågan togs bort från botens startsida.','The question was removed from the bot home screen.')) +
-            '</div>';
-          setTimeout(() => {
-            const msg = $('#knowledgeFeatureMsg');
-            if (msg) msg.innerHTML = '';
-          }, 1800);
-        } catch (err) {
-          button.textContent = original;
-          $('#knowledgeFeatureMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        } finally {
-          button.disabled = false;
-        }
-      });
+      const nextFeatured = button.dataset.featured !== 'true';
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = nextFeatured ? appText('Lisätään…','Lägger till…','Adding…') : appText('Poistetaan…','Tar bort…','Removing…');
+      $('#knowledgeFeatureMsg').innerHTML = '';
+
+      try {
+        const result = await api('/api/app/knowledge/' + encodeURIComponent(knowledgeId) + '/quick-reply', {
+          method:'POST',
+          body:JSON.stringify({ featured:nextFeatured }),
+        });
+        button.dataset.featured = result.featured ? 'true' : 'false';
+        button.classList.toggle('active', Boolean(result.featured));
+        item?.classList.toggle('featured', Boolean(result.featured));
+        button.textContent = result.featured
+          ? appText('✓ Etusivulla','✓ På startsidan','✓ On home screen') + ' ' + result.quickReplyOrder
+          : appText('+ Lisää etusivulle','+ Lägg till på startsidan','+ Add to home screen');
+        const counter = $('#knowledgeQuickCount');
+        if (counter) counter.textContent = Number(result.selected || 0) + '/3 ' + appText('valittu','valda','selected');
+        $('#knowledgeFeatureMsg').innerHTML = '<div class="notice success">' +
+          (result.featured ? appText('Kysymys näkyy nyt botin etusivulla.','Frågan visas nu på botens startsida.','The question now appears on the bot home screen.') : appText('Kysymys poistettiin botin etusivulta.','Frågan togs bort från botens startsida.','The question was removed from the bot home screen.')) +
+          '</div>';
+        setTimeout(() => {
+          const msg = $('#knowledgeFeatureMsg');
+          if (msg) msg.innerHTML = '';
+        }, 1800);
+      } catch (err) {
+        button.textContent = original;
+        $('#knowledgeFeatureMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+      } finally {
+        button.disabled = false;
+      }
     });
 
     $('#knowledgeForm')?.addEventListener('submit', async (e) => {
@@ -8444,6 +8509,17 @@ async function route() {
 
     const quoteEngineForm = $('#quoteEngineForm');
     const quoteDraftEstimate = $('#quoteDraftEstimate');
+    const refreshQuoteRuleHistory = bindQuoteRuleHistory({
+      details:$('#quoteRuleVersions'),form:quoteEngineForm,t:appText,api,locale:appLocale(),
+      onUse:version => {
+        quoteDraftEstimate.textContent = '';
+        $('#quoteEngineMsg').textContent = appText(
+          version+' lisättiin kenttiin. Tarkista hinnat ja tallenna.',
+          version+' fylldes i fälten. Kontrollera priserna och spara.',
+          version+' filled the fields. Review the prices and save.'
+        );
+      }
+    });
     quoteEngineForm?.addEventListener('input', () => { quoteDraftEstimate.textContent = ''; });
     $('#previewQuoteDraft')?.addEventListener('click', async (event) => {
       const form = quoteEngineForm;
@@ -8492,13 +8568,15 @@ async function route() {
 
     quoteEngineForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const form = new FormData(e.currentTarget);
-      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const engineForm = e.currentTarget;
+      const form = new FormData(engineForm);
+      const button = engineForm.querySelector('button[type="submit"]');
+      const status = engineForm.querySelector('#quoteEngineMsg');
       const original = button.innerHTML;
       button.disabled = true;
       button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
       try {
-        await api('/api/app/quote-engine', {
+        const {ruleVersion,changed} = await api('/api/app/quote-engine', {
           method:'POST',
           body:JSON.stringify({
             serviceName:form.get('serviceName'),
@@ -8509,13 +8587,24 @@ async function route() {
             unitLabel:form.get('unitLabel'),
             discountOverQuantity:form.get('discountOverQuantity'),
             discountPercent:form.get('discountPercent'),
+            expectedVersion:Number(form.get('expectedVersion')),
           }),
         });
-        $('#quoteEngineMsg').innerHTML = '<div class="notice success">' + appText('Quote Engine tallennettu ✓','Quote Engine sparad ✓','Quote Engine saved ✓') + '</div>';
+        engineForm.elements.expectedVersion.value = ruleVersion;
+        if (changed) refreshQuoteRuleHistory?.();
+        const message = changed
+          ? appText('Versio '+ruleVersion+' tallennettu.','Version '+ruleVersion+' sparades.','Version '+ruleVersion+' saved.')
+          : appText('Hintasäännöt ovat ajan tasalla.','Prisreglerna är aktuella.','Pricing rules are up to date.');
+        status.innerHTML = '<div class="notice success">' + esc(message) + '</div>';
         button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
         setTimeout(() => (button.innerHTML = original), 1400);
       } catch (err) {
-        $('#quoteEngineMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        const message = err.status === 409 ? appText(
+          'Hintasäännöt muuttuivat toisessa istunnossa. Lataa hallintapaneeli uudelleen ennen tallentamista.',
+          'Prisreglerna ändrades i en annan session. Ladda om kontrollpanelen innan du sparar.',
+          'Pricing rules changed in another session. Reload the dashboard before saving.'
+        ) : err.message;
+        status.innerHTML = '<div class="notice error">' + esc(message) + '</div>';
         button.innerHTML = original;
       } finally {
         button.disabled = false;
@@ -9218,7 +9307,7 @@ async function route() {
           if(!html.includes('data-sites-key=')){
             html=html.replace('></script>',' data-sites-key="'+key+'"></script>');
           }
-          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261109-smart-experience-v1-quote-image-text-v1');
+          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261109-smart-experience-v1-quote-image-text-v1-objects-intake-v1');
           code.textContent=html;
         }
         if(message)message.innerHTML='<div class="notice success">'+appText(

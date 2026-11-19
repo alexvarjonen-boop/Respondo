@@ -138,10 +138,11 @@ test('quote preview is explicitly nonbinding and uses existing owner-approved ru
     assert.match(sql,/quote_discount_over_quantity,quote_discount_percent/);
     return {rows:[{quote_base_price:'25.00',quote_unit_price:'15.00',quote_min_price:'0.00',
       quote_vat_percent:'0.00',quote_service_name:'Window cleaning',
-      quote_discount_over_quantity:'20.000',quote_discount_percent:'10.00'}]};
+      quote_discount_over_quantity:'20.000',quote_discount_percent:'10.00',quote_rule_version:3}]};
   }};
   const quote=await previewGrowthQuote(db,tenant,25);
   assert.equal(quote.totalCents,36250);
+  assert.equal(quote.ruleVersion,3);
   assert.equal(quote.currency,'EUR');
   assert.equal(quote.status,'estimate_only');
   assert.equal(quote.binding,false);

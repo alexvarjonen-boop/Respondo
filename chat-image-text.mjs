@@ -118,12 +118,13 @@ function recognizeInWorker(bytes, langPath, timeoutMs, languages) {
 export function createChatImageTextReader({
   langPath = process.env.RESPONDO_CHAT_IMAGE_OCR_DIR,
   recognize = recognizeInWorker,
+  objectDetector = null,
 } = {}) {
   const enabled = availableLanguages(langPath);
   let running = false;
 
-  async function read(image, type, language) {
-    if (!enabled) return {status: 'unavailable'};
+  async function read(image, type, language, mode = 'text') {
+    if (mode === 'objects' ? !objectDetector?.enabled : !enabled) return {status: 'unavailable'};
     if (running) return {status: 'busy'};
 
     const bytes = safeImageBytes(image, type);
@@ -131,6 +132,14 @@ export function createChatImageTextReader({
 
     running = true;
     try {
+      if (mode === 'objects') {
+        const estimated = await objectDetector.detect(bytes, language, 12_000);
+        const objects = estimated
+          .filter(item => typeof item?.label === 'string' && item.label.trim() &&
+            item.label.length <= 70 && Number.isSafeInteger(item.count) && item.count > 0 && item.count <= 250)
+          .slice(0, 8);
+        return objects.length ? {status: 'read', objects} : {status: 'unreadable'};
+      }
       const preferred = OCR_LANGUAGE.get(language);
       const languages = preferred ? [preferred, ...LANGUAGES.filter(lang => lang !== preferred)] : LANGUAGES;
       const result = await recognize(bytes, langPath, 12_000, languages);
@@ -148,5 +157,5 @@ export function createChatImageTextReader({
     }
   }
 
-  return {enabled, read};
+  return {enabled, get objectsEnabled() { return objectDetector?.enabled === true; }, read};
 }

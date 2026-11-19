@@ -1,6 +1,6 @@
 [build]
 builder = "RAILPACK"
-buildCommand = "npm run check && npm test"
+buildCommand = "bash scripts/provision-chat-image-objects.sh && npm run check && npm test"
 
 [deploy]
 startCommand = "npm start"

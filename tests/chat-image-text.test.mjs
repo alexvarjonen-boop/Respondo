@@ -80,3 +80,37 @@ test('widget OCR limits concurrent work and recovers after unreadable or failed 
   assert.deepEqual(await reader.read(image, 'image/png'), {status:'unavailable'});
   assert.deepEqual(await reader.read(image, 'image/png'), {status:'read', text:'Palveluhinta', truncated:false});
 });
+
+test('object estimates can run without OCR and expose only model-supported counts', async t => {
+  const objectDetector = {
+    enabled: true,
+    async detect(bytes, language, timeoutMs) {
+      assert.deepEqual(bytes, png);
+      assert.equal(language, 'sv');
+      assert.equal(timeoutMs, 12_000);
+      return [{label:'buss', count:1}, {label:'person', count:2}, {label:'ignored',count:0}];
+    },
+  };
+  const reader = createChatImageTextReader({langPath: languageDirectory(t, []), objectDetector});
+  assert.equal(reader.enabled, false);
+  assert.equal(reader.objectsEnabled, true);
+  assert.deepEqual(await reader.read(image, 'image/png', 'sv', 'objects'), {
+    status:'read',
+    objects:[{label:'buss',count:1},{label:'person',count:2}],
+  });
+});
+
+test('text and object estimation share one bounded decoding slot', async t => {
+  let finish;
+  const objectDetector = {enabled:true, async detect() { return []; }};
+  const reader = createChatImageTextReader({
+    langPath:languageDirectory(t),
+    objectDetector,
+    async recognize() { return new Promise(resolve => { finish = resolve; }); },
+  });
+  const text = reader.read(image, 'image/png');
+  assert.deepEqual(await reader.read(image, 'image/png', 'fi', 'objects'), {status:'busy'});
+  finish({confidence:90, text:'Example'});
+  assert.equal((await text).status, 'read');
+  assert.deepEqual(await reader.read(image, 'image/png', 'fi', 'objects'), {status:'unreadable'});
+});

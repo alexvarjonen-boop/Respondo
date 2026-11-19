@@ -54,6 +54,17 @@ The application must keep server-side subscription entitlement checks. Frontend-
 
 Set `RESPONDO_CHAT_IMAGE_OCR_DIR` to an absolute directory on the app server with readable, uncompressed `fin.traineddata`, `swe.traineddata` and `eng.traineddata` files. The upload control appears only when the app starts with all three files. The server reads text from PNG and JPEG images locally. The customer can review and edit the text before sending it as a chat message.
 
+### Optional image analysis in the website chat
+
+Image analysis is off unless the deployment supplies the matching local resources:
+
+- Set `RESPONDO_CHAT_IMAGE_OCR_DIR` to an absolute directory containing readable `fin.traineddata`, `swe.traineddata` and `eng.traineddata` files for Tesseract. The OCR worker loads these files locally.
+- For object estimates, set `RESPONDO_CHAT_IMAGE_OBJECT_PYTHON` to an absolute Python executable with NumPy and headless OpenCV, and `RESPONDO_CHAT_IMAGE_OBJECT_MODEL_DIR` to an absolute directory with a trusted Darknet YOLO `detector.cfg`, `detector.weights`, and the three `detector.fi.names`, `detector.sv.names` and `detector.en.names` files. Each names file lists one class per line in model class order. The server exposes object estimation after a startup inference validates the model and class count. Choose a model trained on the objects offered to your customers. For example, a standard COCO model can estimate buses and people.
+
+The widget accepts JPEG and PNG images up to 2 MB and 8 million pixels, with each side capped at 4096 pixels. The server processes at most one customer image at a time per process. Inference stops after 12 seconds. The image stays in memory during analysis. The widget adds the read text or estimated visible counts to an editable draft, and the customer decides whether to send it as a regular chat message.
+
+Railway includes the three text language packs and installs OpenCV for the optional object detector. The build provisions the [official YOLOv4-tiny weights](https://github.com/AlexeyAB/darknet/releases/tag/yolov4) and verifies the pinned SHA-256 before using them. The bundled COCO labels cover common visible classes. Windows and precise measurements are outside that model’s label set.
+
 ## Database security
 
 The public Supabase schema uses Row Level Security as a deny-by-default boundary for Data API access. The application itself connects to PostgreSQL server-side.

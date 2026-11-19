@@ -262,7 +262,7 @@
       .composer button:focus-visible{outline:3px solid var(--bot-accent,#111113);outline-offset:2px}
       .voice-note{padding:0 14px 8px;background:#fff;color:#5d6470;font-size:11px;line-height:1.35}
       .voice-note[hidden]{display:none}
-      .image-text-tools{display:flex;align-items:center;gap:8px;padding:0 12px 8px;background:#fff;color:#333;font-size:12px}
+      .image-text-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 12px 8px;background:#fff;color:#333;font-size:12px}
       .image-text-tools[hidden]{display:none}
       .image-text-tools button{flex:none;max-width:52%;min-height:32px;padding:5px 8px;border:1px solid #d9d9dc;border-radius:8px;background:#f2f3f5;color:#27272a;font:inherit;text-align:left;cursor:pointer}
       .image-text-tools button:disabled{cursor:wait}
@@ -424,8 +424,9 @@
         <div class="voice-note" id="voiceNote" role="status" aria-live="polite" hidden></div>
         <div class="image-text-tools" id="imageTextTools" hidden>
           <input type="file" id="imageTextFile" accept="image/png,image/jpeg" hidden>
-          <button type="button" id="imageTextButton" aria-describedby="imageTextStatus">${experienceText('Lue teksti kuvasta','Läs text från bild','Read text from an image')}</button>
-          <span id="imageTextStatus" role="status">${experienceText('Teksti lisätään luonnokseen.','Texten läggs till i utkastet.','Text is added to your draft.')}</span>
+          <button type="button" id="imageTextButton" aria-describedby="imageTextStatus" hidden>${experienceText('Lue teksti kuvasta','Läs text från bild','Read image text')}</button>
+          <button type="button" id="imageObjectButton" aria-describedby="imageTextStatus" hidden>${experienceText('Arvioi kuvan kohteet','Uppskatta objekt i bilden','Estimate objects in an image')}</button>
+          <span id="imageTextStatus" role="status">${experienceText('Tulos lisätään luonnokseen.','Resultatet läggs till i utkastet.','The result is added to your draft.')}</span>
         </div>
         <div class="powered">RESPONDO AI</div>
       </section>
@@ -465,8 +466,11 @@
   const imageTextTools = $('#imageTextTools');
   const imageTextFile = $('#imageTextFile');
   const imageTextButton = $('#imageTextButton');
+  const imageObjectButton = $('#imageObjectButton');
   const imageTextStatus = $('#imageTextStatus');
   let imageTextMaxBytes = 0;
+  let imageObjectMaxBytes = 0;
+  let imageAnalysisMode = 'text';
   const voiceButton = $('#voiceBtn');
   const voiceLanguageSelect = $('#voiceLang');
   const voiceNote = $('#voiceNote');
@@ -1333,11 +1337,32 @@
     chat.scrollTop = chat.scrollHeight;
   }
 
-  function showLeadForm(question) {
-    if (chat.querySelector('.leadbox')) return;
+  function showLeadForm(question, intake = null) {
+    const intakeId = typeof intake?.confirmationId === 'string' ? intake.confirmationId : '';
+    const existing = chat.querySelector('.leadbox');
+    if (existing && (!intakeId || existing.dataset.intakeId === intakeId)) return;
+    if (existing) existing.remove();
+    const contactLang = ['fi','sv','en'].includes(intake?.language) ? intake.language : widgetLang;
+    const contactText = (fi,sv,en) => contactLang === 'sv' ? sv : contactLang === 'en' ? en : fi;
     const box = document.createElement('form');
     box.className = 'leadbox';
-    box.innerHTML = '<b>' + t('Haluatko, että joku yrityksestä ottaa sinuun yhteyttä?', 'Would you like the company to contact you?') + '</b><small>' + t('Jätä nimesi ja puhelinnumerosi tai sähköpostisi. Tiedot menevät vain tälle yritykselle yhteydenottoa varten.', 'Leave your name and phone number or email. The details are shared only with this company for contacting you.') + '</small><label style="display:flex;align-items:flex-start;gap:8px;margin:10px 0;font-size:12px"><input type="checkbox" name="consent" required style="width:auto;margin-top:2px">' + t('Hyväksyn yhteystietojeni lähettämisen yritykselle yhteydenottoa varten.', 'I agree to share my contact details with the company for this request.') + '</label><input name="name" maxlength="120" placeholder="' + t('Nimi, jos haluat', 'Name (optional)') + '"><input name="contact" maxlength="220" required placeholder="' + t('Puhelinnumero tai sähköposti', 'Phone or email') + '"><button type="submit">' + t('Pyydä yhteydenottoa', 'Send contact details') + '</button><div class="lead-ok"></div>';
+    box.dataset.intakeId = intakeId;
+    const sendCaption = contactText('Pyydä yhteydenottoa','Be om kontakt','Send contact details');
+    const consentCaption = contactText(
+      'Hyväksyn, että yritys saa yhteystietoni tätä pyyntöä varten.',
+      'Jag godkänner att företaget får mina kontaktuppgifter för den här förfrågan.',
+      'I agree to share my contact details with the company for this request.'
+    );
+    box.innerHTML = '<b>' + contactText('Haluatko yrityksen ottavan sinuun yhteyttä?','Vill du att företaget kontaktar dig?','Would you like the company to contact you?') +
+      '</b><small>' + contactText('Anna puhelinnumero tai sähköposti.','Ange telefonnummer eller e-postadress.','Enter your phone number or email.') +
+      '</small><label style="display:flex;align-items:flex-start;gap:8px;margin:10px 0;font-size:12px"><input type="checkbox" name="consent" required style="width:auto;margin-top:2px">' +
+      consentCaption + '</label><input name="name" maxlength="120" aria-label="' +
+      contactText('Nimi, jos haluat','Namn (valfritt)','Name (optional)') + '" placeholder="' +
+      contactText('Nimi, jos haluat','Namn (valfritt)','Name (optional)') +
+      '"><input name="contact" maxlength="220" required aria-label="' +
+      contactText('Puhelinnumero tai sähköposti','Telefonnummer eller e-post','Phone or email') + '" placeholder="' +
+      contactText('Puhelinnumero tai sähköposti','Telefonnummer eller e-post','Phone or email') +
+      '"><button type="submit">' + sendCaption + '</button><div class="lead-ok" aria-live="polite"></div>';
     box.addEventListener('submit', async (event) => {
       event.preventDefault();
       const contact = String(box.elements.contact.value || '').trim();
@@ -1345,7 +1370,7 @@
       if (!contact || !box.elements.consent.checked) return;
       const button = box.querySelector('button');
       button.disabled = true;
-      button.textContent = t('Lähetetään…', 'Sending…');
+      button.textContent = contactText('Lähetetään…','Skickar…','Sending…');
       const email = contact.includes('@') ? contact : '';
       const phone = email ? '' : contact;
       try {
@@ -1354,17 +1379,18 @@
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify({ name: person, email, phone, message: question, consent: box.elements.consent.checked, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
+          body: JSON.stringify({ name: person, email, phone, message: question, consent: box.elements.consent.checked,
+            widgetToken: token, visitorRef, lang: contactLang, pageContext, ...(intakeId ? {intakeId} : {}) }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Lähetys epäonnistui');
-        box.querySelector('.lead-ok').textContent = t('Kiitos — yhteystiedot on lähetetty ✓', 'Thank you — your contact details were sent ✓');
+        box.querySelector('.lead-ok').textContent = contactText('Kiitos, yhteystiedot on lähetetty.','Tack, kontaktuppgifterna har skickats.','Thank you. Your contact details were sent.');
         box.querySelectorAll('input,button').forEach((el) => el.disabled = true);
-        button.textContent = t('Lähetetty ✓', 'Sent ✓');
+        button.textContent = contactText('Lähetetty','Skickat','Sent');
       } catch {
-        box.querySelector('.lead-ok').textContent = t('Lähetys ei onnistunut. Yritä uudelleen.', 'Sending failed. Please try again.');
+        box.querySelector('.lead-ok').textContent = contactText('Lähetys ei onnistunut. Yritä uudelleen.','Det gick inte att skicka. Försök igen.','Sending failed. Please try again.');
         button.disabled = false;
-        button.textContent = t('Pyydä yhteydenottoa', 'Send contact details');
+        button.textContent = sendCaption;
       }
     });
     chat.appendChild(box);
@@ -1572,8 +1598,13 @@
       token = data.token;
       if (Number.isSafeInteger(data.imageTextMaxBytes) && data.imageTextMaxBytes > 0) {
         imageTextMaxBytes = data.imageTextMaxBytes;
-        imageTextTools.hidden = false;
+        imageTextButton.hidden = false;
       }
+      if (Number.isSafeInteger(data.imageObjectMaxBytes) && data.imageObjectMaxBytes > 0) {
+        imageObjectMaxBytes = data.imageObjectMaxBytes;
+        imageObjectButton.hidden = false;
+      }
+      imageTextTools.hidden = !imageTextMaxBytes && !imageObjectMaxBytes;
       ready = true;
       humanHelp.hidden=false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
@@ -1609,22 +1640,34 @@
   // scroll the host website when the widget opens or a reply arrives.
   const restoreKeyboardFocus = () => !window.matchMedia?.('(pointer:coarse), (hover:none)')?.matches;
   imageTextButton.addEventListener('click', () => {
-    if (ready && imageTextMaxBytes) imageTextFile.click();
+    if (!ready || !imageTextMaxBytes) return;
+    imageAnalysisMode = 'text';
+    imageTextFile.click();
+  });
+  imageObjectButton.addEventListener('click', () => {
+    if (!ready || !imageObjectMaxBytes) return;
+    imageAnalysisMode = 'objects';
+    imageTextFile.click();
   });
   imageTextFile.addEventListener('change', async () => {
     const [file] = imageTextFile.files;
     imageTextFile.value = '';
-    if (!file || !ready || !imageTextMaxBytes || imageTextButton.disabled) return;
-    if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > imageTextMaxBytes) {
+    const estimateObjects = imageAnalysisMode === 'objects';
+    const maxBytes = estimateObjects ? imageObjectMaxBytes : imageTextMaxBytes;
+    if (!file || !ready || !maxBytes || imageTextButton.disabled) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > maxBytes) {
       imageTextStatus.textContent = experienceText(
-        'Valitse JPEG- tai PNG-kuva (enintään ' + imageTextMaxBytes / 1e6 + ' Mt).',
-        'Välj en JPEG- eller PNG-bild (högst ' + imageTextMaxBytes / 1e6 + ' MB).',
-        'Choose a JPEG or PNG image (up to ' + imageTextMaxBytes / 1e6 + ' MB).'
+        'Valitse JPEG- tai PNG-kuva (enintään ' + maxBytes / 1e6 + ' Mt).',
+        'Välj en JPEG- eller PNG-bild (högst ' + maxBytes / 1e6 + ' MB).',
+        'Choose a JPEG or PNG image (up to ' + maxBytes / 1e6 + ' MB).'
       );
       return;
     }
     imageTextButton.disabled = true;
-    imageTextStatus.textContent = experienceText('Luetaan tekstiä…','Läser text…','Reading text…');
+    imageObjectButton.disabled = true;
+    imageTextStatus.textContent = estimateObjects
+      ? experienceText('Arvioidaan näkyviä kohteita…','Uppskattar synliga objekt…','Estimating visible objects…')
+      : experienceText('Luetaan tekstiä…','Läser text…','Reading text…');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 18_000);
     try {
@@ -1634,24 +1677,27 @@
         reader.onload = () => resolve(String(reader.result).split(',', 2)[1]);
         reader.readAsDataURL(file);
       });
-      const response = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/chat-image-text', {
+      const endpoint = estimateObjects ? '/chat-image-objects' : '/chat-image-text';
+      const response = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + endpoint, {
         method:'POST', mode:'cors', credentials:'omit', signal:controller.signal,
         headers:{'Content-Type':'text/plain;charset=UTF-8'},
         body:JSON.stringify({widgetToken:token, type:file.type, image, lang:widgetLang}),
       });
       const result = await response.json().catch(() => ({}));
       if (result.status === 'unreadable' || result.status === 'invalid') {
-        imageTextStatus.textContent = experienceText(
-          'Kokeile terävämpää, tekstiin rajattua kuvaa.',
-          'Prova en skarpare bild beskuren till texten.',
-          'Try a sharper image cropped to the text.'
-        );
+        imageTextStatus.textContent = estimateObjects
+          ? experienceText('Kohteita ei voitu arvioida. Kokeile terävämpää kuvaa tai kerro kohteet itse.','Objekten kunde inte uppskattas. Prova en skarpare bild eller beskriv objekten.','The objects could not be estimated. Try a clearer image or describe them yourself.')
+          : experienceText('Kokeile terävämpää, tekstiin rajattua kuvaa.','Prova en skarpare bild beskuren till texten.','Try a sharper image cropped to the text.');
         return;
       }
-      if (!response.ok || result.status !== 'read' || typeof result.text !== 'string' || !result.text.trim()) {
-        throw new Error('Image text unavailable');
+      if (!response.ok || result.status !== 'read') throw new Error('Image analysis unavailable');
+      let extracted = result.text;
+      if (estimateObjects && Array.isArray(result.objects) && result.objects.length) {
+        const estimates = result.objects.map(({label,count}) => count + ' × ' + label).join(', ');
+        extracted = experienceText('Kuvan kohdearvio: ','Uppskattade objekt i bilden: ','Estimated objects in the image: ') + estimates + '.';
       }
-      const draft = [input.value.trim(), result.text].filter(Boolean).join(' ');
+      if (typeof extracted !== 'string' || !extracted.trim()) throw new Error('Image analysis unavailable');
+      const draft = [input.value.trim(), extracted].filter(Boolean).join(' ');
       if (draft.length > 1200) {
         imageTextStatus.textContent = experienceText(
           'Luonnos on liian pitkä. Lyhennä sitä ja yritä uudelleen.',
@@ -1662,7 +1708,9 @@
       }
       delete input.dataset.respondoVoiceLang;
       input.value = draft;
-      imageTextStatus.textContent = result.truncated
+      imageTextStatus.textContent = estimateObjects
+        ? experienceText('Kohteet ja määrät ovat arvioita. Tarkista ne ennen lähetystä.','Objekten och antalen är uppskattningar. Kontrollera dem före sändning.','Objects and counts are estimates. Review them before sending.')
+        : result.truncated
         ? experienceText('Osa tekstistä lisätty. Tarkista ennen lähetystä.','En del av texten lades till. Kontrollera före sändning.','Part of the text was added. Review before sending.')
         : experienceText('Tarkista kuvasta luettu teksti ennen lähetystä.','Kontrollera den lästa texten före sändning.','Review the image text before sending.');
       if (!input.disabled && panel.classList.contains('open') && restoreKeyboardFocus()) input.focus({preventScroll:true});
@@ -1675,6 +1723,7 @@
     } finally {
       clearTimeout(timer);
       imageTextButton.disabled = false;
+      imageObjectButton.disabled = false;
     }
   });
   launcher.addEventListener('click', () => {
@@ -1779,7 +1828,8 @@
       const hasProducts=renderProducts(data.products || []);
       renderActions((data.actions || []).filter((action)=>!hasProducts || action?.type!=='product'), message);
       renderBranchChoices(data.branchChoices || []);
-      if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message);
+      if (data.industryIntake && !data.industryIntake.confirmationId) chat.querySelector('.leadbox')?.remove();
+      if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message, data.industryIntake);
       if (data.humanTakeover) {
         status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
       }

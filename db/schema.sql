@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     AND (quote_discount_percent = 0 OR quote_discount_over_quantity IS NOT NULL)
   ),
   quote_unit_label TEXT NOT NULL DEFAULT 'kpl',
+  quote_rule_version INTEGER NOT NULL DEFAULT 0 CHECK (quote_rule_version >= 0),
   google_calendar_access_token TEXT,
   google_calendar_refresh_token TEXT,
   google_calendar_token_expires_at TIMESTAMPTZ,
@@ -72,6 +73,17 @@ CREATE TABLE IF NOT EXISTS tenants (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS public.respondo_quote_rule_versions (
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL CHECK (version > 0),
+  snapshot JSONB NOT NULL CHECK (jsonb_typeof(snapshot) = 'object'),
+  recorded_at TIMESTAMPTZ,
+  PRIMARY KEY (tenant_id,version)
+);
+
+ALTER TABLE public.respondo_quote_rule_versions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL PRIVILEGES ON TABLE public.respondo_quote_rule_versions FROM PUBLIC;
 
 CREATE TABLE IF NOT EXISTS knowledge (
   id UUID PRIMARY KEY,

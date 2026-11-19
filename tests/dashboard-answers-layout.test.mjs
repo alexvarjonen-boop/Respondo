@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 const app = readFileSync(new URL('../public/app.js', import.meta.url),'utf8');
 const html = readFileSync(new URL('../public/index.html', import.meta.url),'utf8');
 const css = readFileSync(new URL('../public/dashboard-answers-fix.css', import.meta.url),'utf8');
+const server = readFileSync(new URL('../server.mjs', import.meta.url),'utf8');
 
 test('Answers section survives direct navigation via section query after login', () => {
   assert.match(app, /data-dashboard-view="answers" id="knowledge"/);
@@ -54,4 +56,53 @@ test('small-screen Answers fixes load after other CSS layers', () => {
   assert.match(css,/grid-template-columns:minmax\(0,1fr\)!important/);
   assert.match(css,/#knowledge \u003e \u002eadd-knowledge/);
   assert.match(css,/#knowledge \u003e \u002eknowledge-panel/);
+});
+
+test('website approval reads authenticated tenant knowledge and refreshes the existing list', async () => {
+  const approval = app.slice(app.indexOf("const saved = await api('/api/app/import-website/approve'"));
+  assert.match(approval.slice(0, 1500), /refreshApprovedKnowledge\(approveButton, review\)/);
+  const dashboard = server.slice(server.indexOf("app.get('/api/app/dashboard', auth, ownerOnly, subscribed"));
+  assert.match(dashboard.slice(0, 1000), /active_tenant_for_user[\s\S]*SELECT \* FROM knowledge WHERE tenant_id=\$1[\s\S]*req\.query\.section === 'knowledge'[\s\S]*knowledge:k\.rows/);
+
+  const start = app.indexOf('async function refreshApprovedKnowledge');
+  const end = app.indexOf("knowledgeList?.addEventListener('click'", start);
+  const elements = {
+    '#knowledgeCount':{textContent:'0 kohdetta'},
+    '#knowledgeQuickCount':{textContent:'0/3 valittu'},
+    '#knowledgeToolbar':{hidden:true},
+  };
+  const knowledgeList = {
+    isConnected:true,
+    dataset:{tenantId:'test-tenant'},
+    innerHTML:'empty',
+    closest:()=>({querySelector:selector=>elements[selector]}),
+  };
+  const approved = {id:'confirmed-by-server',source_type:'website'};
+  let filtered = false;
+  let resolveDashboard;
+  const refresh = runInNewContext('(' + app.slice(start,end).trim() + ')',{
+    knowledgeList,
+    appText:fi=>fi,
+    knowledgeItemsMarkup:items=>items.map(item=>item.id).join(','),
+    updateKnowledgeVisibility:()=>{ filtered=true; },
+    api:path=>{
+      assert.equal(path, '/api/app/dashboard?section=knowledge');
+      return new Promise(resolve=>{resolveDashboard=resolve;});
+    },
+  });
+  const approveButton = {isConnected:true};
+  const first = refresh(approveButton,{});
+  resolveDashboard({tenant:{id:'test-tenant'},knowledge:[approved]});
+  await first;
+  assert.equal(elements['#knowledgeCount'].textContent, '1 kohdetta');
+  assert.equal(elements['#knowledgeToolbar'].hidden, false);
+  assert.equal(knowledgeList.innerHTML, 'confirmed-by-server');
+  assert.equal(filtered, true);
+
+  const afterLeaving = refresh(approveButton,{});
+  approveButton.isConnected = false;
+  resolveDashboard({tenant:{id:'test-tenant'},knowledge:[]});
+  await afterLeaving;
+  assert.equal(knowledgeList.innerHTML, 'confirmed-by-server');
+  assert.equal(elements['#knowledgeCount'].textContent, '1 kohdetta');
 });
