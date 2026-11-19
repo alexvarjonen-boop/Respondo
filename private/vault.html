@@ -1,52 +1,53 @@
 <!doctype html>
-<html lang="en">
+<html lang="fi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta name="theme-color" content="#090b0e">
-  <title>Respondo · Internal Records</title>
+  <meta name="theme-color" content="#111a19">
+  <title>Respondo · Sisäinen arkisto</title>
   <link rel="icon" type="image/svg+xml" href="/respondo-symbol.svg">
   <link rel="stylesheet" href="/vault.css?v=20261119-1">
+  <link rel="stylesheet" href="/vault-premium.css?v=20261119-2">
   <script src="/vault.js?v=20261119-1" defer></script>
 </head>
 <body>
   <div class="layout">
     <aside class="sidebar" aria-label="Records navigation">
-      <div class="brand"><img src="/respondo-symbol.svg" alt=""><span><strong>RESPONDO</strong><small>PRIVATE WORKSPACE</small></span></div>
+      <div class="brand"><img src="/respondo-symbol.svg" alt=""><span><strong>RESPONDO</strong><small>RECORDS / PRIVATE</small></span></div>
       <div class="environment"><span class="status-dot"></span><span data-i18n="restrictedSpace">Authorized personnel only</span><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 3a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v7H4v-7a2 2 0 0 1 2-2h1V8a5 5 0 0 1 5-5Zm-3 8h6V8a3 3 0 0 0-6 0Z" stroke-width="1.6"/></svg></div>
       <div class="nav-label" data-i18n="workspace">WORKSPACE</div>
       <nav id="nav">
-        <button data-screen="all" class="nav-item active"><span class="nav-icon">▦</span><span data-i18n="allDocs">All documents</span><small id="allCount">0</small></button>
-        <button data-screen="companies" class="nav-item" id="companiesNav" hidden><span class="nav-icon">◎</span><span data-i18n="companies">Customer companies</span></button>
+        <button data-screen="all" class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span><span data-i18n="allDocs">All documents</span><small id="allCount">0</small></button>
+        <button data-screen="companies" class="nav-item" id="companiesNav" hidden><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M9 8h2m3 0h2M9 12h2m3 0h2M10 20v-4h4v4"/></svg></span><span data-i18n="companies">Customer companies</span></button>
         <div class="nav-label" data-i18n="folders">FOLDERS</div>
         <div id="categoryNav"></div>
         <div class="nav-divider"></div>
-        <button data-screen="trash" class="nav-item"><span class="nav-icon">⌑</span><span data-i18n="trash">Trash</span></button>
-        <button data-screen="activity" class="nav-item" id="activityNav" hidden><span class="nav-icon">◷</span><span data-i18n="activity">Activity log</span></button>
+        <button data-screen="trash" class="nav-item"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9 7V4.5h6V7m-9 0 1 13h10l1-13M10 11v5m4-5v5"/></svg></span><span data-i18n="trash">Trash</span></button>
+        <button data-screen="activity" class="nav-item" id="activityNav" hidden><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span data-i18n="activity">Activity log</span></button>
       </nav>
       <div class="sidebar-footer">
-        <div class="profile"><span class="profile-avatar">R</span><span><b id="userRole">—</b><small data-i18n="secureAccount">Protected account</small></span></div>
+        <div class="profile"><span class="profile-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 20 7v5.3c0 4.2-3 7.3-8 9.2-5-1.9-8-5-8-9.2V7l8-3.5Z"/><path d="m9 12.4 2 2 4-4.4"/></svg></span><span><b id="userRole">—</b><small data-i18n="secureAccount">Protected account</small></span></div>
         <a href="/traffic.html" class="back-link"><span>←</span><span data-i18n="back">Back to Visitors</span></a>
       </div>
     </aside>
     <main class="main">
       <header class="topbar">
-        <div class="breadcrumb"><span>RESPONDO</span><span class="slash">/</span><strong data-i18n="archive">Internal Records</strong></div>
+        <div class="breadcrumb"><span data-i18n="workspace">WORKSPACE</span><span class="slash">/</span><strong data-i18n="archive">Internal Records</strong></div>
         <div class="top-actions"><span class="private-pill">● <span data-i18n="private">PRIVATE</span></span>
           <select id="language" aria-label="Language"><option value="en">🇬🇧 EN</option><option value="fi">🇫🇮 FI</option><option value="sv">🇸🇪 SV</option></select>
         </div>
       </header>
       <div class="main-inner">
-        <div class="headline"><div><div class="eyebrow">RES<span class="green">●</span>PONDO / RECORDS MANAGEMENT</div><h1 id="pageTitle" data-i18n="archive">Internal Records</h1><p id="pageIntro" data-i18n="intro">Your company's documents, information and decisions. One secure place.</p></div>
-          <div class="headline-buttons" id="writeActions" hidden><button class="button secondary" id="uploadButton"><span>↥</span> <span data-i18n="upload">Upload file</span></button><button class="button primary" id="newButton"><span>＋</span> <span data-i18n="newNote">New document</span></button></div>
+        <div class="headline"><div class="headline-copy"><div class="eyebrow"><span class="hero-kicker-dot"></span><span data-i18n="heroKicker">SECURE RECORDS WORKSPACE</span></div><h1 id="pageTitle" data-i18n="archive">Internal Records</h1><p id="pageIntro" data-i18n="intro">Your company's documents, information and decisions. One secure place.</p></div>
+          <div class="headline-buttons" id="writeActions" hidden><button class="button secondary" id="uploadButton"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M5 15v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/></svg><span data-i18n="upload">Upload file</span></button><button class="button primary" id="newButton"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="newNote">New document</span></button></div>
         </div>
         <div class="summary" id="summary"><article><span data-i18n="documents">DOCUMENTS</span><strong id="countDocs">—</strong><small data-i18n="docsHint">Notes and files</small></article><article><span data-i18n="files">FILES</span><strong id="countFiles">—</strong><small data-i18n="filesHint">Uploaded files</small></article><article><span data-i18n="storage">STORAGE</span><strong id="storageCount">—</strong><small data-i18n="storageHint">Current versions</small></article></div>
         <section class="content-panel">
-          <div class="panel-heading"><div><h2 id="listTitle" data-i18n="allDocs">All documents</h2><p id="listSubtitle" data-i18n="listHint">Only authorized team members can see this information.</p></div><div class="filters" id="filters"><div class="search"><span>⌕</span><input id="search" type="search" autocomplete="off" data-placeholder="search" placeholder="Search documents..."></div><select id="categoryFilter" aria-label="Filter folder"><option value="" data-i18n="allFolders">All folders</option></select></div></div>
+          <div class="panel-heading"><div><h2 id="listTitle" data-i18n="allDocs">All documents</h2><p id="listSubtitle" data-i18n="listHint">Only authorized team members can see this information.</p></div><div class="filters" id="filters"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input id="search" type="search" autocomplete="off" data-placeholder="search" aria-label="Search documents" placeholder="Search documents..."></div><select id="categoryFilter" aria-label="Filter folder"><option value="" data-i18n="allFolders">All folders</option></select></div></div>
           <div id="panelContent" aria-live="polite"><div class="empty"><div class="empty-icon">▤</div><h3 data-i18n="loading">Loading records...</h3></div></div>
         </section>
-        <div class="security-footer"><span>◈</span><span data-i18n="securityFooter">Access is checked on the server for every action. Downloads and changes are logged.</span></div>
+        <div class="security-footer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 20 6.5v5.8c0 4.2-3 7.1-8 8.7-5-1.6-8-4.5-8-8.7V6.5L12 3Z"/><path d="m9 12 2 2 4-4"/></svg><span data-i18n="securityFooter">Access is checked on the server for every action. Downloads and changes are logged.</span></div>
       </div>
     </main>
   </div>

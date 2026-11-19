@@ -11,6 +11,9 @@
   Object.assign(dictionary.en,{restrictedSpace:'Owner account only',back:'Back to Visitors',listHint:'Visible only when signed in with the Respondo owner account.',team:'Private',restrictedHint:'Your owner account only',activityHint:'Recent document views, downloads and modifications.'});
   Object.assign(dictionary.fi,{restrictedSpace:'Vain omistajan tunnuksilla',back:'Takaisin Visitors-näkymään',listHint:'Näkyy vain Respondon omistajatunnuksilla kirjautuneelle.',team:'Yksityinen',restrictedHint:'Vain sinun omistajatunnuksillasi',activityHint:'Viimeisimmät asiakirjojen katselut, lataukset ja muutokset.'});
   Object.assign(dictionary.sv,{restrictedSpace:'Endast ägarkontot',back:'Tillbaka till Visitors',listHint:'Synligt endast med Respondos ägarkonto.',team:'Privat',restrictedHint:'Endast ditt ägarkonto',activityHint:'Senaste dokumentvisningar, nedladdningar och ändringar.'});
+  Object.assign(dictionary.en,{heroKicker:'SECURE RECORDS WORKSPACE'});
+  Object.assign(dictionary.fi,{heroKicker:'TURVALLINEN ASIAKIRJATYÖTILA'});
+  Object.assign(dictionary.sv,{heroKicker:'SÄKER DOKUMENTARBETSYTA'});
   const labels={
     'Yrityksen tiedot':['Business information','Yrityksen tiedot','Företagsuppgifter'],
     'Sopimukset':['Contracts','Sopimukset','Avtal'],
@@ -22,9 +25,20 @@
     'Markkinointi':['Marketing','Markkinointi','Marknadsföring'],
     'Muut':['Other','Muut','Övrigt']
   };
-  const icons=['▣','◈','♧','€','⌘','◇','♟','↗','▤'];
+  const icons=[
+    '<path d="M3.5 7.5h6l2 2h9v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z"/>',
+    '<path d="M8 4h8l4 4v12H4V4h4Z"/><path d="M8 12h8m-8 4h6M15 4v4h5"/>',
+    '<circle cx="9" cy="8" r="3"/><path d="M3.5 19v-1a5.5 5.5 0 0 1 11 0v1m2-11a3 3 0 0 1 0 6m1.5 1a4 4 0 0 1 3 4"/>',
+    '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18m-14 5h4"/>',
+    '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m10 8-4 4 4 4m4-8 4 4-4 4"/>',
+    '<path d="M12 3 20 6.5v5.8c0 4.2-3 7.1-8 8.7-5-1.6-8-4.5-8-8.7V6.5L12 3Z"/><path d="m9 12 2 2 4-4"/>',
+    '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3.5 20v-2a5.5 5.5 0 0 1 11 0v2m.5-5a4 4 0 0 1 5.5 4v1"/>',
+    '<path d="M4 20h16M6 17V9m6 8V4m6 13v-6"/>',
+    '<path d="M4 7h16M6 7l1 13h10l1-13M9 7V4h6v3"/>'
+  ];
+  const svgIcon=(markup)=>{const n=document.createElementNS('http://www.w3.org/2000/svg','svg');n.setAttribute('viewBox','0 0 24 24');n.setAttribute('fill','none');n.setAttribute('stroke','currentColor');n.setAttribute('stroke-width','1.8');n.setAttribute('stroke-linecap','round');n.setAttribute('stroke-linejoin','round');n.setAttribute('aria-hidden','true');n.innerHTML=markup;return n;};
   const $=id=>document.getElementById(id);
-  const state={lang:['fi','sv','en'].includes(localStorage.getItem('respondo_lang'))?localStorage.getItem('respondo_lang'):'en',role:null,categories:[],screen:'all',category:'',documents:[],request:0};
+  const state={lang:['fi','sv','en'].includes(localStorage.getItem('respondo_lang'))?localStorage.getItem('respondo_lang'):'fi',role:null,categories:[],screen:'all',category:'',documents:[],request:0};
   const t=key=>dictionary[state.lang]?.[key]||dictionary.en[key]||key;
   const catName=value=>labels[value]?.[['en','fi','sv'].indexOf(state.lang)]||value;
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
@@ -47,9 +61,12 @@
   function nav(){
     $('categoryNav').replaceChildren(...state.categories.map((value,i)=>{
       const b=button(catName(value),'nav-item'+(state.screen==='category'&&state.category===value?' active':''),()=>activate('category',value));
-      b.prepend(el('span','nav-icon',icons[i]||'▣'));
+      const icon=el('span','nav-icon');icon.append(svgIcon(icons[i]||icons[0]));b.prepend(icon);
       return b;
     }));
+    const filter=$('categoryFilter');
+    const all=el('option','',t('allFolders'));all.value='';
+    filter.replaceChildren(all,...state.categories.map(value=>{const option=el('option','',catName(value));option.value=value;return option;}));
     document.querySelectorAll('[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===state.screen));
     $('companiesNav').hidden=!roleAllows('admin');$('activityNav').hidden=!roleAllows('admin');
     $('writeActions').hidden=!roleAllows('write')||!['all','category'].includes(state.screen);
@@ -65,7 +82,7 @@
     state.screen=screen;state.category=category;$('search').value='';nav();load().catch(e=>showError(e.message));
   }
   function empty(message=t('empty'),hint=t('emptyHint')){
-    const wrap=el('div','empty');wrap.append(el('div','empty-icon','▤'),el('h3','',message),el('p','',hint));$('panelContent').replaceChildren(wrap);
+    const wrap=el('div','empty'),badge=el('div','empty-icon');badge.append(svgIcon('<path d="M4 7.5h16v12H4zM8 4h8l2 3.5M8 12h8m-8 4h5"/>'));wrap.append(badge,el('h3','',message),el('p','',hint));$('panelContent').replaceChildren(wrap);
   }
   function showError(message){empty(message,'');notify(message);}
   function table(headings,rows){const wrapper=el('div','table-scroll');const tbl=el('table','data-table');const thead=el('thead'),header=el('tr');headings.forEach(label=>header.append(el('th','',label)));thead.append(header);const tbody=el('tbody');rows.forEach(row=>{const tr=el('tr');row.forEach(value=>{const td=el('td');if(value instanceof Node)td.append(value);else td.textContent=String(value??'—');tr.append(td);});tbody.append(tr);});tbl.append(thead,tbody);wrapper.append(tbl);$('panelContent').replaceChildren(wrapper);}
@@ -84,7 +101,7 @@
     ]));
     table([t('name'),t('folder'),t('updated'),t('visibility')],result.documents.map(doc=>{
       const link=button(doc.title,'doc-button',()=>openDetail(doc.id));
-      const badge=el('span','doc-icon'+(doc.kind==='file'?' file':''),doc.kind==='file'?'↥':'▤');link.prepend(badge);
+      const badge=el('span','doc-icon'+(doc.kind==='file'?' file':''));badge.append(svgIcon(doc.kind==='file'?'<path d="M12 3v12m-4-4 4 4 4-4M5 17v3h14v-3"/>':'<path d="M6 3.5h9l4 4V20H6a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Zm9 0v5h4M8 12h8M8 16h6"/>'));link.prepend(badge);
       const title=el('div');title.append(link,el('div','cell-sub',doc.kind==='file'?`${doc.file_name} · ${size(doc.size_bytes)}`:doc.description||t('note')));
       const level=el('span','level'+(doc.classification==='restricted'?' restricted':''),t(doc.classification==='restricted'?'restricted':'team'));
       return [title,catName(doc.category),date(doc.updated_at),level];
@@ -99,7 +116,15 @@
   }
   function openModal(title,content){$('modalTitle').textContent=title;$('modalBody').replaceChildren(content);$('modal').hidden=false;document.body.style.overflow='hidden';$('closeModal').focus();}
   function closeModal(){$('modal').hidden=true;$('modalBody').replaceChildren();document.body.style.overflow='';}
-  function field(label,input,hint){const wrap=el('div','field');wrap.append(el('label','',label),input);if(hint)wrap.append(el('small','',hint));return wrap;}
+  let fieldSequence=0;
+  function field(label,input,hint){
+    const wrap=el('div','field'),caption=el('label','',label);
+    input.id ||= 'vault-field-'+(++fieldSequence);
+    caption.htmlFor=input.id;
+    wrap.append(caption,input);
+    if(hint)wrap.append(el('small','',hint));
+    return wrap;
+  }
   function input(value='',required=false){const control=el('input');control.type='text';control.value=value;control.required=required;control.maxLength=160;return control;}
   function selectCategory(value=state.category||'Yrityksen tiedot'){
     const select=el('select');state.categories.forEach(cat=>{const opt=el('option','',catName(cat));opt.value=cat;select.append(opt);});select.value=value;return select;
@@ -163,7 +188,7 @@
   }
   async function restore(id){try{await request('/documents/'+encodeURIComponent(id)+'/restore',{method:'POST'});notify(t('restored'));await refresh();}catch(e){notify(e.message);}}
   async function refresh(){
-    const session=await request('/session');state.role=session.role;$('countDocs').textContent=session.summary.documents;$('countFiles').textContent=session.summary.files;$('storageCount').textContent=size(session.summary.bytes);$('allCount').textContent=session.summary.documents;translate();nav();
+    const session=await request('/session');state.role=session.role;state.categories=Array.isArray(session.categories)?session.categories:[];$('countDocs').textContent=session.summary.documents;$('countFiles').textContent=session.summary.files;$('storageCount').textContent=size(session.summary.bytes);$('allCount').textContent=session.summary.documents;translate();nav();
     await load();
   }
   function setup(){
