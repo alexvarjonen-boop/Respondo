@@ -1,10 +1,11 @@
-// Convert only supported one-unit pricing clauses. An unrecognized clause
+// Convert only supported pricing clauses. An unrecognized clause
 // invalidates the whole draft so it cannot silently drop a fee or condition.
 const number = '(\\d{1,6}(?:[,.]\\d{1,3})?)';
 const money = '(?:€\\s*' + number + '|' + number + '\\s*€)';
 const pricePerUnit = new RegExp('^(?:veloitamme\\s+|vi tar\\s+|we charge\\s+)?' +
   money + '\\s*(?:/|per\\s+)\\s*([\\p{L}²³]+)$', 'iu');
 const baseFee = new RegExp('^(?:perusmaksu|matkakulu|startavgift|reseavgift|base fee|fixed fee|travel fee)\\s+' + money + '$', 'i');
+const distanceFee = new RegExp('^(?:matkaveloitus|matkat|reseavgift|travel fee)\\s+' + money + '\\s*(?:/|per\\s+)\\s*km$', 'i');
 const minimumFee = new RegExp('^(?:minimihinta|minimiveloitus|minimiavgift|minimum charge|minimum price)\\s+' + money + '$', 'i');
 const discount = new RegExp('^(?:yli|över|over)\\s+' + number +
   '\\s+[\\p{L}²³]+\\s+' + number +
@@ -33,6 +34,13 @@ export function parseQuoteRuleDraft(value) {
       continue;
     }
 
+    const distance = distanceFee.exec(clause);
+    if (distance) {
+      const amount = distance[1] || distance[2];
+      if (draft.distancePrice !== undefined || !hasPrecision(amount, 2)) return null;
+      draft.distancePrice = asNumber(amount);
+      continue;
+    }
     const base = baseFee.exec(clause);
     const minimum = minimumFee.exec(clause);
     const fee = base || minimum;

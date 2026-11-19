@@ -27,6 +27,18 @@ const profiles = {
     cue: /(?:siivou\w*|ikkun\w*.{0,20}pes\w*|ikkunanpes\w*|window\s+(?:clean|wash)\w*|cleaning\b|f[oö]nster(?:puts|tvatt)\w*|stadn\w*)/,
     fields: ['scope', 'area', 'date']
   },
+  plumbing: {
+    cue: /(?:putkit(?:yo|oi)|putkimies|putkiasenn|putkivuoto|hanan vaiht|plumb(?:ing|er)|pipe leak|tap replacement|rorlagg|rorarbete|rorlack|kranbyte)/,
+    fields: ['job', 'site', 'date']
+  },
+  painting: {
+    cue: /(?:maalaus|maalari|seinamaal|house painting|wall painting|painting service|malning|malare)/,
+    fields: ['job', 'site', 'date']
+  },
+  landscaping: {
+    cue: /(?:pihaty|pihanhoito|puutarhanhoito|nurmikon leik|landscap|garden maintenance|lawn mowing|tradgardsskotsel|grasklippning)/,
+    fields: ['job', 'site', 'date']
+  },
   retail: {
     cue: retailStart,
     fields: ['product', 'preference']
@@ -55,6 +67,8 @@ const texts = {
     repair:['Huollon tarve', 'Mitä huoltoa tarvitset tai mikä autossa oireilee?'],
     scope:['Siivoustyö', 'Millaista siivoustyötä tarvitset?'],
     area:['Työn laajuus', 'Kuinka laaja työ on? Kerro esimerkiksi pinta-ala tai pestävien ikkunoiden määrä.'],
+    job:['Työ','Mitä haluat tehtäväksi?'],
+    site:['Kohde','Millainen kohde on ja kuinka laaja työ on?'],
     product:['Etsittävä tuote', 'Millaista tuotetta etsit?'],
     preference:['Toiveet', 'Onko sinulla käyttötarkoitusta, budjettia tai muita toiveita?'],
     flexible:'Ei vielä tiedossa', review:'Kokosin nämä tiedot. Ovatko ne oikein? Voit korjata tietoja tässä chatissa.',
@@ -70,6 +84,8 @@ const texts = {
     repair:['Servicebehov', 'Vilken service behöver du, eller vilka problem har bilen?'],
     scope:['Städarbete', 'Vilken sorts städning behöver du?'],
     area:['Arbetets omfattning', 'Hur omfattande är arbetet? Ange gärna ytan eller antalet fönster.'],
+    job:['Arbete','Vad vill du få gjort?'],
+    site:['Objekt','Vad är det för objekt och hur omfattande är arbetet?'],
     product:['Produkt', 'Vilken typ av produkt söker du?'],
     preference:['Önskemål', 'Vad ska du använda den till, eller har du en budget eller andra önskemål?'],
     flexible:'Ännu inte bestämt', review:'Jag har sammanställt uppgifterna. Stämmer de? Du kan rätta uppgifterna här i chatten.',
@@ -85,6 +101,8 @@ const texts = {
     repair:['Service needed', 'What service do you need, or what symptoms are you seeing?'],
     scope:['Cleaning work', 'What kind of cleaning do you need?'],
     area:['Amount of work', 'How much work is there? An area or number of windows is enough.'],
+    job:['Work','What would you like done?'],
+    site:['Site','What kind of site is it, and how extensive is the work?'],
     product:['Product', 'What kind of product are you looking for?'],
     preference:['Preferences', 'Do you have a use in mind, a budget, or any other preferences?'],
     flexible:'Still open', review:'Here’s what I have. Is it correct? You can make changes in this chat.',
@@ -139,7 +157,10 @@ function factsIn(message, profile) {
     garage: {vehicle:source.match(vehiclePattern)?.[1], repair:get(repairPattern), date:preferred},
     cleaning: {scope:get(cleanScopePattern), area:get(areaPattern), date:preferred},
     retail: {product:product?.split(/\s+(?:under|budget|alle|högst|in size|med storlek)\b/iu)[0], preference:get(preferencePattern)}
-  }[profile];
+  }[profile] || {
+    job:fold(source).match(profiles[profile].cue) ? source.replace(/^(?:haluaisin|tarvitsen|i need|i want|jag vill ha|jag behöver)\s+/iu,'') : '',
+    site:get(areaPattern), date:preferred
+  };
   return Object.fromEntries(Object.entries(facts).map(([key,value])=>[key,cleanValue(value)]).filter(([,value])=>value));
 }
 

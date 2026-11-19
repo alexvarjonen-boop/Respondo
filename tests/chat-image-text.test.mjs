@@ -114,3 +114,25 @@ test('text and object estimation share one bounded decoding slot', async t => {
   assert.equal((await text).status, 'read');
   assert.deepEqual(await reader.read(image, 'image/png', 'fi', 'objects'), {status:'unreadable'});
 });
+
+test('window counting reports positive estimates and shares the image analysis slot', async () => {
+  let finish;
+  const objectDetector = {
+    enabled:true,
+    windowsEnabled:true,
+    async detectWindows(bytes) {
+      assert.deepEqual(bytes, png);
+      return new Promise(resolve => { finish = resolve; });
+    },
+  };
+  const reader = createChatImageTextReader({objectDetector});
+  const estimate = reader.read(image, 'image/png', 'fi', 'windows');
+  assert.equal(reader.windowsEnabled, true);
+  assert.deepEqual(await reader.read(image, 'image/png', 'fi', 'objects'), {status:'busy'});
+  finish(7);
+  assert.deepEqual(await estimate, {status:'read', count:7});
+
+  const empty = reader.read(image, 'image/png', 'fi', 'windows');
+  finish(0);
+  assert.deepEqual(await empty, {status:'unreadable'});
+});

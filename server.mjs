@@ -9440,13 +9440,14 @@ const chatImageTextLimiter = rateLimit({
 });
 // The optional upload route uses a bounded plain-text envelope (a CORS-simple
 // request, like /chat). Limit requests before reading the envelope.
-app.post(['/api/public/:slug/chat-image-text', '/api/public/:slug/chat-image-objects'], chatImageTextLimiter,
+app.post(['/api/public/:slug/chat-image-text', '/api/public/:slug/chat-image-objects', '/api/public/:slug/chat-image-windows'], chatImageTextLimiter,
   (req, res, next) => {
-    const objects = /\/chat-image-objects\/?$/i.test(req.path);
-    if (objects ? !chatImageText.objectsEnabled : !chatImageText.enabled) {
+    const mode = req.path.match(/-(windows|objects|text)\/?$/i)[1].toLowerCase();
+    const available = {windows:chatImageText.windowsEnabled, objects:chatImageText.objectsEnabled, text:chatImageText.enabled};
+    if (!available[mode]) {
       return res.status(404).json({status:'unavailable'});
     }
-    res.locals.imageAnalysisMode = objects ? 'objects' : 'text';
+    res.locals.imageAnalysisMode = mode;
     return next();
   },
   express.text({type:'text/plain', limit:CHAT_IMAGE_BODY_LIMIT, inflate:false}),
@@ -10737,7 +10738,7 @@ app.get('/api/app/native/growth',auth,ownerOnly,subscribed,nativeEndpoint(
 app.put('/api/app/native/growth/settings',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>saveGrowthSettings(pool,id,req.body||{})));
 app.get('/api/app/native/growth/quote-preview',auth,ownerOnly,subscribed,nativeEndpoint(
-  (id,req)=>previewGrowthQuote(pool,id,req.query?.quantity)));
+  (id,req)=>previewGrowthQuote(pool,id,req.query?.quantity,req.query?.distanceKm)));
 app.get('/api/app/native/growth/weekly-report',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>growthWeeklyReport(pool,id)));
 app.post('/api/app/native/growth/compare',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -10766,7 +10767,7 @@ app.post('/api/app/native/tickets',auth,ownerOnly,subscribed,nativeWriteLimiter,
 app.patch('/api/app/native/tickets/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>updateNativeTicket(pool,id,req.params.id,req.body||{})));
 app.post('/api/app/native/quotes',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
-  (id,req)=>createNativeQuote(pool,id,req.body?.quantity,req.body?.note),{quote:true}));
+  (id,req)=>createNativeQuote(pool,id,req.body?.quantity,req.body?.note,req.body?.distanceKm),{quote:true}));
 app.patch('/api/app/native/quotes/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>updateNativeQuote(pool,id,req.params.id,req.body?.status),{quote:true}));
 app.put('/api/app/native/rules',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -10846,6 +10847,7 @@ app.get('/api/health', async (req, res) => {
     stripe: stripeConfigured,
     chatImageText: chatImageText.enabled,
     chatImageObjects: chatImageText.objectsEnabled,
+    chatImageWindows: chatImageText.windowsEnabled,
   };
   if (pool) {
     try {
@@ -13703,6 +13705,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
         discountOverQuantity: tenant.quote_discount_over_quantity == null ? null : Number(tenant.quote_discount_over_quantity),
         discountPercent: Number(tenant.quote_discount_percent ?? 0),
         ruleVersion: tenant.quote_rule_version || 0,
+        distancePrice:Number(tenant.quote_distance_price ?? 0),
         unitLabel: tenant.quote_unit_label || 'kpl',
       } : { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' },
       integrations: planAccess.allCurrentFeatures ? {
@@ -15239,8 +15242,10 @@ app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) =>
       greeting,
       accent: tenant.accent,
       quickReplies,
+      quoteDistanceRequired:Number(tenant.quote_distance_price)>0 && planEntitlements(tenant.subscription_plan).allCurrentFeatures,
       ...(chatImageText.enabled ? {imageTextMaxBytes:CHAT_IMAGE_MAX_BYTES} : {}),
       ...(chatImageText.objectsEnabled ? {imageObjectMaxBytes:CHAT_IMAGE_MAX_BYTES} : {}),
+      ...(chatImageText.windowsEnabled ? {imageWindowMaxBytes:CHAT_IMAGE_MAX_BYTES} : {}),
     });
   } catch (e) {
     console.error('Widget token failed', e);
@@ -16445,7 +16450,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           AND created_at>NOW()-INTERVAL '45 minutes'
         ORDER BY created_at DESC LIMIT 1`,[t.id,thread.id]) : null;
       industryReply=advanceIndustryIntake({
-        message,language:detectedLang,serviceRows,isProduct:parseProductKnowledgeRow,
+        message,language:detectedLang,serviceRows,hasCatalog:serviceRows.some(row=>Boolean(parseProductKnowledgeRow(row))),
         previous:previous?.rows[0]?.state,topic:queryTopic(message)
       });
     }
@@ -16964,6 +16969,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     if (type === 'quote') {
       try {
         fields.quantity = parseQuoteQuantity(body.fields?.quantity);
+        const distance = body.fields?.distanceKm;
+        if (distance != null && String(distance).trim() !== '') fields.distanceKm = parseQuoteQuantity(distance);
       } catch {
         return res.status(422).json({ error:'Virheellinen määrä tarjouslaskentaan.' });
       }
@@ -17021,10 +17028,12 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       let safeEstimate;
       try {
         const pricing = tenantQuotePricing(tenant);
-        // A unit-price request without quantity still reaches the company for review.
-        safeEstimate = Number(pricing.unit) > 0 && fields.quantity === 0
-          ? null
-          : computeSafeQuote({ ...pricing, quantity:fields.quantity });
+        // A request missing a billable quantity still reaches the company for review.
+        const missingQuantity = Number(pricing.unit) > 0 && fields.quantity === 0;
+        const missingDistance = Number(pricing.distancePrice) > 0 && fields.distanceKm === undefined;
+        if (!missingQuantity && !missingDistance) {
+          safeEstimate = computeSafeQuote({ ...pricing, quantity:fields.quantity, distanceKm:fields.distanceKm });
+        }
       } catch (error) {
         console.error('Unsafe quote pricing configuration',error?.name || 'error');
         // Preserve the request for human review when configured pricing cannot be applied safely.
@@ -17446,6 +17455,7 @@ function readDashboardQuotePricing(body) {
   const pricing = validateQuotePricing({
     base:zeroIfBlank(body.basePrice),
     unit:zeroIfBlank(body.unitPrice),
+    distancePrice:zeroIfBlank(body.distancePrice),
     minimum:zeroIfBlank(body.minPrice),
     vatPercent:zeroIfBlank(body.vatPercent),
     discountOverQuantity:body.discountOverQuantity,
@@ -17461,7 +17471,7 @@ app.post('/api/app/quote-engine/preview', auth, ownerOnly, subscribed, async (re
     const body = req.body || {};
     const quantity = parseQuoteQuantity(body.quantity);
     if (quantity <= 0 || Math.round(quantity*1000)/1000 !== quantity) throw new RangeError('Invalid quote quantity');
-    const quote = computeSafeQuote({...readDashboardQuotePricing(body),quantity});
+    const quote = computeSafeQuote({...readDashboardQuotePricing(body),quantity,distanceKm:body.distanceKm});
     if (!quote) throw new RangeError('Configure prices first');
     return res.json({quote});
   } catch (error) {
@@ -17498,6 +17508,7 @@ app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) =
 
     const saved = await saveTenantQuoteRules(pool,{
       tenantId:access.tenant.id,ownerId:req.user.sub,serviceName,unitLabel,pricing,saveDiscount,
+      saveDistance:Object.hasOwn(body,'distancePrice'),
       expectedVersion:body.expectedVersion
     });
     if (!saved) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -18510,6 +18521,7 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_price NUMERIC(12,2) NOT NULL DEFAULT 0");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_distance_price NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (quote_distance_price >= 0)");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_discount_over_quantity NUMERIC(12,3) CHECK (quote_discount_over_quantity BETWEEN 0 AND 100000)");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_discount_percent NUMERIC(6,2) NOT NULL DEFAULT 0 CHECK (quote_discount_percent BETWEEN 0 AND 100 AND (quote_discount_percent = 0 OR quote_discount_over_quantity IS NOT NULL))");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_label TEXT NOT NULL DEFAULT 'kpl'");

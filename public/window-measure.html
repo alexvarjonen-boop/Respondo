@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Ikkunat kuvasta | Respondo AI</title>
+  <link rel="stylesheet" href="/window-measure.css">
+  <script type="module" src="/window-measure-ui.js"></script>
+</head>
+<body>
+  <main>
+    <h1 data-label="title">Ikkunat kuvasta</h1>
+    <p data-label="intro">Merkitse jokaisen ikkunan vastakkaiset kulmat. Mittojen arviointiin tarvitaan tunnettu pituus samalta tasolta. Käytä suoraan edestä otettua kuvaa.</p>
+    <label><span data-label="photo">Valitse kuva</span><input id="photo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+    <p id="image-status" role="status"></p>
+    <section id="workspace" hidden>
+      <div class="controls">
+        <button type="button" id="mark-window" data-label="window">Merkitse ikkuna</button>
+        <button type="button" id="mark-reference" data-label="reference">Merkitse tunnettu pituus</button>
+        <button type="button" id="undo" data-label="undo">Peruuta viimeisin</button>
+      </div>
+      <label><span data-label="length">Tunnetun välin pituus (cm)</span><input id="length" type="number" min="0.1" max="100000" step="any" inputmode="decimal"></label>
+      <p id="hint" role="status"></p>
+      <canvas id="picture"></canvas>
+      <label><span data-label="results">Kopioitava arvio</span><textarea id="results" readonly rows="4"></textarea></label>
+      <button type="button" id="copy" data-label="copy">Kopioi arvio</button>
+      <p id="copied" role="status"></p>
+    </section>
+  </main>
+</body>
+</html>

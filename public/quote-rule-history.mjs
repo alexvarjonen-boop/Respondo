@@ -32,6 +32,7 @@ export function bindQuoteRuleHistory({details,form,t,api,locale,onUse}) {
       [t('Palvelu','Tjänst','Service'),pricing.serviceName || '—'],
       [t('Perusmaksu','Grundavgift','Base fee'),amount(pricing.basePrice)],
       [t('Yksikköhinta','Enhetspris','Unit price'),amount(pricing.unitPrice)+' / '+pricing.unitLabel],
+      [t('Matkaveloitus','Reseavgift','Travel fee'),amount(pricing.distancePrice ?? 0)+' / km'],
       [t('Minimihinta','Minimipris','Minimum price'),amount(pricing.minPrice)],
       [t('ALV','Moms','VAT'),percent(pricing.vatPercent)],
       [t('Määräalennus','Mängdrabatt','Quantity discount'),

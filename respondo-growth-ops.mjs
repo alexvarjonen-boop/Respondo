@@ -157,12 +157,12 @@ export async function growthOverview(db,tenantId){
     providerConnectionsVerified:false};
 }
 
-export async function previewGrowthQuote(db,tenantId,quantity){
+export async function previewGrowthQuote(db,tenantId,quantity,distanceKm){
   if(!validTenant(tenantId))throw new TypeError('Invalid workspace');
   const r=await db.query(`SELECT quote_base_price,quote_unit_price,quote_min_price,quote_vat_percent,
-    quote_service_name,quote_discount_over_quantity,quote_discount_percent,quote_rule_version FROM tenants WHERE id=$1`,[tenantId]);
+    quote_service_name,quote_distance_price,quote_discount_over_quantity,quote_discount_percent,quote_rule_version FROM tenants WHERE id=$1`,[tenantId]);
   if(!r.rows?.[0])throw new TypeError('Workspace not found');
-  const result=calculateNativeQuote(r.rows[0],quantity);
+  const result=calculateNativeQuote(r.rows[0],quantity,distanceKm);
   return {...result,status:'estimate_only',binding:false,requiresOwnerApproval:true,
     availabilityVerified:false,priceConfiguredByOwner:true};
 }

@@ -212,7 +212,7 @@ test('tenant quote draft reads the persisted volume discount and matches the wid
   assert.match(lookup.sql,/quote_discount_over_quantity,quote_discount_percent/);
   assert.deepEqual(lookup.params,[TENANT]);
   assert.deepEqual(calls.find(x=>x.sql.includes('INSERT INTO respondo_native_quotes')).params,
-    [TENANT,'Window cleaning',25,36250,'Needs approval',2]);
+    [TENANT,'Window cleaning',25,36250,'Needs approval',2,null]);
   assert.equal(calculateNativeQuote({quote_unit_price:1},'1.001').quantity,1.001);
   assert.throws(()=>calculateNativeQuote({quote_unit_price:1},'1.0001'),TypeError);
 });

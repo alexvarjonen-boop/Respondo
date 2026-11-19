@@ -44,6 +44,7 @@ function snapshotFromTenant(tenant) {
     unitLabel:tenant.quote_unit_label || 'kpl',
     basePrice:storedNumber(pricing.base),
     unitPrice:storedNumber(pricing.unit),
+    distancePrice:storedNumber(pricing.distancePrice),
     minPrice:storedNumber(pricing.minimum),
     vatPercent:storedNumber(pricing.vatPercent),
     discountOverQuantity:pricing.discountOverQuantity === null ? null : storedNumber(pricing.discountOverQuantity),
@@ -51,12 +52,12 @@ function snapshotFromTenant(tenant) {
   };
 }
 
-export async function saveTenantQuoteRules(db, {tenantId, ownerId, serviceName, unitLabel, pricing, saveDiscount, expectedVersion}) {
+export async function saveTenantQuoteRules(db, {tenantId, ownerId, serviceName, unitLabel, pricing, saveDiscount, saveDistance, expectedVersion}) {
   const expected = expectedVersion === undefined ? null : readVersion(expectedVersion,0);
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    const locked = await client.query(`SELECT quote_rule_version,quote_service_name,quote_base_price,quote_unit_price,
+    const locked = await client.query(`SELECT quote_rule_version,quote_service_name,quote_base_price,quote_unit_price,quote_distance_price,
       quote_min_price,quote_vat_percent,quote_unit_label,quote_discount_over_quantity,quote_discount_percent
       FROM public.tenants WHERE id=$1 AND owner_user_id=$2 FOR UPDATE`, [tenantId,ownerId]);
     const tenant = locked.rows[0];
@@ -71,7 +72,8 @@ export async function saveTenantQuoteRules(db, {tenantId, ownerId, serviceName, 
       serviceName,unitLabel,
       basePrice:pricing.base,unitPrice:pricing.unit,minPrice:pricing.minimum,vatPercent:pricing.vatPercent,
       discountOverQuantity:saveDiscount ? pricing.discountOverQuantity : current.discountOverQuantity,
-      discountPercent:saveDiscount ? pricing.discountPercent : current.discountPercent
+      discountPercent:saveDiscount ? pricing.discountPercent : current.discountPercent,
+      distancePrice:saveDistance ? pricing.distancePrice : current.distancePrice
     };
 
     // A retry arriving after its own save is still a no-op, even if its
@@ -93,10 +95,10 @@ export async function saveTenantQuoteRules(db, {tenantId, ownerId, serviceName, 
     await client.query(`UPDATE public.tenants
       SET quote_service_name=$3,quote_base_price=$4,quote_unit_price=$5,
           quote_min_price=$6,quote_vat_percent=$7,quote_unit_label=$8,
-          quote_discount_over_quantity=$9,quote_discount_percent=$10,quote_rule_version=$11,updated_at=NOW()
+          quote_discount_over_quantity=$9,quote_discount_percent=$10,quote_rule_version=$11,quote_distance_price=$12,updated_at=NOW()
       WHERE id=$1 AND owner_user_id=$2`, [
       tenantId,ownerId,next.serviceName,next.basePrice,next.unitPrice,next.minPrice,
-      next.vatPercent,next.unitLabel,next.discountOverQuantity,next.discountPercent,ruleVersion
+      next.vatPercent,next.unitLabel,next.discountOverQuantity,next.discountPercent,ruleVersion,next.distancePrice
     ]);
     await client.query(`INSERT INTO public.respondo_quote_rule_versions
       (tenant_id,version,snapshot,recorded_at) VALUES($1,$2,$3::jsonb,NOW())`, [tenantId,ruleVersion,JSON.stringify(next)]);
@@ -120,7 +122,7 @@ export async function listTenantQuoteRuleVersions(db, {tenantId,ownerId,before})
     ORDER BY versions.version DESC LIMIT $4`, [tenantId,ownerId,cursor,PAGE_SIZE + 1]);
   const versions = result.rows.slice(0,PAGE_SIZE).map(row => ({
     version:row.version,
-    pricing:row.snapshot,
+    pricing:{distancePrice:0,...row.snapshot},
     recordedAt:row.recorded_at
   }));
   return {versions,nextBefore:result.rows.length > PAGE_SIZE ? versions.at(-1).version : null};

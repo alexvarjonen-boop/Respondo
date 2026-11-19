@@ -9,7 +9,7 @@
       docsIntro:'Julkaise vain tarkistettua yritystietoa, jota botti saa käyttää vastauksissa.',cloudGoogle:'Yhdistä Google Drive',cloudMicrosoft:'Yhdistä SharePoint',cloudSite:'SharePoint-sivustotunnus',cloudListGoogle:'Näytä Drive-tiedostot',cloudListSharePoint:'Näytä SharePoint-tiedostot',cloudPublish:'Tuo ja julkaise',cloudApprove:'Vahvistan, että tämä valittu tiedosto sisältää vain tietoa, jota yritykseni saa julkaista asiakaspalvelubotissa.',cloudImported:'Tiedosto julkaistu tietopohjaan',cloudNextPage:'Seuraavat tiedostot',
       name:'Nimi',email:'Sähköposti',phone:'Puhelin',note:'Lisätiedot',save:'Tallenna',
       title:'Otsikko',details:'Kuvaus',priority:'Kiireellisyys',normal:'Normaali',urgent:'Kiireellinen',
-      quantity:'Määrä',create:'Luo',approve:'Hyväksy',remove:'Poista',
+      quantity:'Määrä',distance:'Ajomatka (km)',create:'Luo',approve:'Hyväksy',remove:'Poista',
       published:'Julkaistu',publishConsent:'Hyväksyn tiedon julkaisemisen botin tietopohjaan.',
       documentBody:'Dokumentin tarkistettu sisältö',empty:'Ei vielä tietoja.',
       loading:'Haetaan tietoja…',saving:'Tallennetaan…',saved:'Tallennettu.',
@@ -25,7 +25,7 @@
       docsIntro:'Publicera endast granskade företagsuppgifter som botten får använda.',cloudGoogle:'Anslut Google Drive',cloudMicrosoft:'Anslut SharePoint',cloudSite:'SharePoint-webbplats-ID',cloudListGoogle:'Visa Drive-filer',cloudListSharePoint:'Visa SharePoint-filer',cloudPublish:'Importera och publicera',cloudApprove:'Jag bekräftar att den valda filen endast innehåller information som mitt företag får publicera i kundservicebotten.',cloudImported:'Filen publicerad i kunskapsbasen',cloudNextPage:'Nästa filer',
       name:'Namn',email:'E-post',phone:'Telefon',note:'Anteckningar',save:'Spara',
       title:'Rubrik',details:'Beskrivning',priority:'Prioritet',normal:'Normal',urgent:'Brådskande',
-      quantity:'Antal',create:'Skapa',approve:'Godkänn',remove:'Ta bort',
+      quantity:'Antal',distance:'Körsträcka (km)',create:'Skapa',approve:'Godkänn',remove:'Ta bort',
       published:'Publicerad',publishConsent:'Jag godkänner publicering i bottens kunskapsbas.',
       documentBody:'Granskat dokumentinnehåll',empty:'Inga poster ännu.',
       loading:'Hämtar uppgifter…',saving:'Sparar…',saved:'Sparat.',
@@ -41,7 +41,7 @@
       docsIntro:'Publish only verified business facts that the bot may use in its answers.',cloudGoogle:'Connect Google Drive',cloudMicrosoft:'Connect SharePoint',cloudSite:'SharePoint site ID',cloudListGoogle:'List Drive files',cloudListSharePoint:'List SharePoint files',cloudPublish:'Import and publish',cloudApprove:'I confirm that this selected file contains only information my company is authorized to publish through the customer-service bot.',cloudImported:'File published to knowledge base',cloudNextPage:'Next files',
       name:'Name',email:'Email',phone:'Phone',note:'Notes',save:'Save',
       title:'Title',details:'Details',priority:'Priority',normal:'Normal',urgent:'Urgent',
-      quantity:'Quantity',create:'Create',approve:'Approve',remove:'Remove',
+      quantity:'Quantity',distance:'Travel distance (km)',create:'Create',approve:'Approve',remove:'Remove',
       published:'Published',publishConsent:'I approve publishing this content to the bot knowledge base.',
       documentBody:'Verified document text',empty:'No entries yet.',
       loading:'Loading data…',saving:'Saving…',saved:'Saved.',
@@ -71,6 +71,7 @@
       if(item.type)control.type=item.type;
       control.required=item.required!==false;
       if(item.min!==undefined)control.min=String(item.min);
+      if(item.step!==undefined)control.step=String(item.step);
       if(item.maxlength)control.maxLength=item.maxlength;
       if(item.multiline)control.rows=4;
       label.appendChild(control);
@@ -599,7 +600,8 @@
           event.preventDefault();perform('POST',API+'/tickets',Object.fromEntries(new FormData(form)));
         });
       }else if(kind==='quotes'){
-        fields(form,[{label:t.quantity,name:'quantity',type:'number',min:'0.001',required:true},
+        fields(form,[{label:t.quantity,name:'quantity',type:'number',min:'0.001',step:'0.001',required:true},
+          {label:t.distance,name:'distanceKm',type:'number',min:'0',step:'0.001',required:false},
           {label:t.note,name:'note',maxlength:700,required:false}]);
         form.addEventListener('submit',event=>{
           event.preventDefault();perform('POST',API+'/quotes',Object.fromEntries(new FormData(form)));

@@ -124,7 +124,8 @@ export function createChatImageTextReader({
   let running = false;
 
   async function read(image, type, language, mode = 'text') {
-    if (mode === 'objects' ? !objectDetector?.enabled : !enabled) return {status: 'unavailable'};
+    const available = {windows:objectDetector?.windowsEnabled, objects:objectDetector?.enabled, text:enabled};
+    if (!available[mode]) return {status: 'unavailable'};
     if (running) return {status: 'busy'};
 
     const bytes = safeImageBytes(image, type);
@@ -132,6 +133,12 @@ export function createChatImageTextReader({
 
     running = true;
     try {
+      if (mode === 'windows') {
+        const count = await objectDetector.detectWindows(bytes, 35_000);
+        return Number.isSafeInteger(count) && count > 0 && count <= 60
+          ? {status:'read', count}
+          : {status:'unreadable'};
+      }
       if (mode === 'objects') {
         const estimated = await objectDetector.detect(bytes, language, 12_000);
         const objects = estimated
@@ -157,5 +164,6 @@ export function createChatImageTextReader({
     }
   }
 
-  return {enabled, get objectsEnabled() { return objectDetector?.enabled === true; }, read};
+  return {enabled, get objectsEnabled() { return objectDetector?.enabled === true; },
+    get windowsEnabled() { return objectDetector?.windowsEnabled === true; }, read};
 }

@@ -91,3 +91,17 @@ test('no-contact paths clear or revise the request and never mark a lead ready',
   assert.match(revised.answer,/Friday/);
   assert.doesNotMatch(revised.answer,/Monday/);
 });
+
+test('property maintenance intake handles three additional approved trades', () => {
+  for (const [language,message,title] of [
+    ['fi','Haluaisin tarjouksen putkitöistä ensi maanantaina.','Putkityöt'],
+    ['sv','Jag vill ha en offert för målning nästa vecka.','Målning'],
+    ['en','I need a quote for lawn mowing next Friday.','Lawn mowing']
+  ]) {
+    const serviceRows = [{title,answer:title}];
+    assert.equal(advanceIndustryIntake({language,message,serviceRows:[]}),null);
+    const request = advanceIndustryIntake({language,message,serviceRows});
+    assert.equal(request.state.pending,'site');
+    assert.equal(advanceIndustryIntake({language,message:'120 m2',serviceRows,previous:request.state}).state.stage,'review');
+  }
+});

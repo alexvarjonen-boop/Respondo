@@ -16,18 +16,19 @@ export function validateContact(value={}){
   return {name,email:e?email:'',phone:p?phone:'',note:text(value.note,1200),
     stage:STATES.has(value.stage)?value.stage:'new'};
 }
-export function calculateNativeQuote(tenant,quantity){
+export function calculateNativeQuote(tenant,quantity,distanceKm){
   let n;
   try { n=parseQuoteQuantity(quantity); }
   catch { throw new TypeError('Invalid quantity'); }
   if(n<=0||Math.round(n*1000)/1000!==n)throw new TypeError('Invalid quantity');
   let quote;
-  try { quote=computeSafeQuote({...tenantQuotePricing(tenant),quantity:n}); }
+  try { quote=computeSafeQuote({...tenantQuotePricing(tenant),quantity:n,distanceKm}); }
   catch(error) { throw new TypeError(error.message); }
   if(!quote)throw new TypeError('Configure verified service prices first');
   if(quote.totalCents>100000000)throw new TypeError('Quote value out of bounds');
   return {service:text(tenant.quote_service_name||'Service',120),quantity:n,
     totalCents:quote.totalCents,currency:quote.currency,
+    ...(quote.distanceKm === undefined ? {} : {distanceKm:quote.distanceKm}),
     ...(tenant.quote_rule_version > 0 ? {ruleVersion:tenant.quote_rule_version} : {})};
 }
 export async function ensureNativeOperationsSchema(db){
@@ -59,6 +60,7 @@ export async function ensureNativeOperationsSchema(db){
       service TEXT NOT NULL,quantity NUMERIC NOT NULL,total_cents BIGINT NOT NULL,
       currency TEXT NOT NULL DEFAULT 'EUR',
       quote_rule_version INTEGER CHECK (quote_rule_version > 0),
+      distance_km NUMERIC(12,3) CHECK (distance_km >= 0),
       status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','approved')),
       note TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -91,6 +93,7 @@ export async function ensureNativeOperationsSchema(db){
   for(const sql of tables)await db.query(sql);
   await db.query(`ALTER TABLE public.respondo_native_quotes ADD COLUMN IF NOT EXISTS
     quote_rule_version INTEGER CHECK (quote_rule_version > 0)`);
+  await db.query(`ALTER TABLE public.respondo_native_quotes ADD COLUMN IF NOT EXISTS distance_km NUMERIC(12,3) CHECK (distance_km >= 0)`);
   for(const table of ['respondo_native_contacts','respondo_native_tickets',
     'respondo_native_quotes','respondo_native_rules','respondo_native_runs',
     'respondo_native_documents']){
@@ -109,7 +112,7 @@ export async function nativeOverview(db,tenantId){
   const sql=[
     'SELECT id,name,email,phone,note,stage,created_at FROM respondo_native_contacts WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 75',
     'SELECT id,title,details,status,priority,source_kind,created_at FROM respondo_native_tickets WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 75',
-    'SELECT id,service,quantity,total_cents,currency,quote_rule_version,status,note,created_at FROM respondo_native_quotes WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 50',
+    'SELECT id,service,quantity,total_cents,currency,quote_rule_version,distance_km,status,note,created_at FROM respondo_native_quotes WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 50',
     'SELECT id,trigger_key,action_key,enabled FROM respondo_native_rules WHERE tenant_id=$1 ORDER BY trigger_key',
     'SELECT id,title,status,created_at FROM respondo_native_documents WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 50',
     'SELECT id,event_key,created_at FROM respondo_native_runs WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 15'
@@ -145,16 +148,16 @@ export async function updateNativeTicket(db,tenantId,id,payload){
     WHERE tenant_id=$1 AND id=$2 RETURNING id,status`,[tenantId,id,payload.status]);
   return r.rows[0]||null;
 }
-export async function createNativeQuote(db,tenantId,quantity,note=''){
+export async function createNativeQuote(db,tenantId,quantity,note='',distanceKm){
   const tr=await db.query(`SELECT quote_base_price,quote_unit_price,quote_min_price,
-    quote_vat_percent,quote_service_name,quote_discount_over_quantity,quote_discount_percent,quote_rule_version
+    quote_vat_percent,quote_service_name,quote_distance_price,quote_discount_over_quantity,quote_discount_percent,quote_rule_version
     FROM tenants WHERE id=$1`,[tenantId]);
   if(!tr.rows[0])throw new TypeError('Workspace not found');
-  const x=calculateNativeQuote(tr.rows[0],quantity);
+  const x=calculateNativeQuote(tr.rows[0],quantity,distanceKm);
   const r=await db.query(`INSERT INTO respondo_native_quotes
-    (tenant_id,service,quantity,total_cents,note,quote_rule_version)
-    VALUES($1,$2,$3,$4,$5,$6) RETURNING id,service,quantity,total_cents,status,quote_rule_version`,
-    [tenantId,x.service,x.quantity,x.totalCents,text(note,700),x.ruleVersion ?? null]);
+    (tenant_id,service,quantity,total_cents,note,quote_rule_version,distance_km)
+    VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id,service,quantity,total_cents,status,quote_rule_version,distance_km`,
+    [tenantId,x.service,x.quantity,x.totalCents,text(note,700),x.ruleVersion ?? null,x.distanceKm ?? null]);
   return r.rows[0];
 }
 export async function updateNativeQuote(db,tenantId,id,status){

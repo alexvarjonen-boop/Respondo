@@ -51,10 +51,10 @@ test('first real edit records legacy and updated snapshots and preserves an omit
   assert.deepEqual(calls[1].args,['t1','u1']);
   assert.match(calls[2].sql,/VALUES\(\$1,1,\$2::jsonb,NULL\)/);
   assert.deepEqual(JSON.parse(calls[2].args[1]),{
-    serviceName:'Window cleaning',unitLabel:'windows',basePrice:25,unitPrice:15,minPrice:0,
+    serviceName:'Window cleaning',unitLabel:'windows',basePrice:25,unitPrice:15,distancePrice:0,minPrice:0,
     vatPercent:0,discountOverQuantity:20,discountPercent:10
   });
-  assert.deepEqual(calls[3].args,['t1','u1','Window cleaning',25,20,0,0,'windows',20,10,2]);
+  assert.deepEqual(calls[3].args,['t1','u1','Window cleaning',25,20,0,0,'windows',20,10,2,0]);
   assert.equal(JSON.parse(calls[4].args[2]).unitPrice,20);
   assert.equal(calls[5].sql,'COMMIT');
   assert.equal(calls[6].sql,'release');
@@ -100,7 +100,7 @@ test('owner list is bounded and uses a tenant-scoped exclusive version cursor',a
   const response = await listTenantQuoteRuleVersions(db,{tenantId:'t1',ownerId:'u1',before:'19'});
   assert.equal(response.versions.length,15);
   assert.equal(response.nextBefore,4);
-  assert.deepEqual(response.versions[0],{version:18,pricing:{basePrice:0},recordedAt:null});
+  assert.deepEqual(response.versions[0],{version:18,pricing:{basePrice:0,distancePrice:0},recordedAt:null});
   await assert.rejects(listTenantQuoteRuleVersions(db,{tenantId:'t1',ownerId:'u1',before:['19']}),RangeError);
 });
 

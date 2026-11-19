@@ -1,5 +1,5 @@
-import { parseQuoteRuleDraft } from './quote-rule-draft.mjs?v=1';
-import { bindQuoteRuleHistory } from './quote-rule-history.mjs?v=1';
+import { parseQuoteRuleDraft } from './quote-rule-draft.mjs?v=2';
+import { bindQuoteRuleHistory } from './quote-rule-history.mjs?v=2';
 import { bindProductStory } from './home-product-story.js?v=2';
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
@@ -5173,10 +5173,10 @@ async function dashboard(options = {}) {
             <details>
               <summary>${appText('Luonnostele hinnat lauseella','Skriv ett prisutkast i text','Draft prices in plain language')}</summary>
               <div class="field">
-                <label for="quoteRuleDraft">${appText('Yhden yksikön hinnasto','Prislista för en enhet','Price list for one unit')}</label>
+                <label for="quoteRuleDraft">${appText('Hinnasto','Prislista','Price list')}</label>
                 <textarea id="quoteRuleDraft" maxlength="420" rows="3" aria-describedby="quoteRuleExample"></textarea>
               </div>
-              <p id="quoteRuleExample">${appText('Esimerkki: 15 €/ikkuna; matkakulu 25 €; yli 20 ikkunasta 10 % alennus. Tarkista kentät ennen tallennusta.','Exempel: 15 € per fönster; reseavgift 25 €; över 20 fönster 10 % rabatt. Kontrollera fälten före sparning.','Example: €15 per window; travel fee €25; over 20 windows 10% discount. Review the fields before saving.')}</p>
+              <p id="quoteRuleExample">${appText('Esimerkki: 15 €/ikkuna; matkaveloitus 0,60 €/km; yli 20 ikkunasta 10 % alennus. Tarkista kentät ennen tallennusta.','Exempel: 15 € per fönster; reseavgift 0,60 €/km; över 20 fönster 10 % rabatt. Kontrollera fälten före sparning.','Example: €15 per window; travel fee €0.60/km; over 20 windows 10% discount. Review the fields before saving.')}</p>
               <button class="btn" type="button" id="fillQuoteRuleDraft">${appText('Täytä kenttiin','Fyll i fälten','Fill in fields')}</button>
               <p id="quoteRuleDraftStatus" role="status"></p>
             </details>
@@ -5185,6 +5185,7 @@ async function dashboard(options = {}) {
               <div class="field"><label for="quoteBasePrice">${appText('Perusmaksu €','Grundavgift €','Base fee €')}</label><input id="quoteBasePrice" name="basePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.basePrice)}"></div>
               <div class="field"><label for="quoteUnitPrice">${appText('Hinta / yksikkö €','Pris / enhet €','Price / unit €')}</label><input id="quoteUnitPrice" name="unitPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.unitPrice)}"></div>
               <div class="field"><label for="quoteUnitLabel">${appText('Yksikön nimi','Enhetens namn','Unit name')}</label><input id="quoteUnitLabel" name="unitLabel" value="${esc(quoteEngine.unitLabel || appText('kpl','st','pcs'))}" placeholder="h, km, m²"></div>
+              <div class="field"><label for="quoteDistancePrice">${appText('Matkaveloitus €/km','Reseavgift €/km','Travel fee €/km')}</label><input id="quoteDistancePrice" name="distancePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.distancePrice ?? 0)}"></div>
               <div class="field"><label for="quoteMinPrice">${appText('Minimihinta €','Minimipris €','Minimum price €')}</label><input id="quoteMinPrice" name="minPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.minPrice)}"></div>
               <div class="field"><label for="quoteVatPercent">${appText('ALV %','Moms %','VAT %')}</label><input id="quoteVatPercent" name="vatPercent" type="number" min="0" max="30" step="0.1" value="${esc(quoteEngine.vatPercent)}"></div>
               <div class="field"><label for="quoteDiscountThreshold">${appText('Alennus tämän määrän ylittäessä','Rabatt över denna mängd','Discount above this quantity')}</label><input id="quoteDiscountThreshold" name="discountOverQuantity" type="number" min="0" max="100000" step="0.001" value="${esc(quoteEngine.discountOverQuantity ?? '')}"></div>
@@ -5193,11 +5194,12 @@ async function dashboard(options = {}) {
             <div class="field">
               <label for="quoteExampleQuantity">${appText('Esimerkin määrä','Exempelmängd','Example quantity')}</label>
               <input id="quoteExampleQuantity" type="number" min="0.001" max="100000" step="0.001" value="25">
+              <label for="quoteExampleDistance">${appText('Esimerkin kilometrit','Exempelkilometer','Example distance (km)')}</label><input id="quoteExampleDistance" type="number" min="0" max="100000" step="0.001">
               <button class="btn" type="button" id="previewQuoteDraft">${appText('Laske esimerkki','Beräkna exempel','Calculate example')}</button>
               <output id="quoteDraftEstimate" for="quoteExampleQuantity" aria-live="polite"></output>
             </div>
             <div class="quote-form-bottom">
-              <p class="quote-formula-preview">${appText('Alennus koskee yksikköhintojen summaa. Perusmaksu lisätään, minimihinta tarkistetaan ja ALV lisätään viimeiseksi.','Rabatten gäller summan av enhetspriserna. Grundavgiften läggs till, minimipriset kontrolleras och moms läggs till sist.','The discount applies to the unit subtotal. The base fee is added, the minimum is checked, and VAT is applied last.')}</p>
+              <p class="quote-formula-preview">${appText('Alennus koskee yksikköhintojen summaa. Perusmaksu ja matkaveloitus lisätään, minimihinta tarkistetaan ja ALV lisätään viimeiseksi.','Rabatten gäller summan av enhetspriserna. Grundavgift och reseavgift läggs till, minimipriset kontrolleras och moms läggs till sist.','The discount applies to the unit subtotal. The base and travel fees are added, the minimum is checked, and VAT is applied last.')}</p>
               <button class="btn dashboard-action" type="submit">${appText('Tallenna hintalaskuri','Spara priskalkylatorn','Save quote calculator')} <span>→</span></button>
             </div>
             <div id="quoteEngineMsg" role="status"></div>
@@ -5436,7 +5438,7 @@ async function dashboard(options = {}) {
           </select>
           <small style="line-height:1.5;opacity:.76">${appText('Valinta päivittää alla olevan asennuskoodin. Smart Assist toimii myös jo asennetuissa boteissa automaattisesti.','Valet uppdaterar installationskoden nedan. Smart Assist fungerar också automatiskt i befintliga installationer.','Your choice updates the embed code below. Existing installations also receive Smart Assist automatically.')}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1-quote-image-text-v1-objects-intake-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1-quote-image-text-v1-objects-intake-v1-distance-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Koodi lisätty','✓ Koden tillagd','✓ Code added') : appText('Olen lisännyt koodin','Jag har lagt till koden','I added the code')}</button>
         <button type="button" class="btn" id="verifyInstallation" ${t.website?'':'disabled'}>${appText('Tarkista asennus oikealta sivulta','Kontrollera installationen på webbplatsen','Verify installation on the live website')}</button>
         <p id="installationProofResult" class="field-hint" role="status" aria-live="polite">${appText('Koodin lisääminen ei vielä todista, että se näkyy julkaistulla sivulla.','Att lägga till koden bevisar inte att den finns på den publicerade sidan.','Adding the code does not prove it appears on the published website.')}</p>
@@ -8528,7 +8530,7 @@ async function route() {
         quoteDraftEstimate.textContent = appText('Anna esimerkin määrä.','Ange exempelmängden.','Enter the example quantity.');
         return;
       }
-      const payload = () => JSON.stringify({...Object.fromEntries(new FormData(form)),quantity:quantity.value});
+      const payload = () => JSON.stringify({...Object.fromEntries(new FormData(form)),quantity:quantity.value,distanceKm:$('#quoteExampleDistance').value});
       const submitted = payload();
       const button = event.currentTarget;
       button.disabled = true;
@@ -8587,6 +8589,7 @@ async function route() {
             unitLabel:form.get('unitLabel'),
             discountOverQuantity:form.get('discountOverQuantity'),
             discountPercent:form.get('discountPercent'),
+            distancePrice:form.get('distancePrice'),
             expectedVersion:Number(form.get('expectedVersion')),
           }),
         });
@@ -9307,7 +9310,7 @@ async function route() {
           if(!html.includes('data-sites-key=')){
             html=html.replace('></script>',' data-sites-key="'+key+'"></script>');
           }
-          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261109-smart-experience-v1-quote-image-text-v1-objects-intake-v1');
+          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261109-smart-experience-v1-quote-image-text-v1-objects-intake-v1-distance-v1');
           code.textContent=html;
         }
         if(message)message.innerHTML='<div class="notice success">'+appText(

@@ -67,3 +67,15 @@ test('rejects invalid discount configurations before pricing', () => {
   ]) assert.throws(()=>computeSafeQuote({unit:15,quantity:25,...rules}),RangeError);
   assert.equal(computeSafeQuote({unit:15,quantity:1,discountOverQuantity:0,discountPercent:100}).totalCents,0);
 });
+
+test('travel adds a separate measured quantity without receiving the work discount', () => {
+  const pricing = {unit:45, distancePrice:.60, quantity:2, discountOverQuantity:1, discountPercent:10, vatPercent:25.5};
+  const quote = computeSafeQuote({...pricing,distanceKm:50});
+  assert.equal(quote.travel,30);
+  assert.equal(quote.net,111);
+  assert.equal(quote.totalCents,13931);
+  assert.equal(quote.workDiscount,9);
+  assert.throws(()=>computeSafeQuote(pricing),RangeError);
+  assert.throws(()=>computeSafeQuote({...pricing,distanceKm:2.1234}),RangeError);
+  assert.equal(computeSafeQuote({...pricing,distanceKm:0}).travel,0);
+});

@@ -48,6 +48,12 @@ test('the unsaved example uses the authenticated, plan-gated server calculator',
   const route = server.slice(server.indexOf("app.post('/api/app/quote-engine/preview'"),server.indexOf("app.post('/api/app/quote-engine',"));
   assert.match(route,/auth, ownerOnly, subscribed/);
   assert.match(route,/requirePlanCapability\(req,res,'allCurrentFeatures'\)/);
-  assert.match(route,/computeSafeQuote\(\{\.\.\.readDashboardQuotePricing\(body\),quantity\}\)/);
+  assert.match(route,/computeSafeQuote\(\{\.\.\.readDashboardQuotePricing\(body\),quantity,distanceKm:body.distanceKm\}\)/);
   assert.doesNotMatch(route,/UPDATE tenants|INSERT INTO/);
+});
+
+test('explicit per-kilometre travel fees complement the main service unit', () => {
+  assert.deepEqual(parseQuoteRuleDraft('45 €/tunti; matkaveloitus 0,60 €/km'), {
+    unitPrice:45, unitLabel:'tunti', distancePrice:.60
+  });
 });

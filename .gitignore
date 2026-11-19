@@ -4,3 +4,5 @@ node_modules/
 npm-debug.log*
 
 /assets/chat-image-objects/detector.weights
+
+/assets/chat-image-objects/windows.onnx

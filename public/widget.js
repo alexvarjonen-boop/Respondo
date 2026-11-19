@@ -426,6 +426,8 @@
           <input type="file" id="imageTextFile" accept="image/png,image/jpeg" hidden>
           <button type="button" id="imageTextButton" aria-describedby="imageTextStatus" hidden>${experienceText('Lue teksti kuvasta','Läs text från bild','Read image text')}</button>
           <button type="button" id="imageObjectButton" aria-describedby="imageTextStatus" hidden>${experienceText('Arvioi kuvan kohteet','Uppskatta objekt i bilden','Estimate objects in an image')}</button>
+          <button type="button" id="imageWindowButton" aria-describedby="imageTextStatus" hidden>${experienceText('Arvioi ikkunoiden määrä kuvasta','Uppskatta antal fönster i bilden','Estimate window count in a photo')}</button>
+          <a href="${serviceOrigin}/window-measure.html?lang=${widgetLang}" target="_blank" rel="noopener noreferrer">${experienceText('Merkitse ja mittaa ikkunat kuvasta','Markera och mät fönster i bild','Mark and measure windows in a photo')}</a>
           <span id="imageTextStatus" role="status">${experienceText('Tulos lisätään luonnokseen.','Resultatet läggs till i utkastet.','The result is added to your draft.')}</span>
         </div>
         <div class="powered">RESPONDO AI</div>
@@ -467,9 +469,12 @@
   const imageTextFile = $('#imageTextFile');
   const imageTextButton = $('#imageTextButton');
   const imageObjectButton = $('#imageObjectButton');
+  const imageWindowButton = $('#imageWindowButton');
   const imageTextStatus = $('#imageTextStatus');
+  let quoteDistanceRequired = false;
   let imageTextMaxBytes = 0;
   let imageObjectMaxBytes = 0;
+  let imageWindowMaxBytes = 0;
   let imageAnalysisMode = 'text';
   const voiceButton = $('#voiceBtn');
   const voiceLanguageSelect = $('#voiceLang');
@@ -1155,6 +1160,7 @@
         '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
         '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
         '<input name="quantity" inputmode="decimal" min="0" step="0.01" placeholder="' + t('Määrä', 'Quantity') + '">' +
+        (quoteDistanceRequired ? '<label>' + experienceText('Matka kilometreinä','Resa i kilometer','Travel distance in kilometres') + '<input name="distanceKm" type="number" min="0" max="100000" step="0.001"></label>' : '') +
         '<textarea name="details" maxlength="1800" placeholder="' + t('Mitä tarvitset?', 'What do you need?') + '">' + escapeHtml(question) + '</textarea>' +
         '<input name="budget" maxlength="120" placeholder="' + t('Budjetti, jos tiedossa', 'Budget, if known') + '">' +
         '<button type="submit">' + t('Laske ja lähetä tarjouspyyntö', 'Calculate and send') + '</button>' +
@@ -1282,6 +1288,10 @@
               '<small>' + escapeHtml(q.serviceName || experienceText('Palvelu', 'Tjänst', 'Service')) + '</small>' +
               (!data.checkoutUrl ? '<small>' + experienceText('Hinta-arvio', 'Prisuppskattning', 'Estimated price') + '</small>' : '') +
               '<strong>' + escapeHtml(total) + '</strong>' +
+              (Number.isFinite(q.distanceKm) && Number.isFinite(q.travel) ? '<span>' + escapeHtml(
+                experienceText('Matka','Resa','Travel') + ' · ' + new Intl.NumberFormat(locale).format(q.distanceKm) +
+                  ' km · ' + currency.format(q.travel)
+              ) + '</span>' : '') +
               (discountText ? '<span>' + escapeHtml(discountText) + '</span>' : '') +
               (q.minimumApplied ? '<span>' + experienceText('Vähimmäisveloitus käytössä', 'Minimidebitering tillämpas', 'Minimum charge applies') + '</span>' : '') +
               '<span>' + escapeHtml(
@@ -1596,6 +1606,7 @@
       if (!res.ok) throw new Error('Widget not allowed');
       const data = await res.json();
       token = data.token;
+      quoteDistanceRequired = data.quoteDistanceRequired === true;
       if (Number.isSafeInteger(data.imageTextMaxBytes) && data.imageTextMaxBytes > 0) {
         imageTextMaxBytes = data.imageTextMaxBytes;
         imageTextButton.hidden = false;
@@ -1604,7 +1615,11 @@
         imageObjectMaxBytes = data.imageObjectMaxBytes;
         imageObjectButton.hidden = false;
       }
-      imageTextTools.hidden = !imageTextMaxBytes && !imageObjectMaxBytes;
+      if (Number.isSafeInteger(data.imageWindowMaxBytes) && data.imageWindowMaxBytes > 0) {
+        imageWindowMaxBytes = data.imageWindowMaxBytes;
+        imageWindowButton.hidden = false;
+      }
+      imageTextTools.hidden = !imageTextMaxBytes && !imageObjectMaxBytes && !imageWindowMaxBytes;
       ready = true;
       humanHelp.hidden=false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
@@ -1649,11 +1664,17 @@
     imageAnalysisMode = 'objects';
     imageTextFile.click();
   });
+  imageWindowButton.addEventListener('click', () => {
+    if (!ready || !imageWindowMaxBytes) return;
+    imageAnalysisMode = 'windows';
+    imageTextFile.click();
+  });
   imageTextFile.addEventListener('change', async () => {
     const [file] = imageTextFile.files;
     imageTextFile.value = '';
-    const estimateObjects = imageAnalysisMode === 'objects';
-    const maxBytes = estimateObjects ? imageObjectMaxBytes : imageTextMaxBytes;
+    const mode = imageAnalysisMode;
+    const estimateObjects = mode !== 'text';
+    const maxBytes = {text:imageTextMaxBytes, objects:imageObjectMaxBytes, windows:imageWindowMaxBytes}[mode];
     if (!file || !ready || !maxBytes || imageTextButton.disabled) return;
     if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > maxBytes) {
       imageTextStatus.textContent = experienceText(
@@ -1665,11 +1686,13 @@
     }
     imageTextButton.disabled = true;
     imageObjectButton.disabled = true;
-    imageTextStatus.textContent = estimateObjects
-      ? experienceText('Arvioidaan näkyviä kohteita…','Uppskattar synliga objekt…','Estimating visible objects…')
+    imageWindowButton.disabled = true;
+    imageTextStatus.textContent = mode === 'windows'
+      ? experienceText('Arvioidaan näkyviä ikkunoita…','Uppskattar synliga fönster…','Estimating visible windows…')
+      : estimateObjects ? experienceText('Arvioidaan näkyviä kohteita…','Uppskattar synliga objekt…','Estimating visible objects…')
       : experienceText('Luetaan tekstiä…','Läser text…','Reading text…');
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 18_000);
+    const timer = setTimeout(() => controller.abort(), mode === 'windows' ? 40_000 : 18_000);
     try {
       const image = await new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1677,7 +1700,7 @@
         reader.onload = () => resolve(String(reader.result).split(',', 2)[1]);
         reader.readAsDataURL(file);
       });
-      const endpoint = estimateObjects ? '/chat-image-objects' : '/chat-image-text';
+      const endpoint = '/chat-image-' + mode;
       const response = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + endpoint, {
         method:'POST', mode:'cors', credentials:'omit', signal:controller.signal,
         headers:{'Content-Type':'text/plain;charset=UTF-8'},
@@ -1685,14 +1708,22 @@
       });
       const result = await response.json().catch(() => ({}));
       if (result.status === 'unreadable' || result.status === 'invalid') {
-        imageTextStatus.textContent = estimateObjects
-          ? experienceText('Kohteita ei voitu arvioida. Kokeile terävämpää kuvaa tai kerro kohteet itse.','Objekten kunde inte uppskattas. Prova en skarpare bild eller beskriv objekten.','The objects could not be estimated. Try a clearer image or describe them yourself.')
+        imageTextStatus.textContent = mode === 'windows'
+          ? experienceText('Ikkunoiden määrää ei voitu arvioida. Kokeile suoraan edestä otettua kuvaa tai merkitse ikkunat itse.','Antalet fönster kunde inte uppskattas. Prova ett foto rakt framifrån eller markera fönstren själv.','Could not estimate the count. Try a straight-on photo or mark the windows manually.')
+          : estimateObjects ? experienceText('Kohteita ei voitu arvioida. Kokeile terävämpää kuvaa tai kerro kohteet itse.','Objekten kunde inte uppskattas. Prova en skarpare bild eller beskriv objekten.','The objects could not be estimated. Try a clearer image or describe them yourself.')
           : experienceText('Kokeile terävämpää, tekstiin rajattua kuvaa.','Prova en skarpare bild beskuren till texten.','Try a sharper image cropped to the text.');
         return;
       }
       if (!response.ok || result.status !== 'read') throw new Error('Image analysis unavailable');
       let extracted = result.text;
-      if (estimateObjects && Array.isArray(result.objects) && result.objects.length) {
+      if (mode === 'windows' && Number.isInteger(result.count) && result.count > 0) {
+        extracted = experienceText(
+          'Kuvassa näyttää olevan noin ' + result.count + ' ikkunaa.',
+          'Bilden verkar visa cirka ' + result.count + ' fönster.',
+          'The image appears to show about ' + result.count + ' windows.'
+        );
+      }
+      if (mode === 'objects' && Array.isArray(result.objects) && result.objects.length) {
         const estimates = result.objects.map(({label,count}) => count + ' × ' + label).join(', ');
         extracted = experienceText('Kuvan kohdearvio: ','Uppskattade objekt i bilden: ','Estimated objects in the image: ') + estimates + '.';
       }
@@ -1708,8 +1739,9 @@
       }
       delete input.dataset.respondoVoiceLang;
       input.value = draft;
-      imageTextStatus.textContent = estimateObjects
-        ? experienceText('Kohteet ja määrät ovat arvioita. Tarkista ne ennen lähetystä.','Objekten och antalen är uppskattningar. Kontrollera dem före sändning.','Objects and counts are estimates. Review them before sending.')
+      imageTextStatus.textContent = mode === 'windows'
+        ? experienceText('Tarkista ikkunoiden määrä ennen lähetystä. Mittoihin tarvitaan tunnettu vertailupituus.','Kontrollera antalet fönster före sändning. Mått kräver en känd referenslängd.','Confirm the window count before sending. Size estimates need a known reference length.')
+        : estimateObjects ? experienceText('Kohteet ja määrät ovat arvioita. Tarkista ne ennen lähetystä.','Objekten och antalen är uppskattningar. Kontrollera dem före sändning.','Objects and counts are estimates. Review them before sending.')
         : result.truncated
         ? experienceText('Osa tekstistä lisätty. Tarkista ennen lähetystä.','En del av texten lades till. Kontrollera före sändning.','Part of the text was added. Review before sending.')
         : experienceText('Tarkista kuvasta luettu teksti ennen lähetystä.','Kontrollera den lästa texten före sändning.','Review the image text before sending.');
@@ -1724,6 +1756,7 @@
       clearTimeout(timer);
       imageTextButton.disabled = false;
       imageObjectButton.disabled = false;
+      imageWindowButton.disabled = false;
     }
   });
   launcher.addEventListener('click', () => {

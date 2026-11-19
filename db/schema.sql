@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   quote_service_name TEXT,
   quote_base_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   quote_unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  quote_distance_price NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (quote_distance_price >= 0),
   quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0,
   quote_discount_over_quantity NUMERIC(12,3) CHECK (quote_discount_over_quantity BETWEEN 0 AND 100000),

@@ -7,3 +7,5 @@ npm-debug.log*
 .DS_Store
 
 assets/chat-image-objects/detector.weights
+
+/assets/chat-image-objects/windows.onnx

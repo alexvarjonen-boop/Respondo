@@ -29,6 +29,7 @@ function fixedPrecision(input, max, scale) {
 export function validateQuotePricing({
   base = 0,
   unit = 0,
+  distancePrice = 0,
   minimum = 0,
   vatPercent = 0,
   discountOverQuantity = null,
@@ -42,6 +43,7 @@ export function validateQuotePricing({
   return {
     base:fixedPrecision(base, MAX_EUR, 100),
     unit:fixedPrecision(unit, MAX_EUR, 100),
+    distancePrice:fixedPrecision(distancePrice, MAX_EUR, 100),
     minimum:fixedPrecision(minimum, MAX_EUR, 100),
     vatPercent:fixedPrecision(vatPercent, 100, 100),
     discountOverQuantity:threshold,
@@ -62,18 +64,24 @@ function quantityFraction(quantity) {
 const hundredths = value => BigInt(Math.round(value * 100));
 const roundRatio = (numerator, denominator) => (numerator + denominator / 2n) / denominator;
 
-export function computeSafeQuote({ quantity = 0, ...configuration } = {}) {
+export function computeSafeQuote({ quantity = 0, distanceKm, ...configuration } = {}) {
   const pricing = validateQuotePricing(configuration);
   const qty = parseQuoteQuantity(quantity);
-  if (pricing.base === 0 && pricing.unit === 0 && pricing.minimum === 0) return null;
+  const distance = pricing.distancePrice > 0
+    ? decimalAmount(distanceKm, MAX_QUANTITY, 'Invalid or missing trip distance')
+    : 0;
+  if (Math.round(distance*1000)/1000 !== distance) throw new RangeError('Invalid trip distance precision');
+  if (pricing.base === 0 && pricing.unit === 0 && pricing.minimum === 0 && pricing.distancePrice === 0) return null;
 
   const discountApplies = pricing.discountPercent > 0 && pricing.unit > 0 &&
     qty > pricing.discountOverQuantity;
   const discountRate = discountApplies ? hundredths(pricing.discountPercent) : 0n;
   const [qtyNumerator, qtyDenominator] = quantityFraction(qty);
-  const scale = qtyDenominator * PERCENT_SCALE;
+  const [distanceNumerator,distanceDenominator] = quantityFraction(distance);
+  const scale = qtyDenominator * distanceDenominator * PERCENT_SCALE;
   const work = hundredths(pricing.unit) * qtyNumerator;
-  const subtotal = hundredths(pricing.base) * scale + work * (PERCENT_SCALE - discountRate);
+  const travel = hundredths(pricing.distancePrice) * distanceNumerator * qtyDenominator * PERCENT_SCALE;
+  const subtotal = hundredths(pricing.base) * scale + work * (PERCENT_SCALE - discountRate) * distanceDenominator + travel;
   const minimum = hundredths(pricing.minimum) * scale;
   const minimumApplied = subtotal < minimum;
   const netCents = roundRatio(minimumApplied ? minimum : subtotal, scale);
@@ -89,10 +97,11 @@ export function computeSafeQuote({ quantity = 0, ...configuration } = {}) {
     totalCents:Number(totalCents),
     quantity:qty,
     currency:'EUR',
+    ...(pricing.distancePrice > 0 ? {distanceKm:distance,travel:Number(roundRatio(travel,scale))/100} : {}),
     ...(minimumApplied ? {minimumApplied:true} : {}),
     ...(discountApplies ? {
       workDiscountPercent:pricing.discountPercent,
-      workDiscount:Number(roundRatio(work * discountRate, scale)) / 100
+      workDiscount:Number(roundRatio(work * discountRate, qtyDenominator * PERCENT_SCALE)) / 100
     } : {})
   });
 }
@@ -101,6 +110,7 @@ export function tenantQuotePricing(tenant) {
   return {
     base:tenant.quote_base_price ?? 0,
     unit:tenant.quote_unit_price ?? 0,
+    distancePrice:tenant.quote_distance_price ?? 0,
     minimum:tenant.quote_min_price ?? 0,
     vatPercent:tenant.quote_vat_percent ?? 0,
     discountOverQuantity:tenant.quote_discount_over_quantity ?? null,
