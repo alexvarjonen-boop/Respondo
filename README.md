@@ -4,7 +4,15 @@ Production-oriented B2B customer-service SaaS for Finnish, Swedish and English w
 
 ## Current product model
 
-Respondo answers from each business's approved knowledge base and imported website facts. It does not use the OpenAI API in production.
+Respondo's deterministic production bot answers from each business's approved knowledge base and imported website facts. Optional model-based conversational reasoning is available in code but **disabled by default** until billing, data processing/privacy, and testing are approved. It uses OpenAI Responses API only when explicitly enabled.
+
+### Optional multilingual conversational reasoning
+
+`RESPONDO_CONVERSATIONAL_AI_ENABLED=1` plus an existing `OPENAI_API_KEY` enables a tenant-scoped, evidence-checked AI interpretation layer. `RESPONDO_CONVERSATIONAL_AI_MODEL` (default `gpt-5-mini`), and `RESPONDO_CONVERSATIONAL_AI_MAX_DAILY` (default 30 requests/process/day, hard cap 100) limit costs. This daily counter is **per process**, not a centralized production spend limit: set a provider billing budget and monitor costs separately.
+
+Only filtered, approved, HTTPS-sourced website snippets are transmitted by default. Include approved manually entered company knowledge only after a processor/privacy review by explicitly setting `RESPONDO_CONVERSATIONAL_AI_INCLUDE_MANUAL=1`. Requests containing obvious personal identifiers or secrets fail closed to the existing on-server handler. No chat transcripts or assistant responses are transmitted; only up to four sanitized previous customer questions aid follow-ups. `store:false` is sent to the provider. Verify the privacy notice, external processor terms, regional processing and lawful basis before turning this on.
+
+The model sees only a bounded set of current-tenant facts and must cite literal evidence quotes. Answers pass the numeric and retail-integrity guards and model errors fall back to the deterministic engine. It cannot confirm payments, bookings or external actions. Not every question can be answered, and **zero hallucinations or a 100% error-free rate are not guaranteed**. Test tenant-specific multilingual paraphrases and refusal cases before deployment; keep the feature flag off when unsure.
 
 ## Subscription prices for new customers — October 14, 2026
 

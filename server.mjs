@@ -55,6 +55,7 @@ import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs'
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
 import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
 import {tryGroundedAIResponse} from './grounded-ai-fallback.mjs';
+import {tryConversationalAIResponse} from './conversational-ai.mjs';
 import {classifyMainioSemanticIntent,mainioSemanticActions,interpretMainioLocalIntent} from './mainio-semantic-intent.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
@@ -8511,6 +8512,25 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
 // sensitive policies, named services) stay on their audited deterministic path.
 async function generateGroundedAnswer(args={}) {
   let rawResult=await generateRuleGroundedAnswer(args);
+  // When enabled, the LLM interprets paraphrases, typos, code-switching and
+  // conversation context over THIS tenant's approved knowledge. It cannot
+  // change bookings, execute actions, or create unsupported merchant facts.
+  // Keep already-verified, high-confidence deterministic business answers.
+  const eligibleForConversationalAI=args.disableAIFallback!==true && !args.multiPart &&
+    (rawResult?.handoff || (!rawResult?.sourceIds?.length && rawResult?.confidence<0.8));
+  if(eligibleForConversationalAI){
+    const semantic=await tryConversationalAIResponse({
+      question:String(args.message||''),rows:Array.isArray(args.rows)?args.rows:[],
+      history:args.history,lang:args.lang
+    });
+    if(semantic){
+      const checked=guardCitedNumericFacts(
+        verifyRetailAnswer(semantic,args.rows,args.message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),
+        args.rows
+      );
+      if(checked && !checked.handoff && checked.answer) return checked;
+    }
+  }
 
   // Final answer boundary: older, higher-priority service-price handlers may
   // still return an entire multi-service pricing paragraph. Re-scope once

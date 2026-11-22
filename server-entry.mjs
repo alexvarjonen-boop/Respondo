@@ -158,6 +158,13 @@ const blockedPaidApiHosts = new Set([
   'api.openai.com',
 ]);
 
+// Only unlock the OpenAI endpoint for explicitly approved, cost-limited
+// conversational inference. Legacy paid integrations stay blocked.
+if (process.env.RESPONDO_CONVERSATIONAL_AI_ENABLED === '1' &&
+    /^sk-/.test(String(process.env.OPENAI_API_KEY || ''))) {
+  blockedPaidApiHosts.delete('api.openai.com');
+}
+
 const nativeFetch = globalThis.fetch.bind(globalThis);
 globalThis.fetch = async (input, init) => {
   const raw = typeof input === 'string' ? input : String(input?.url || input || '');
