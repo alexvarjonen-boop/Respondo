@@ -91,6 +91,7 @@ import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-
 import {reliabilityOverview} from './respondo-reliability-lab.mjs';
 import {ensureScheduledQualitySchema,claimScheduledQualityRun,executeScheduledQualityRun,scheduledQualityOverview} from './respondo-scheduled-quality.mjs';
 import {ensureOwnerSalesSchema,ownerSalesOverview,recordOwnerSale,retractOwnerSale} from './respondo-sales-evidence.mjs';
+import {salesPartnerProgramActive,salesPartnerForCheckout,savePartnerCheckout,partnerCheckoutCompleted,partnerInvoicePaid,ensureSalesPartnerSchema,installSalesPartnerRoutes} from './sales-partners.mjs';
 import {capabilityHealthOverview} from './respondo-capability-health.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
@@ -9224,6 +9225,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (!(await enforceCompletedCheckoutCountryPolicy(session))) {
         return res.json({ received:true, taxCountryBlocked:true });
       }
+      if (process.env.SALES_PARTNER_PROGRAM_ENABLED === '1') await partnerCheckoutCompleted(pool,session);
       const target = await resolveSignupCheckoutTarget(session);
       const userId = target?.userId || '';
       let tenantId = target?.tenantId || '';
@@ -9349,6 +9351,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         await syncStripeSubscriptionState(subscription);
+        if (process.env.SALES_PARTNER_PROGRAM_ENABLED === '1') await partnerInvoicePaid(pool,stripe,invoice,subscription);
       }
     }
 
@@ -9486,6 +9489,7 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text({ type: 'text/plain', limit: '20kb' }));
+installSalesPartnerRoutes(app,{db:pool,customerAuth:auth,ownerOnly:ownerTrafficOnly,secret:JWT,base:BASE,stripe});
 app.use(rateLimit({ windowMs:60000, limit:600, standardHeaders:true, legacyHeaders:false, keyGenerator:req=>publicRateKey(req,'global') }));
 installInternalVaultRoutes(app, {
   auth,
@@ -9665,6 +9669,16 @@ app.get(['/media', '/media/', '/media/index.html'], (req,res) => {
 
 app.get('/trafic', (req,res) => { res.set('X-Robots-Tag','noindex, nofollow'); return res.redirect(302,'/traffic.html'); });
 
+// Private administration is never served through public static middleware.
+app.get('/sales-admin.html',auth,ownerTrafficOnly,(req,res)=>{
+  res.set('Cache-Control','private,no-store');
+  return res.sendFile(path.join(__dirname,'public','sales-admin.html'));
+});
+// Do not expose an unapproved legal agreement or referral consent page.
+app.get(['/myyntikumppani-ehdot.html','/sales-referral.html'],(req,res,next)=>{
+  if(!salesPartnerProgramActive())return res.status(404).type('text/plain').send('Not available');
+  return next();
+});
 app.use(createPublicAssetCompression(path.join(__dirname,'public')));
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
@@ -11825,6 +11839,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       ? (setupService ? ownerFreeSetupCheckoutLineItem(normalizedPlan) : null)
       : await stripeCheckoutLineItem(normalizedPlan);
     if(usFirstYearCampaign) await assertUSFirstYearCheckoutPrice(checkoutLineItem);
+    const salesPartner = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1' && !freeReferral ? await salesPartnerForCheckout(pool,req,JWT,normalizedPlan) : null;
 
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
@@ -11965,6 +11980,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           ...(normalizedPlan === 'owner_test' ? {} : assistedSetupCheckoutTrial(setupService)),
           metadata: {
             user_id: id,
+            ...(salesPartner ? {sales_partner_id:salesPartner.id} : {}),
             tenant_id: tenantId,
             plan: normalizedPlan,
             tax_country_policy: checkoutCountry.policyVersion,
@@ -11989,6 +12005,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             : `${BASE}/tilaus?cancelled=1`,
         metadata: {
           user_id: id,
+            ...(salesPartner ? {sales_partner_id:salesPartner.id} : {}),
           tenant_id: tenantId,
           plan: normalizedPlan,
           tax_country_policy: checkoutCountry.policyVersion,
@@ -12005,6 +12022,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       });
 
       if(setupService)await bindSetupImageToSession(client,setupImageToken,session.id);
+      if (salesPartner) await savePartnerCheckout(client,{partner:salesPartner,sessionId:session.id,userId:id,tenantId});
       await client.query('COMMIT');
     } catch (e) {
       try { await client.query('ROLLBACK'); } catch {}
@@ -12880,6 +12898,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
+    const salesPartner = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1' && !freeReferral ? await salesPartnerForCheckout(pool,req,JWT,plan) : null;
     const checkoutNoticeMessage=checkoutCountry.country==='US'
       ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.'
       : (setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi',freeReferral) : '');
@@ -12902,6 +12921,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         ...assistedSetupCheckoutTrial(setupService),
         metadata:{
           user_id:req.user.sub,
+          ...(salesPartner ? {sales_partner_id:salesPartner.id} : {}),
           tenant_id:tenantId,
           plan,
           additional_workspace:'1',
@@ -12924,6 +12944,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
       cancel_url:`${BASE}/app?section=account&workspace_checkout=cancelled`,
       metadata:{
         user_id:req.user.sub,
+          ...(salesPartner ? {sales_partner_id:salesPartner.id} : {}),
         tenant_id:tenantId,
         plan,
         additional_workspace:'1',
@@ -12941,6 +12962,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
     });
 
     if(setupService)await bindSetupImageToSession(pool,setupImageToken,session.id);
+    if (salesPartner) await savePartnerCheckout(pool,{partner:salesPartner,sessionId:session.id,userId:req.user.sub,tenantId});
 
     if(referrer && !existingReferralReservation){
       await q(
@@ -18807,6 +18829,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
     await withRuntimeSchemaLock(() => ensureScheduledQualitySchema(pool));
     await withRuntimeSchemaLock(() => ensureOwnerSalesSchema(pool));
+    await withRuntimeSchemaLock(() => ensureSalesPartnerSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailBridgeSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
