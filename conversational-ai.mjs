@@ -211,7 +211,7 @@ export async function tryConversationalAIResponse({
       const answer=String(parsed?.answer||'').trim();
       if(parsed?.answerable!==true || !Array.isArray(parsed?.evidence) ||
         parsed.evidence.length || answer.length<3 || answer.length>600 ||
-        /https?:\\/\\/|www\\.|\\b(?:we|our|us|meilla|teilla|yrityksemme|vi|vart foretag)\\b/i.test(norm(answer)) ||
+        /https?:\/\/|www\.|\b(?:we|our|us|meilla|teilla|yrityksemme|vi|vart foretag)\b/i.test(norm(answer)) ||
         containsKnowledgeInstructionAttack(answer))return null;
       result={answer,handoff:false,confidence:0.55,intent:'Yleistietoa',sourceIds:[],selected:[]};
     }else{
