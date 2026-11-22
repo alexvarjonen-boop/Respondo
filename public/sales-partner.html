@@ -36,7 +36,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;colo
 <script>
 (function(){
 'use strict';
-const $=id=>document.getElementById(id),param=new URLSearchParams(location.search),invite=param.get('invite');let contractVersion='2026-11-22-draft-v1';
+const $=id=>document.getElementById(id),param=new URLSearchParams(location.hash.slice(1)),invite=param.get('invite');let contractVersion='2026-11-22-draft-v1';
 const show=id=>{['loginSection','activateSection','dashboard'].forEach(s=>$(s).classList.toggle('hidden',s!==id));$('logout').classList.toggle('hidden',id!=='dashboard');};
 const tell=t=>{$('message').textContent=t;$('message').classList.remove('hidden');};
 const text=(parent,value,tag='td')=>{const element=document.createElement(tag);element.textContent=value;parent.append(element);return element;};
