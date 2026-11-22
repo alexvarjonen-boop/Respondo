@@ -48,11 +48,12 @@ function originGuard(req,res,next){
 
 export async function salesPartnerForCheckout(db,req,secret,plan){
   if(!ACTIVE || !String(plan||'').endsWith('_yearly'))return null;
-  const token=getCookie(req,COOKIE), split=token.lastIndexOf('.');
-  if(split<0)return null;
-  const code=token.slice(0,split), signature=token.slice(split+1);
-  if(!isCode(code)||!/^[0-9a-f]{64}$/.test(signature))return null;
-  const expected=hmac(secret,code);
+  const token=getCookie(req,COOKIE);
+  const [code,issued,signature]=token.split('.');
+  if(!isCode(code)||!/^[0-9]{10}$/.test(issued||'')||!/^[0-9a-f]{64}$/.test(signature||''))return null;
+  const age=Math.floor(Date.now()/1000)-Number(issued);
+  if(age<0||age>30*86400)return null;
+  const expected=hmac(secret,code+'.'+issued);
   if(!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return null;
   const found=await db.query("SELECT id,code FROM respondo_sales.partners WHERE code=$1 AND status='active' AND agreement_accepted_at IS NOT NULL",[code]);
   return found.rows[0]||null;
@@ -150,7 +151,9 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
       return res.status(422).json({error:'Virheellinen linkki tai suostumus puuttuu.'});
     const result=await db.query("SELECT id FROM respondo_sales.partners WHERE code=$1 AND status='active' AND agreement_accepted_at IS NOT NULL LIMIT 1",[code]);
     if(!result.rowCount)return res.status(404).json({error:'Kumppanilinkki ei ole enää voimassa.'});
-    res.cookie(COOKIE,code+'.'+hmac(secret,code),{...cookieOptions,maxAge:30*24*60*60*1000});
+    const issued=String(Math.floor(Date.now()/1000));
+    const proof=code+'.'+issued+'.'+hmac(secret,code+'.'+issued);
+    res.cookie(COOKIE,proof,{...cookieOptions,maxAge:30*24*60*60*1000});
     res.set('Cache-Control','no-store').json({ok:true,expiresDays:30});
   }));
   const admin=[prepUnavailable,customerAuth,ownerOnly,originGuard];
