@@ -5,10 +5,13 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { rateLimit } from 'express-rate-limit';
 
-const ACTIVE = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1';
+const CONTRACT = process.env.SALES_PARTNER_CONTRACT_VERSION || '2026-11-22-draft-v1';
+// Prevent accidental activation on the draft contract or without both rollout approvals.
+const ACTIVE = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1' &&
+  process.env.SALES_PARTNER_LEGAL_APPROVED === '1' &&
+  CONTRACT !== '2026-11-22-draft-v1';
 const COOKIE = 'rsp_sales_partner';
 const SESSION_COOKIE = 'rsp_sales_session';
-const CONTRACT = '2026-11-22-draft-v1';
 const PARTNER_PRICE_CENTS = 5000;
 const newId = () => crypto.randomUUID();
 const email = v => String(v || '').trim().toLowerCase().slice(0,254);
@@ -115,25 +118,12 @@ export async function ensureSalesPartnerSchema(db){
   }
   await db.query('CREATE INDEX IF NOT EXISTS ix_sales_attribution_partner ON respondo_sales.attributions(partner_id,created_at DESC)');
   await db.query('CREATE INDEX IF NOT EXISTS ix_sales_commission_partner ON respondo_sales.commissions(partner_id,created_at DESC)');
+  await db.query('DELETE FROM respondo_sales.leads WHERE expires_at<NOW()');
 }
 export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,base}){
+  app.get('/api/sales/program-status',(req,res)=>res.set('Cache-Control','no-store').json({open:Boolean(db)&&ACTIVE,agreementVersion:CONTRACT}));
   if(!db)return;
   const admin=[unavailable,customerAuth,ownerOnly,originGuard];
-  const partner=[unavailable,originGuard,guarded(async(req,res,next)=>{})];
-  // Dedicated auth; existing customer/employee sessions do not confer partner access.
-  const partnerAuth=guarded(async(req,res)=>{
-    const token=getCookie(req,SESSION_COOKIE);
-    let payload;
-    try{payload=jwt.verify(token,secret,{algorithms:['HS256']});}catch{return res.status(401).json({error:'Kirjaudu kumppanitilille.'});}
-    if(payload?.type!=='sales-partner')return res.status(401).json({error:'Kirjaudu kumppanitilille.'});
-    const result=await db.query("SELECT id,full_name,email,code,status,session_version,agreement_accepted_at FROM respondo_sales.partners WHERE id=$1",[payload.sub]);
-    const person=result.rows[0];
-    if(!person||person.status!=='active'||!person.agreement_accepted_at||Number(person.session_version)!==Number(payload.sv))
-      return res.status(401).json({error:'Kumppani-istunto ei ole voimassa.'});
-    req.salesPartner=person;
-    // Caller routes deliberately compose the auth checker themselves.
-    res.locals.salesPartner=person;
-  });
   // Wrapper permits the same partner verification to protect all read/write routes.
   const withPartner=(fn)=>[unavailable,originGuard,async(req,res,next)=>{
     const token=getCookie(req,SESSION_COOKIE);
@@ -161,10 +151,12 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
     res.json({ok:true});
   }));
   app.post('/api/sales/login',unavailable,originGuard,limiter,guarded(async(req,res)=>{
+    const suppliedPassword=String(req.body?.password||'');
+    if(suppliedPassword.length>128)return res.status(401).json({error:'Virheellinen kirjautuminen.'});
     const rr=await db.query("SELECT id,full_name,email,password_hash,status,session_version,agreement_accepted_at FROM respondo_sales.partners WHERE lower(email)=$1",[email(req.body?.email)]);
     const p=rr.rows[0];
     // Constant-work fallback to reduce timing leakage when account doesn't exist.
-    const ok=await bcrypt.compare(String(req.body?.password||''),p?.password_hash||'$2b$12$QYLsI5Ce2SVR7hK03iQ6DO/9YB3qayI8Kofn8qF.22rT7I0jPf6da');
+    const ok=await bcrypt.compare(suppliedPassword,p?.password_hash||'$2b$12$QYLsI5Ce2SVR7hK03iQ6DO/9YB3qayI8Kofn8qF.22rT7I0jPf6da');
     if(!p||!ok||p.status!=='active'||!p.agreement_accepted_at)return res.status(401).json({error:'Virheellinen kirjautuminen.'});
     res.cookie(SESSION_COOKIE,jwt.sign({type:'sales-partner',sub:p.id,sv:p.session_version},secret,{algorithm:'HS256',expiresIn:'7d'}),{...cookieOptions,maxAge:7*86400*1000});
     res.json({ok:true});
@@ -189,7 +181,7 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
   app.patch('/api/sales/leads/:id',...withPartner(async(req,res)=>{
     const stage=clean(req.body?.stage,30);
     if(!['prospect','contacted','interested','declined'].includes(stage))return res.status(422).json({error:'Virheellinen tila.'});
-    const rr=await db.query("UPDATE respondo_sales.leads SET stage=$3,opt_out=CASE WHEN $3='declined' THEN TRUE ELSE opt_out END WHERE id=$1 AND partner_id=$2 RETURNING id",[req.params.id,req.salesPartner.id,stage]);
+    const rr=await db.query("UPDATE respondo_sales.leads SET stage=$3,opt_out=CASE WHEN $3='declined' THEN TRUE ELSE opt_out END WHERE id=$1 AND partner_id=$2 AND opt_out=FALSE RETURNING id",[req.params.id,req.salesPartner.id,stage]);
     return rr.rowCount?res.json({ok:true}):res.status(404).json({error:'Ei löydy.'});
   }));
   app.delete('/api/sales/leads/:id',...withPartner(async(req,res)=>{
