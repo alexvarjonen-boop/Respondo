@@ -91,7 +91,7 @@ import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-
 import {reliabilityOverview} from './respondo-reliability-lab.mjs';
 import {ensureScheduledQualitySchema,claimScheduledQualityRun,executeScheduledQualityRun,scheduledQualityOverview} from './respondo-scheduled-quality.mjs';
 import {ensureOwnerSalesSchema,ownerSalesOverview,recordOwnerSale,retractOwnerSale} from './respondo-sales-evidence.mjs';
-import {salesPartnerForCheckout,savePartnerCheckout,partnerCheckoutCompleted,partnerInvoicePaid,ensureSalesPartnerSchema,installSalesPartnerRoutes} from './sales-partners.mjs';
+import {salesPartnerProgramActive,salesPartnerForCheckout,savePartnerCheckout,partnerCheckoutCompleted,partnerInvoicePaid,ensureSalesPartnerSchema,installSalesPartnerRoutes} from './sales-partners.mjs';
 import {capabilityHealthOverview} from './respondo-capability-health.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
@@ -9669,6 +9669,16 @@ app.get(['/media', '/media/', '/media/index.html'], (req,res) => {
 
 app.get('/trafic', (req,res) => { res.set('X-Robots-Tag','noindex, nofollow'); return res.redirect(302,'/traffic.html'); });
 
+// Private administration is never served through public static middleware.
+app.get('/sales-admin.html',auth,ownerTrafficOnly,(req,res)=>{
+  res.set('Cache-Control','private,no-store');
+  return res.sendFile(path.join(__dirname,'public','sales-admin.html'));
+});
+// Do not expose an unapproved legal agreement or referral consent page.
+app.get(['/myyntikumppani-ehdot.html','/sales-referral.html'],(req,res,next)=>{
+  if(!salesPartnerProgramActive())return res.status(404).type('text/plain').send('Not available');
+  return next();
+});
 app.use(createPublicAssetCompression(path.join(__dirname,'public')));
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
