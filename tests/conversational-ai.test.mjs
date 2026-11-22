@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  conversationalAIEnabled,conversationalFacts,conversationalHistory,
+  conversationalAIEnabled,conversationalFacts,conversationalHistory,generalKnowledgeQuestion,
   tryConversationalAIResponse,resetConversationalAIBudgetForTests
 } from '../conversational-ai.mjs';
 
@@ -141,4 +141,40 @@ test('long or unverified knowledge does not reach provider',()=>{
   assert.ok(conversationalFacts(Array.from({length:100},(_,i)=>({
     ...website,id:String(i),title:'Service '+i,answer:'We offer professional cleaning '+i+'.'
   })),'cleaning',env).length<=30);
+});
+
+test('model may explain general knowledge without claiming business-specific facts',async()=>{
+  assert.equal(generalKnowledgeQuestion('Mikä on tekoäly?'),true);
+  assert.equal(generalKnowledgeQuestion('What is your return policy?'),false);
+  assert.equal(generalKnowledgeQuestion('Vad betyder maskininlärning?'),true);
+  resetConversationalAIBudgetForTests();
+  let sent;
+  const result=await tryConversationalAIResponse({
+    question:'Mikä on tekoäly?',rows:[],lang:'fi',env,
+    fetchImpl:async(_url,options)=>{
+      sent=JSON.parse(options.body);
+      return completion({answerable:true,answer:'Tekoäly on tietokonejärjestelmien kyky käsitellä ja tuottaa tietoa.',evidence:[]});
+    }
+  });
+  assert.equal(result?.intent,'Yleistietoa');
+  assert.equal(result?.handoff,false);
+  assert.deepEqual(result?.sourceIds,[]);
+  assert.deepEqual(JSON.parse(sent.input[1].content).facts,[]);
+});
+test('general explanations cannot claim actions or be mistaken for company answers',async()=>{
+  resetConversationalAIBudgetForTests();
+  const result=await tryConversationalAIResponse({
+    question:'What is machine learning?',rows:[],lang:'en',env,
+    fetchImpl:async()=>completion({answerable:true,answer:'We offer machine learning consulting.',evidence:[]})
+  });
+  assert.equal(result,null);
+});
+test('fuzzy retrieval finds Finnish inflections even behind unrelated rows',()=>{
+  const distractors=Array.from({length:85},(_,i)=>({
+    ...website,id:'d'+i,title:'Eri tuotteen toiminta '+i,
+    answer:'Tietoa aivan muusta aiheesta.'
+  }));
+  const fact={...website,id:'target',title:'Ikkunanpesu',answer:'Teemme ikkunanpesuja yrityksille.'};
+  const facts=conversationalFacts([...distractors,fact],'Teettekö ikkunanpesua?',env);
+  assert.equal(facts[0]?.row.id,'target');
 });
