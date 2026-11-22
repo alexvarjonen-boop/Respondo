@@ -11,6 +11,7 @@ const ACTIVE = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1' &&
   process.env.SALES_PARTNER_LEGAL_APPROVED === '1' &&
   CONTRACT !== '2026-11-22-draft-v1';
 const PREPARATION = ACTIVE || process.env.SALES_PARTNER_PREP_ENABLED === '1';
+export function salesPartnerProgramActive(){return ACTIVE;}
 const COOKIE = 'rsp_sales_partner';
 const SESSION_COOKIE = 'rsp_sales_session';
 const PARTNER_PRICE_CENTS = 5000;
