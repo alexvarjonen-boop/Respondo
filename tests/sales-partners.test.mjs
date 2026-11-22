@@ -5,7 +5,7 @@ process.env.SALES_PARTNER_PROGRAM_ENABLED='1';
 process.env.SALES_PARTNER_LEGAL_APPROVED='1';
 process.env.SALES_PARTNER_CONTRACT_VERSION='test-reviewed-v1';
 
-const {qualifyingAnnualInvoice,savePartnerCheckout,partnerCheckoutCompleted,partnerInvoicePaid}=await import('../sales-partners.mjs');
+const {qualifyingAnnualInvoice,savePartnerCheckout,partnerCheckoutCompleted,partnerInvoicePaid,verifyCommissionBeforeApproval}=await import('../sales-partners.mjs');
 
 const invoice=(values={})=>({id:'in_first',amount_paid:46800,status:'paid',...values});
 const annual={id:'sub_one',items:{data:[{price:{id:'price_yearly',recurring:{interval:'year'}}}]}};
@@ -63,4 +63,23 @@ test('out-of-order paid invoice links persisted partner attribution from Stripe 
   await partnerInvoicePaid(db,stripe,invoice(),subscription);
   assert.ok(calls.some(x=>x.sql.includes('UPDATE respondo_sales.attributions')));
   assert.ok(calls.some(x=>x.sql.includes('INSERT INTO respondo_sales.commissions')));
+});
+
+test('owner approval rechecks Stripe paid invoice and refuses issued credit notes',async()=>{
+  const makeStripe=(creditNotes)=>({
+    invoices:{retrieve:async()=>invoice(),listLineItems:async()=>({data:annualLine})},
+    subscriptions:{retrieve:async()=>annual},
+    creditNotes:{list:async()=>({data:creditNotes})}
+  });
+  assert.deepEqual(await verifyCommissionBeforeApproval(makeStripe([]),'in_first','sub_one'),{ok:true});
+  const block=await verifyCommissionBeforeApproval(makeStripe([{status:'issued',amount:5000}]),'in_first','sub_one');
+  assert.equal(block.ok,false);
+});
+test('owner approval refuses an open invoice even when no credit note exists',async()=>{
+  const stripe={
+    invoices:{retrieve:async()=>invoice({status:'open'}),listLineItems:async()=>({data:annualLine})},
+    subscriptions:{retrieve:async()=>annual},
+    creditNotes:{list:async()=>({data:[]})}
+  };
+  assert.equal((await verifyCommissionBeforeApproval(stripe,'in_first','sub_one')).ok,false);
 });
