@@ -45,18 +45,6 @@ function originGuard(req,res,next){
   return next();
 }
 
-export function captureSalesPartnerReferral(app,secret){
-  app.use((req,res,next)=>{
-    if(ACTIVE && req.method==='GET' && !req.path.startsWith('/api/')){
-      const code=String(req.query?.partner||'').trim().toUpperCase();
-      if(isCode(code)){
-        const packed=code+'.'+hmac(secret,code);
-        res.cookie(COOKIE,packed,{...cookieOptions,maxAge:30*24*60*60*1000});
-      }
-    }
-    next();
-  });
-}
 export async function salesPartnerForCheckout(db,req,secret,plan){
   if(!ACTIVE || !String(plan||'').endsWith('_yearly'))return null;
   const token=getCookie(req,COOKIE), split=token.lastIndexOf('.');
@@ -125,6 +113,16 @@ export async function ensureSalesPartnerSchema(db){
 export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,base}){
   app.get('/api/sales/program-status',(req,res)=>res.set('Cache-Control','no-store').json({open:Boolean(db)&&ACTIVE,agreementVersion:CONTRACT}));
   if(!db)return;
+  // No referral-tracking cookie is set on page views. The customer must opt in.
+  app.post('/api/sales/consent',unavailable,originGuard,limiter,guarded(async(req,res)=>{
+    const code=String(req.body?.partner||'').trim().toUpperCase();
+    if(!isCode(code) || req.body?.consent!==true)
+      return res.status(422).json({error:'Virheellinen linkki tai suostumus puuttuu.'});
+    const result=await db.query("SELECT id FROM respondo_sales.partners WHERE code=$1 AND status='active' AND agreement_accepted_at IS NOT NULL LIMIT 1",[code]);
+    if(!result.rowCount)return res.status(404).json({error:'Kumppanilinkki ei ole enää voimassa.'});
+    res.cookie(COOKIE,code+'.'+hmac(secret,code),{...cookieOptions,maxAge:30*24*60*60*1000});
+    res.set('Cache-Control','no-store').json({ok:true,expiresDays:30});
+  }));
   const admin=[prepUnavailable,customerAuth,ownerOnly,originGuard];
   const activeAdmin=[unavailable,customerAuth,ownerOnly,originGuard];
   // Wrapper permits the same partner verification to protect all read/write routes.
@@ -169,7 +167,7 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
     const p=req.salesPartner;
     const totals=await db.query("SELECT status,COUNT(*)::integer AS count,COALESCE(SUM(amount_cents),0)::integer AS cents FROM respondo_sales.commissions WHERE partner_id=$1 GROUP BY status",[p.id]);
     res.set('Cache-Control','private,no-store');
-    res.json({name:p.full_name,code:p.code,link:base+'/?partner='+encodeURIComponent(p.code),commissions:totals.rows});
+    res.json({name:p.full_name,code:p.code,link:base+'/sales-referral.html?partner='+encodeURIComponent(p.code),commissions:totals.rows});
   }));
   app.get('/api/sales/leads',...withPartner(async(req,res)=>{
     const r=await db.query("SELECT id,company,website,stage,opt_out,created_at FROM respondo_sales.leads WHERE partner_id=$1 AND expires_at>NOW() ORDER BY created_at DESC LIMIT 200",[req.salesPartner.id]);
