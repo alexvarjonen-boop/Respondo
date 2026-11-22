@@ -44,3 +44,23 @@ test('zero-euro and setup invoices never create commission',async()=>{
  await partnerInvoicePaid(db,stripe,invoice({amount_paid:19900}),annual);
  assert.equal(calls.some(sql=>sql.includes('INSERT INTO respondo_sales.commissions')),false);
 });
+test('annual renewal more than 350 days after subscription creation cannot earn new commission',()=>{
+  const created=1784000000;
+  const original={...annual,created};
+  assert.equal(qualifyingAnnualInvoice(invoice({created:created+3*86400}),original,annualLine),true);
+  assert.equal(qualifyingAnnualInvoice(invoice({created:created+365*86400}),original,annualLine),false);
+});
+test('out-of-order paid invoice links persisted partner attribution from Stripe metadata',async()=>{
+  const calls=[];
+  const db={query:async(sql,params)=>{
+    calls.push({sql,params});
+    if(sql.startsWith('SELECT a.id'))return {rowCount:0,rows:[]};
+    if(sql.startsWith('UPDATE respondo_sales.attributions'))return {rowCount:1,rows:[{id:'attr',partner_id:'partner-a'}]};
+    return {rowCount:1,rows:[]};
+  }};
+  const stripe={invoices:{listLineItems:async()=>({data:annualLine})}};
+  const subscription={...annual,metadata:{sales_partner_id:'11111111-1111-4111-8111-111111111111',user_id:'22222222-2222-4222-8222-222222222222',tenant_id:'33333333-3333-4333-8333-333333333333'}};
+  await partnerInvoicePaid(db,stripe,invoice(),subscription);
+  assert.ok(calls.some(x=>x.sql.includes('UPDATE respondo_sales.attributions')));
+  assert.ok(calls.some(x=>x.sql.includes('INSERT INTO respondo_sales.commissions')));
+});
