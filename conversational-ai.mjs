@@ -58,7 +58,28 @@ function allowCall(env,now){
   return budget.used<limit && budget.inFlight<MAX_IN_FLIGHT && now>=budget.cooldownUntil;
 }
 function questionTokens(message){
-  return [...new Set(norm(message).split(' ').filter(word=>word.length>=3))];
+  return [...new Set(norm(message).split(' ').filter(word=>word.length>=3))].slice(0,16);
+}
+// Retrieval hints tolerate inflections and a small number of missing or
+// transposed letters. The model, not this heuristic, interprets their meaning.
+function nearToken(a,b){
+  if(a===b)return true;
+  if(a.length>=6&&b.length>=6&&a.slice(0,5)===b.slice(0,5))return true;
+  if(Math.abs(a.length-b.length)>2||Math.min(a.length,b.length)<5)return false;
+  let previous=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    const current=[i];
+    let minimum=current[0];
+    for(let j=1;j<=b.length;j++){
+      const cost=a[i-1]===b[j-1]?0:1;
+      const value=Math.min(previous[j]+1,current[j-1]+1,previous[j-1]+cost);
+      current.push(value);
+      minimum=Math.min(minimum,value);
+    }
+    if(minimum>2)return false;
+    previous=current;
+  }
+  return previous[b.length]<=2;
 }
 export function conversationalFacts(rows,question,env=process.env){
   const tokens=questionTokens(question);
@@ -72,9 +93,11 @@ export function conversationalFacts(rows,question,env=process.env){
     const title=safeText(row?.title,200),answer=safeText(row?.answer,1700);
     if(!title||answer.length<8)continue;
     const titleNorm=norm(title),combined=norm(title+' '+answer);
-    const overlap=tokens.filter(term=>combined.includes(term)).length;
-    const titleHits=tokens.filter(term=>titleNorm.includes(term)).length;
-    const score=titleHits*5+overlap*2+Math.min(2,Number(row?._score)||0);
+    const titleWords=titleNorm.split(' ').filter(word=>word.length>=3).slice(0,22);
+    const overlap=tokens.filter(term=>combined.includes(term)||
+      (term.length>=6&&combined.includes(term.slice(0,5)))).length;
+    const titleHits=tokens.filter(term=>titleWords.some(word=>nearToken(term,word))).length;
+    const score=titleHits*6+overlap*2+Math.min(2,Number(row?._score)||0);
     candidates.push({row,title,answer,score,category:String(row?.category||'').slice(0,75)});
   }
   candidates.sort((a,b)=>b.score-a.score);
