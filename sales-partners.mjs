@@ -259,8 +259,23 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
       if(!check.ok)return res.status(409).json({error:check.reason});
     }
     const before=action==='paid'?'approved':'pending_review',after=action==='approve'?'approved':action==='reject'?'rejected':'paid';
-    const rr=await db.query("UPDATE respondo_sales.commissions SET status=$2,reviewed_at=NOW(),reviewed_by=$3,review_note=$4,invoice_reference=CASE WHEN $2='paid' THEN $5 ELSE invoice_reference END,paid_at=CASE WHEN $2='paid' THEN NOW() ELSE paid_at END WHERE id=$1 AND status=$6 RETURNING id",
-      [req.params.id,after,email(req.user?.email||process.env.OWNER_EMAIL),note||null,reference||null,before]);
-    return rr.rowCount?res.json({ok:true,status:after}):res.status(409).json({error:'Tila muuttui tai provisiota ei löytynyt.'});
+    const client=await db.connect();
+    try{
+      await client.query('BEGIN');
+      const actor=email(req.user?.email||process.env.OWNER_EMAIL);
+      const rr=await client.query("UPDATE respondo_sales.commissions SET status=$2,reviewed_at=NOW(),reviewed_by=$3,review_note=$4,invoice_reference=CASE WHEN $2='paid' THEN $5 ELSE invoice_reference END,paid_at=CASE WHEN $2='paid' THEN NOW() ELSE paid_at END WHERE id=$1 AND status=$6 RETURNING id,partner_id",
+        [req.params.id,after,actor,note||null,reference||null,before]);
+      if(!rr.rowCount){
+        await client.query('ROLLBACK');
+        return res.status(409).json({error:'Tila muuttui tai provisiota ei löytynyt.'});
+      }
+      await client.query("INSERT INTO respondo_sales.audit(id,partner_id,actor,action,details) VALUES($1,$2,$3,$4,$5)",
+        [newId(),rr.rows[0].partner_id,actor,'commission_'+after,'commission:'+rr.rows[0].id+';invoice:'+reference]);
+      await client.query('COMMIT');
+      return res.json({ok:true,status:after});
+    }catch(error){
+      try{await client.query('ROLLBACK');}catch{}
+      throw error;
+    }finally{client.release();}
   }));
 }
