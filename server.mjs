@@ -9227,7 +9227,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (!(await enforceCompletedCheckoutCountryPolicy(session))) {
         return res.json({ received:true, taxCountryBlocked:true });
       }
-      await partnerCheckoutCompleted(pool,session);
+      if (process.env.SALES_PARTNER_PROGRAM_ENABLED === '1') await partnerCheckoutCompleted(pool,session);
       const target = await resolveSignupCheckoutTarget(session);
       const userId = target?.userId || '';
       let tenantId = target?.tenantId || '';
@@ -9353,7 +9353,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         await syncStripeSubscriptionState(subscription);
-        await partnerInvoicePaid(pool,stripe,invoice,subscription);
+        if (process.env.SALES_PARTNER_PROGRAM_ENABLED === '1') await partnerInvoicePaid(pool,stripe,invoice,subscription);
       }
     }
 
@@ -11831,7 +11831,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       ? (setupService ? ownerFreeSetupCheckoutLineItem(normalizedPlan) : null)
       : await stripeCheckoutLineItem(normalizedPlan);
     if(usFirstYearCampaign) await assertUSFirstYearCheckoutPrice(checkoutLineItem);
-    const salesPartner = freeReferral ? null : await salesPartnerForCheckout(pool,req,JWT,normalizedPlan);
+    const salesPartner = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1' && !freeReferral ? await salesPartnerForCheckout(pool,req,JWT,normalizedPlan) : null;
 
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
@@ -12014,7 +12014,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       });
 
       if(setupService)await bindSetupImageToSession(client,setupImageToken,session.id);
-      await savePartnerCheckout(client,{partner:salesPartner,sessionId:session.id,userId:id,tenantId});
+      if (salesPartner) await savePartnerCheckout(client,{partner:salesPartner,sessionId:session.id,userId:id,tenantId});
       await client.query('COMMIT');
     } catch (e) {
       try { await client.query('ROLLBACK'); } catch {}
@@ -12890,7 +12890,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
-    const salesPartner = freeReferral ? null : await salesPartnerForCheckout(pool,req,JWT,plan);
+    const salesPartner = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1' && !freeReferral ? await salesPartnerForCheckout(pool,req,JWT,plan) : null;
     const checkoutNoticeMessage=checkoutCountry.country==='US'
       ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.'
       : (setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi',freeReferral) : '');
@@ -12954,7 +12954,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
     });
 
     if(setupService)await bindSetupImageToSession(pool,setupImageToken,session.id);
-    await savePartnerCheckout(pool,{partner:salesPartner,sessionId:session.id,userId:req.user.sub,tenantId});
+    if (salesPartner) await savePartnerCheckout(pool,{partner:salesPartner,sessionId:session.id,userId:req.user.sub,tenantId});
 
     if(referrer && !existingReferralReservation){
       await q(
