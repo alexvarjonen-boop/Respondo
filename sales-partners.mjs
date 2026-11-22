@@ -70,6 +70,11 @@ export async function partnerCheckoutCompleted(db,session){
 export function qualifyingAnnualInvoice(invoice, subscription, lines){
   if(!ACTIVE || !invoice?.id || Number(invoice.amount_paid||0)<=0 || String(invoice.status||'')!=='paid')return false;
   if(!subscription?.id || !subscription?.items?.data?.some(i=>i.price?.recurring?.interval==='year'))return false;
+  // Avoid crediting next year's renewal if there was never an eligible first payment.
+  // The 350-day window allows extended assisted onboarding but excludes annual renewals.
+  const subscriptionCreated=Number(subscription.created||0), invoiceCreated=Number(invoice.created||0);
+  if(subscriptionCreated>0 && invoiceCreated>0 &&
+     (invoiceCreated < subscriptionCreated-3600 || invoiceCreated-subscriptionCreated > 350*86400))return false;
   // A paid one-time setup invoice does not count. The annual recurring line
   // must itself have a positive price after discount.
   const annualPriceIds=new Set(subscription.items.data.filter(i=>i.price?.recurring?.interval==='year').map(i=>i.price.id));
@@ -81,7 +86,16 @@ export function qualifyingAnnualInvoice(invoice, subscription, lines){
 }
 export async function partnerInvoicePaid(db,stripe,invoice,subscription){
   if(!ACTIVE || !db || !stripe || !subscription?.id)return;
-  const rows=await db.query("SELECT a.id,a.partner_id FROM respondo_sales.attributions a JOIN respondo_sales.partners p ON p.id=a.partner_id WHERE a.subscription_id=$1 AND p.status='active' LIMIT 1",[subscription.id]);
+  let rows=await db.query("SELECT a.id,a.partner_id FROM respondo_sales.attributions a JOIN respondo_sales.partners p ON p.id=a.partner_id WHERE a.subscription_id=$1 AND p.status='active' LIMIT 1",[subscription.id]);
+  // Stripe can deliver invoice.paid before checkout.session.completed.
+  // Attribution metadata was written to the subscription by our server at checkout,
+  // and is cross-checked against a persisted checkout attribution before linking.
+  if(!rows.rowCount){
+    const metadata=subscription.metadata||{};
+    if(metadata.sales_partner_id && metadata.user_id && metadata.tenant_id){
+      rows=await db.query("UPDATE respondo_sales.attributions a SET subscription_id=$1 FROM respondo_sales.partners p WHERE a.partner_id=p.id AND a.partner_id=$2::uuid AND a.user_id=$3::uuid AND a.tenant_id=$4::uuid AND a.subscription_id IS NULL AND a.created_at>NOW()-INTERVAL '350 days' AND p.status='active' RETURNING a.id,a.partner_id",[subscription.id,metadata.sales_partner_id,metadata.user_id,metadata.tenant_id]);
+    }
+  }
   if(!rows.rowCount)return;
   const lines=await stripe.invoices.listLineItems(invoice.id,{limit:100});
   if(!qualifyingAnnualInvoice(invoice,subscription,lines.data))return;
