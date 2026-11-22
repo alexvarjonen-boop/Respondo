@@ -103,6 +103,21 @@ export async function partnerInvoicePaid(db,stripe,invoice,subscription){
   await db.query("INSERT INTO respondo_sales.commissions(id,partner_id,attribution_id,subscription_id,stripe_invoice_id,amount_cents,status,paid_invoice_at) VALUES($1,$2,$3,$4,$5,$6,'pending_review',NOW()) ON CONFLICT(subscription_id) DO NOTHING",
     [newId(),rows.rows[0].partner_id,rows.rows[0].id,subscription.id,invoice.id,PARTNER_PRICE_CENTS]);
 }
+export async function verifyCommissionBeforeApproval(stripe,invoiceId,subscriptionId){
+  if(!stripe || !invoiceId || !subscriptionId)return {ok:false,reason:'Stripe ei ole saatavilla.'};
+  const [invoice,subscription,lines,notes]=await Promise.all([
+    stripe.invoices.retrieve(invoiceId),
+    stripe.subscriptions.retrieve(subscriptionId),
+    stripe.invoices.listLineItems(invoiceId,{limit:100}),
+    stripe.creditNotes.list({invoice:invoiceId,limit:100}),
+  ]);
+  if(!qualifyingAnnualInvoice(invoice,subscription,lines.data))
+    return {ok:false,reason:'Stripe ei vahvista kelvollista maksettua vuositilausta.'};
+  const credited=(notes?.data||[]).some(note=>note.status!=='void' && Number(note.amount||0)>0);
+  if(credited)return {ok:false,reason:'Laskulla on hyvityslasku. Selvitä provisio manuaalisesti ennen hyväksyntää.'};
+  // Card refunds outside Stripe credit notes may still need a manual check.
+  return {ok:true};
+}
 export async function ensureSalesPartnerSchema(db){
   if(!PREPARATION||!db)return;
   await db.query('CREATE SCHEMA IF NOT EXISTS respondo_sales');
@@ -125,7 +140,7 @@ export async function ensureSalesPartnerSchema(db){
   await db.query('CREATE INDEX IF NOT EXISTS ix_sales_commission_partner ON respondo_sales.commissions(partner_id,created_at DESC)');
   await db.query('DELETE FROM respondo_sales.leads WHERE expires_at<NOW()');
 }
-export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,base}){
+export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,base,stripe}){
   app.get('/api/sales/program-status',(req,res)=>res.set('Cache-Control','no-store').json({open:Boolean(db)&&ACTIVE,agreementVersion:CONTRACT}));
   if(!db)return;
   // No referral-tracking cookie is set on page views. The customer must opt in.
@@ -236,6 +251,13 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
     if(action==='reject'&&note.length<5)return res.status(422).json({error:'Kirjaa hylkäyksen syy.'});
     const reference=clean(req.body?.invoiceReference,120);
     if(action==='paid' && reference.length<3)return res.status(422).json({error:'Kirjaa maksettu lasku.'});
+    if(action==='approve'){
+      const current=await db.query("SELECT stripe_invoice_id,subscription_id,status FROM respondo_sales.commissions WHERE id=$1 LIMIT 1",[req.params.id]);
+      if(!current.rowCount||current.rows[0].status!=='pending_review')
+        return res.status(409).json({error:'Provisio ei ole tarkistettavissa.'});
+      const check=await verifyCommissionBeforeApproval(stripe,current.rows[0].stripe_invoice_id,current.rows[0].subscription_id);
+      if(!check.ok)return res.status(409).json({error:check.reason});
+    }
     const before=action==='paid'?'approved':'pending_review',after=action==='approve'?'approved':action==='reject'?'rejected':'paid';
     const rr=await db.query("UPDATE respondo_sales.commissions SET status=$2,reviewed_at=NOW(),reviewed_by=$3,review_note=$4,invoice_reference=CASE WHEN $2='paid' THEN $5 ELSE invoice_reference END,paid_at=CASE WHEN $2='paid' THEN NOW() ELSE paid_at END WHERE id=$1 AND status=$6 RETURNING id",
       [req.params.id,after,email(req.user?.email||process.env.OWNER_EMAIL),note||null,reference||null,before]);
