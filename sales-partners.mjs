@@ -205,7 +205,7 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
     const id=newId();
     const result=await db.query("INSERT INTO respondo_sales.partners(id,full_name,email,code,invite_digest,invite_expires) VALUES($1,$2,$3,$4,$5,NOW()+INTERVAL '7 days') RETURNING id",
       [id,name,mail,code,digest(token)]);
-    res.status(201).set('Cache-Control','no-store').json({id:result.rows[0].id,code,inviteLink:base+'/sales-partner.html?invite='+token,inviteEmail:mail,agreementVersion:CONTRACT});
+    res.status(201).set('Cache-Control','no-store').json({id:result.rows[0].id,code,inviteLink:base+'/sales-partner.html#invite='+token,inviteEmail:mail,agreementVersion:CONTRACT});
   }));
   app.post('/api/app/sales-partners/:id/status',...admin,guarded(async(req,res)=>{
     const status=req.body?.status;
