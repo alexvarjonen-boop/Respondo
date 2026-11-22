@@ -10,6 +10,7 @@ const CONTRACT = process.env.SALES_PARTNER_CONTRACT_VERSION || '2026-11-22-draft
 const ACTIVE = process.env.SALES_PARTNER_PROGRAM_ENABLED === '1' &&
   process.env.SALES_PARTNER_LEGAL_APPROVED === '1' &&
   CONTRACT !== '2026-11-22-draft-v1';
+const PREPARATION = ACTIVE || process.env.SALES_PARTNER_PREP_ENABLED === '1';
 const COOKIE = 'rsp_sales_partner';
 const SESSION_COOKIE = 'rsp_sales_session';
 const PARTNER_PRICE_CENTS = 5000;
@@ -26,6 +27,7 @@ const hmac = (secret,msg) => crypto.createHmac('sha256',secret).update(msg).dige
 const isCode = value => /^SP-[A-Z0-9]{10}$/.test(String(value||''));
 const validPassword = s => typeof s==='string' && s.length>=12 && s.length<=128 && /[A-Z]/.test(s) && /[a-z]/.test(s) && /[0-9]/.test(s) && /[^a-zA-Z0-9]/.test(s);
 const unavailable = (req,res,next) => ACTIVE ? next() : res.status(404).json({error:'Ohjelma ei ole käytössä.'});
+const prepUnavailable = (req,res,next) => PREPARATION ? next() : res.status(404).json({error:'Ohjelma ei ole käytössä.'});
 const guarded = handler => async (req,res) => {try{await handler(req,res);}catch(error){console.error('Sales partner action failed',error?.name||'error');if(!res.headersSent)res.status(503).json({error:'Toiminto ei ole saatavilla.'});}};
 const limiter=rateLimit({windowMs:15*60*1000,limit:15,standardHeaders:true,legacyHeaders:false});
 
@@ -99,7 +101,7 @@ export async function partnerInvoicePaid(db,stripe,invoice,subscription){
     [newId(),rows.rows[0].partner_id,rows.rows[0].id,subscription.id,invoice.id,PARTNER_PRICE_CENTS]);
 }
 export async function ensureSalesPartnerSchema(db){
-  if(!ACTIVE||!db)return;
+  if(!PREPARATION||!db)return;
   await db.query('CREATE SCHEMA IF NOT EXISTS respondo_sales');
   await db.query("CREATE TABLE IF NOT EXISTS respondo_sales.partners(id UUID PRIMARY KEY, full_name TEXT NOT NULL, email TEXT NOT NULL, code TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'invited' CHECK(status IN ('invited','active','suspended')), password_hash TEXT, invite_digest TEXT, invite_expires TIMESTAMPTZ, agreement_accepted_at TIMESTAMPTZ, agreement_version TEXT, session_version INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
   await db.query('CREATE UNIQUE INDEX IF NOT EXISTS ux_sales_partner_email ON respondo_sales.partners(lower(email))');
@@ -123,7 +125,8 @@ export async function ensureSalesPartnerSchema(db){
 export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,base}){
   app.get('/api/sales/program-status',(req,res)=>res.set('Cache-Control','no-store').json({open:Boolean(db)&&ACTIVE,agreementVersion:CONTRACT}));
   if(!db)return;
-  const admin=[unavailable,customerAuth,ownerOnly,originGuard];
+  const admin=[prepUnavailable,customerAuth,ownerOnly,originGuard];
+  const activeAdmin=[unavailable,customerAuth,ownerOnly,originGuard];
   // Wrapper permits the same partner verification to protect all read/write routes.
   const withPartner=(fn)=>[unavailable,originGuard,async(req,res,next)=>{
     const token=getCookie(req,SESSION_COOKIE);
@@ -197,7 +200,7 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
     const c=await db.query("SELECT c.id,c.status,c.amount_cents,c.stripe_invoice_id,c.subscription_id,c.invoice_reference,c.created_at,p.full_name FROM respondo_sales.commissions c JOIN respondo_sales.partners p ON p.id=c.partner_id ORDER BY c.created_at DESC LIMIT 200");
     res.set('Cache-Control','private,no-store');res.json({partners:p.rows,commissions:c.rows});
   }));
-  app.post('/api/app/sales-partners',limiter,...admin,guarded(async(req,res)=>{
+  app.post('/api/app/sales-partners',limiter,...activeAdmin,guarded(async(req,res)=>{
     const name=clean(req.body?.name,120),mail=email(req.body?.email);
     if(name.length<2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail))return res.status(422).json({error:'Tarkista nimi ja sähköposti.'});
     const code='SP-'+crypto.randomBytes(5).toString('hex').toUpperCase();
@@ -207,13 +210,13 @@ export function installSalesPartnerRoutes(app,{db,customerAuth,ownerOnly,secret,
       [id,name,mail,code,digest(token)]);
     res.status(201).set('Cache-Control','no-store').json({id:result.rows[0].id,code,inviteLink:base+'/sales-partner.html#invite='+token,inviteEmail:mail,agreementVersion:CONTRACT});
   }));
-  app.post('/api/app/sales-partners/:id/status',...admin,guarded(async(req,res)=>{
+  app.post('/api/app/sales-partners/:id/status',...activeAdmin,guarded(async(req,res)=>{
     const status=req.body?.status;
     if(status!=='suspended')return res.status(422).json({error:'Vain keskeyttäminen on sallittu.'});
     const rr=await db.query("UPDATE respondo_sales.partners SET status='suspended',session_version=session_version+1 WHERE id=$1 AND status<>'suspended' RETURNING id",[req.params.id]);
     return rr.rowCount?res.json({ok:true}):res.status(404).json({error:'Ei löydy.'});
   }));
-  app.post('/api/app/sales-partners/commissions/:id/review',...admin,guarded(async(req,res)=>{
+  app.post('/api/app/sales-partners/commissions/:id/review',...activeAdmin,guarded(async(req,res)=>{
     const action=req.body?.action,note=clean(req.body?.note,400);
     if(!['approve','reject','paid'].includes(action))return res.status(422).json({error:'Virheellinen toiminto.'});
     if(action==='approve'&&req.body?.refundChecked!==true)return res.status(422).json({error:'Vahvista, että maksu ja hyvitykset on tarkistettu Stripestä.'});
