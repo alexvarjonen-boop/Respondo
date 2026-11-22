@@ -9489,7 +9489,7 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text({ type: 'text/plain', limit: '20kb' }));
-installSalesPartnerRoutes(app,{db:pool,customerAuth:auth,ownerOnly:ownerTrafficOnly,secret:JWT,base:BASE});
+installSalesPartnerRoutes(app,{db:pool,customerAuth:auth,ownerOnly:ownerTrafficOnly,secret:JWT,base:BASE,stripe});
 app.use(rateLimit({ windowMs:60000, limit:600, standardHeaders:true, legacyHeaders:false, keyGenerator:req=>publicRateKey(req,'global') }));
 installInternalVaultRoutes(app, {
   auth,
