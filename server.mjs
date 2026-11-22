@@ -91,7 +91,7 @@ import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-
 import {reliabilityOverview} from './respondo-reliability-lab.mjs';
 import {ensureScheduledQualitySchema,claimScheduledQualityRun,executeScheduledQualityRun,scheduledQualityOverview} from './respondo-scheduled-quality.mjs';
 import {ensureOwnerSalesSchema,ownerSalesOverview,recordOwnerSale,retractOwnerSale} from './respondo-sales-evidence.mjs';
-import {captureSalesPartnerReferral,salesPartnerForCheckout,savePartnerCheckout,partnerCheckoutCompleted,partnerInvoicePaid,ensureSalesPartnerSchema,installSalesPartnerRoutes} from './sales-partners.mjs';
+import {salesPartnerForCheckout,savePartnerCheckout,partnerCheckoutCompleted,partnerInvoicePaid,ensureSalesPartnerSchema,installSalesPartnerRoutes} from './sales-partners.mjs';
 import {capabilityHealthOverview} from './respondo-capability-health.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
@@ -8651,8 +8651,6 @@ async function ownerTrafficOnly(req, res, next) {
     next(error);
   }
 }
-
-captureSalesPartnerReferral(app,JWT);
 
 function trafficVisitorHash(req) {
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
