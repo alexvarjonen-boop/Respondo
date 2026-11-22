@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Sales Partner · Respondo AI</title>
+<style>
+:root{color-scheme:dark;font:16px/1.5 Inter,ui-sans-serif,system-ui,sans-serif;background:#08090b;color:#f5f5f6}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#181a20,#08090b 45%)}a{color:#d6dcff}
+header{padding:22px clamp(20px,5vw,72px);border-bottom:1px solid #24262b;display:flex;align-items:center;gap:14px}
+.brand{font-weight:800;letter-spacing:.08em}.kicker{color:#979ba7;font-size:12px;letter-spacing:.16em}
+.logo{display:inline-grid;place-items:center;height:38px;width:38px;border:1px solid #4b4d55;border-radius:12px;color:white;font-weight:900}
+main{max-width:1040px;margin:0 auto;padding:44px 18px 100px}h1{font-size:clamp(27px,4vw,48px);line-height:1.12;letter-spacing:-.045em;margin:0 0 14px}
+p{color:#aab0bd}.panel{border:1px solid #30343e;background:linear-gradient(135deg,#17191f,#101114);border-radius:18px;padding:24px;margin-top:22px;box-shadow:0 15px 60px #0004}
+.sub{font-size:13px;color:#a5a9b4}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.stat{background:#0d0f13;border:1px solid #30343b;border-radius:14px;padding:18px}.stat strong{display:block;font-size:30px}
+input,select,button{font:inherit;border-radius:10px;padding:12px 13px}input,select{background:#11141a;border:1px solid #484d5a;color:white;max-width:100%;width:100%}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 7px}button{background:white;color:#0b0d11;border:0;font-weight:700;cursor:pointer}button:hover{background:#e4e7ef}button:disabled{opacity:.45;cursor:default}.muted{background:#292d35;color:#fff}button.small{padding:7px 10px;font-size:12px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grow{flex:1}.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.notice{padding:12px 14px;background:#20232a;border-radius:10px;color:#d5d9e2;margin:18px 0;white-space:pre-wrap}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:#aab0bd;font-weight:500}th,td{padding:11px 8px;border-bottom:1px solid #2d3039}
+.scroll{overflow-x:auto}.hidden{display:none!important}.check{display:flex;align-items:flex-start;gap:10px;margin:18px 0}.check input{width:auto;flex-shrink:0;margin-top:5px}
+@media(max-width:750px){.grid,.cols{grid-template-columns:1fr}main{padding-top:28px}.panel{padding:19px}}
+</style></head><body>
+<header><span class="logo" aria-hidden="true">↗</span><div><div class="brand">RESPONDO AI</div><div class="kicker">SALES PARTNER</div></div><span class="grow"></span><button id="logout" class="small muted hidden">Kirjaudu ulos</button></header>
+<main>
+<section id="loginSection" class="panel hidden"><h1>Kumppanin kirjautuminen</h1><p>Kirjaudu omaan myyntinäkymääsi. Asiakkaiden hallintatunnukset eivät toimi täällä.</p>
+<form id="loginForm"><label for="loginEmail">Sähköposti</label><input id="loginEmail" type="email" required autocomplete="username"><label for="loginPassword">Salasana</label><input id="loginPassword" type="password" required autocomplete="current-password"><p><button type="submit">Kirjaudu</button></p></form></section>
+<section id="activateSection" class="panel hidden"><h1>Ota kumppanitili käyttöön</h1><p>Tarkista henkilökohtainen kutsusi ja tutustu yhteistyöehtoihin ennen hyväksymistä.</p>
+<form id="activateForm"><label for="activateEmail">Kutsuun merkitty sähköpostisi</label><input id="activateEmail" type="email" required autocomplete="email"><label for="activatePassword">Luo vahva salasana</label><input id="activatePassword" type="password" minlength="12" required autocomplete="new-password"><p class="sub">Vähintään 12 merkkiä, iso ja pieni kirjain, numero ja erikoismerkki.</p>
+<label class="check"><input id="terms" type="checkbox" required><span>Olen tutustunut <a href="/myyntikumppani-ehdot.html" target="_blank" rel="noopener">myyntikumppanuuden ehtoihin</a> ja hyväksyn ne. Ymmärrän, ettei kyseessä ole työsuhde eikä takuupalkkaa makseta. Todellinen suhde määräytyy käytännön olosuhteiden mukaan.</span></label>
+<button type="submit">Hyväksy ja aktivoi</button></form></section>
+<section id="dashboard" class="hidden"><div class="row"><div class="grow"><h1 id="welcome">Myyntinäkymä</h1><p>Itsenäinen Respondo AI -myyntikumppanuus. Näet vain omat tiedot.</p></div></div>
+<div class="grid"><div class="stat"><span class="sub">Maksetut provisiot</span><strong id="paid">0 €</strong></div><div class="stat"><span class="sub">Odottaa tarkistusta</span><strong id="pending">0 €</strong></div><div class="stat"><span class="sub">Vahvistetut kaupat</span><strong id="sales">0</strong></div></div>
+<div class="panel"><h2>Oma myyntilinkkisi</h2><p class="sub">Kerro asiakkaalle, että linkki kohdistaa hänen tilauksensa sinulle. Kauppa hyväksytään vain Stripe-maksun jälkeen.</p><div class="row"><input id="partnerLink" aria-label="Myyntilinkki" readonly><button id="copyLink" type="button">Kopioi</button></div></div>
+<div class="panel"><h2>Asiakasyritysten seuranta</h2><p class="sub">Kirjaa vain yrityksen nimi ja verkkosivu. Älä tallenna henkilöiden yhteystietoja, puhelutallenteita tai arkaluonteista aineistoa.</p>
+<form id="leadForm" class="cols"><div><label for="company">Yritys</label><input id="company" maxlength="120" required></div><div><label for="website">Verkkosivusto (HTTPS)</label><input id="website" type="url" placeholder="https://yritys.fi" maxlength="300"></div><div><button type="submit">Lisää yritys</button></div></form>
+<div class="scroll"><table><thead><tr><th>Yritys</th><th>Verkkosivu</th><th>Tila</th><th></th></tr></thead><tbody id="leads"></tbody></table></div></div>
+<div class="panel"><h2>Provisiot</h2><p class="sub">50 € per ehdot täyttävä, ensimmäisen maksun suorittanut vuositilaus. Maksu tehdään laskua vastaan omistajan hyväksynnän jälkeen.</p><div class="scroll"><table><thead><tr><th>Päivä</th><th>Summa</th><th>Tila</th></tr></thead><tbody id="commissions"></tbody></table></div></div>
+</section><div id="message" class="notice hidden" role="status"></div></main>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id),param=new URLSearchParams(location.search),invite=param.get('invite');
+const show=id=>{['loginSection','activateSection','dashboard'].forEach(s=>$(s).classList.toggle('hidden',s!==id));$('logout').classList.toggle('hidden',id!=='dashboard');};
+const tell=t=>{$('message').textContent=t;$('message').classList.remove('hidden');};
+const text=(parent,value,tag='td')=>{const element=document.createElement(tag);element.textContent=value;parent.append(element);return element;};
+const eur=c=>(Number(c||0)/100).toLocaleString('fi-FI',{style:'currency',currency:'EUR'});
+async function api(path,options){const r=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Pyyntö epäonnistui.');return data;}
+async function load(){
+try{const me=await api('/api/sales/me');show('dashboard');$('welcome').textContent='Hei, '+me.name;$('partnerLink').value=me.link;
+const count=state=>(me.commissions||[]).filter(c=>c.status===state).reduce((sum,c)=>sum+Number(c.count||0),0);
+const cents=state=>(me.commissions||[]).filter(c=>c.status===state).reduce((sum,c)=>sum+Number(c.cents||0),0);
+$('paid').textContent=eur(cents('paid'));$('pending').textContent=eur(cents('pending_review'));$('sales').textContent=count('paid')+count('approved')+count('pending_review');
+const [leads,comm]=await Promise.all([api('/api/sales/leads'),api('/api/sales/commissions')]);$('leads').replaceChildren();$('commissions').replaceChildren();
+leads.items.forEach(l=>{const tr=document.createElement('tr');text(tr,l.company);text(tr,l.website||'—');const td=document.createElement('td'),sel=document.createElement('select');['prospect','contacted','interested','declined'].forEach((s,i)=>{const x=document.createElement('option');x.value=s;x.textContent=['Uusi','Kontaktoitu','Kiinnostunut','Ei yhteydenottoja'][i];x.selected=l.stage===s;sel.append(x);});sel.disabled=l.opt_out;sel.onchange=async()=>{try{await api('/api/sales/leads/'+encodeURIComponent(l.id),{method:'PATCH',body:JSON.stringify({stage:sel.value})});load();}catch(e){tell(e.message);}};td.append(sel);tr.append(td);const actions=document.createElement('td'),del=document.createElement('button');del.className='muted small';del.textContent='Poista';del.onclick=async()=>{if(!confirm('Poistetaanko yritys?'))return;try{await api('/api/sales/leads/'+encodeURIComponent(l.id),{method:'DELETE'});load();}catch(e){tell(e.message);}};actions.append(del);tr.append(actions);$('leads').append(tr);});
+comm.items.forEach(c=>{const tr=document.createElement('tr');text(tr,new Date(c.created_at).toLocaleDateString('fi-FI'));text(tr,eur(c.amount_cents));text(tr,({paid:'Maksettu',approved:'Hyväksytty',rejected:'Hylätty',pending_review:'Tarkistuksessa'})[c.status]||c.status);$('commissions').append(tr);});
+}catch(e){show(invite?'activateSection':'loginSection');if(!/Kirjaudu kumppanitilille|Istunto on vanhentunut/.test(e.message))tell(e.message);}}
+$('loginForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/sales/login',{method:'POST',body:JSON.stringify({email:$('loginEmail').value,password:$('loginPassword').value})});await load();}catch(e){tell(e.message);}};
+$('activateForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/sales/activate',{method:'POST',body:JSON.stringify({token:invite,email:$('activateEmail').value,password:$('activatePassword').value,agreementVersion:'2026-11-22-draft-v1',acceptAgreement:$('terms').checked})});history.replaceState({},'',location.pathname);show('loginSection');tell('Tili aktivoitu. Kirjaudu uudella salasanallasi.');}catch(e){tell(e.message);}};
+$('leadForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/sales/leads',{method:'POST',body:JSON.stringify({company:$('company').value,website:$('website').value})});$('leadForm').reset();await load();}catch(e){tell(e.message);}};
+$('copyLink').onclick=()=>navigator.clipboard.writeText($('partnerLink').value).then(()=>tell('Linkki kopioitu.')).catch(()=>tell('Kopioi linkki tekstikentästä.'));
+$('logout').onclick=async()=>{await api('/api/sales/logout',{method:'POST',body:'{}'}).catch(()=>{});show('loginSection');};
+load();
+})();
+</script></body></html>
