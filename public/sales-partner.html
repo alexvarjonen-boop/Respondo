@@ -36,14 +36,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;colo
 <script>
 (function(){
 'use strict';
-const $=id=>document.getElementById(id),param=new URLSearchParams(location.search),invite=param.get('invite');
+const $=id=>document.getElementById(id),param=new URLSearchParams(location.search),invite=param.get('invite');let contractVersion='2026-11-22-draft-v1';
 const show=id=>{['loginSection','activateSection','dashboard'].forEach(s=>$(s).classList.toggle('hidden',s!==id));$('logout').classList.toggle('hidden',id!=='dashboard');};
 const tell=t=>{$('message').textContent=t;$('message').classList.remove('hidden');};
 const text=(parent,value,tag='td')=>{const element=document.createElement(tag);element.textContent=value;parent.append(element);return element;};
 const eur=c=>(Number(c||0)/100).toLocaleString('fi-FI',{style:'currency',currency:'EUR'});
 async function api(path,options){const r=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Pyyntö epäonnistui.');return data;}
 async function load(){
-try{const me=await api('/api/sales/me');show('dashboard');$('welcome').textContent='Hei, '+me.name;$('partnerLink').value=me.link;
+try{const status=await api('/api/sales/program-status');contractVersion=status.agreementVersion;if(!status.open){show('loginSection');tell('Myyntikumppanihaku ja kirjautuminen eivät ole vielä avoinna.');return;}const me=await api('/api/sales/me');show('dashboard');$('welcome').textContent='Hei, '+me.name;$('partnerLink').value=me.link;
 const count=state=>(me.commissions||[]).filter(c=>c.status===state).reduce((sum,c)=>sum+Number(c.count||0),0);
 const cents=state=>(me.commissions||[]).filter(c=>c.status===state).reduce((sum,c)=>sum+Number(c.cents||0),0);
 $('paid').textContent=eur(cents('paid'));$('pending').textContent=eur(cents('pending_review'));$('sales').textContent=count('paid')+count('approved')+count('pending_review');
@@ -52,7 +52,7 @@ leads.items.forEach(l=>{const tr=document.createElement('tr');text(tr,l.company)
 comm.items.forEach(c=>{const tr=document.createElement('tr');text(tr,new Date(c.created_at).toLocaleDateString('fi-FI'));text(tr,eur(c.amount_cents));text(tr,({paid:'Maksettu',approved:'Hyväksytty',rejected:'Hylätty',pending_review:'Tarkistuksessa'})[c.status]||c.status);$('commissions').append(tr);});
 }catch(e){show(invite?'activateSection':'loginSection');if(!/Kirjaudu kumppanitilille|Istunto on vanhentunut/.test(e.message))tell(e.message);}}
 $('loginForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/sales/login',{method:'POST',body:JSON.stringify({email:$('loginEmail').value,password:$('loginPassword').value})});await load();}catch(e){tell(e.message);}};
-$('activateForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/sales/activate',{method:'POST',body:JSON.stringify({token:invite,email:$('activateEmail').value,password:$('activatePassword').value,agreementVersion:'2026-11-22-draft-v1',acceptAgreement:$('terms').checked})});history.replaceState({},'',location.pathname);show('loginSection');tell('Tili aktivoitu. Kirjaudu uudella salasanallasi.');}catch(e){tell(e.message);}};
+$('activateForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/sales/activate',{method:'POST',body:JSON.stringify({token:invite,email:$('activateEmail').value,password:$('activatePassword').value,agreementVersion:contractVersion,acceptAgreement:$('terms').checked})});history.replaceState({},'',location.pathname);show('loginSection');tell('Tili aktivoitu. Kirjaudu uudella salasanallasi.');}catch(e){tell(e.message);}};
 $('leadForm').onsubmit=async event=>{event.preventDefault();try{await api('/api/sales/leads',{method:'POST',body:JSON.stringify({company:$('company').value,website:$('website').value})});$('leadForm').reset();await load();}catch(e){tell(e.message);}};
 $('copyLink').onclick=()=>navigator.clipboard.writeText($('partnerLink').value).then(()=>tell('Linkki kopioitu.')).catch(()=>tell('Kopioi linkki tekstikentästä.'));
 $('logout').onclick=async()=>{await api('/api/sales/logout',{method:'POST',body:'{}'}).catch(()=>{});show('loginSection');};
