@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Respondo AI – Suosittelulinkin vahvistus</title>
+<style>
+:root{font:16px/1.6 system-ui,sans-serif;color-scheme:dark;background:#0b0c0f;color:#f8f9fb}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 60% 0,#22262d,#0b0c0f 60%)}
+main{max-width:640px;width:100%;background:#16181e;border:1px solid #393c46;border-radius:20px;padding:clamp(20px,6vw,42px)}
+.logo{display:inline-block;width:42px;height:42px;border-radius:10px;margin-bottom:20px}
+h1{font-size:clamp(28px,5vw,42px);line-height:1.12;letter-spacing:-.03em;margin:8px 0 20px}
+p{color:#c1c5d0}small{color:#a6aab5}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:27px}
+button,a.button{border:0;border-radius:10px;padding:13px 19px;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}
+button{color:#15171b;background:#f8f9fb}
+a.button{color:#fff;background:#32353e}
+button:disabled{opacity:.5;cursor:not-allowed}
+.notice{min-height:25px;color:#ffcf98}
+</style></head>
+<body><main>
+<img class="logo" src="/respondo-approved-arrow-20261012.png" width="42" height="42" alt="Respondo AI">
+<div style="color:#9399a7;letter-spacing:.12em;font-size:12px">RESPONDO AI</div>
+<h1>Vahvista suosittelulinkki</h1>
+<p>Saavuit Respondo AI:hin myyntikumppanin linkin kautta. Jos hyväksyt, tallennamme selaimeesi 30 päiväksi välttämättömistä sivustoevästeistä erillisen, ensimmäisen osapuolen kumppanitunnisteen. Se auttaa meitä kohdistamaan mahdollisen vuositilauksesi oikealle kumppanille ja laskemaan hänelle myyntipalkkion.</p>
+<p>Suostumus on vapaaehtoinen. Voit jatkaa palveluun ilman seurantaa, eikä valinta muuta Respondo AI:n tilaushintaa. Eväste poistuu viimeistään 30 päivän kuluttua; voit myös tyhjentää sen selaimesta.</p>
+<div class="actions"><button id="yes" type="button">Hyväksyn seurannan</button><a href="/" class="button" id="no">Jatka ilman seurantaa</a></div>
+<p class="notice" id="message" role="status"></p><small>Rekisterinpitäjä: Tmi Movexa / Respondo AI · <a style="color:#d9dfed" href="/tietosuoja">Tietosuoja</a></small>
+</main>
+<script>
+(() => {
+'use strict';
+const code=(new URLSearchParams(location.search).get('partner')||'').toUpperCase().trim();
+const message=document.getElementById('message');
+const yes=document.getElementById('yes');
+if(!/^SP-[A-F0-9]{10}$/.test(code)){yes.disabled=true;message.textContent='Kumppanilinkki on virheellinen. Voit jatkaa palveluun ilman seurantaa.';return;}
+yes.onclick=async()=>{
+yes.disabled=true;message.textContent='Vahvistetaan suostumusta…';
+try{
+const res=await fetch('/api/sales/consent',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({partner:code,consent:true})});
+const data=await res.json().catch(()=>({}));
+if(!res.ok)throw new Error(data.error||'Suostumusta ei voitu tallentaa.');
+location.replace('/');
+}catch(error){yes.disabled=false;message.textContent=error.message;}
+};
+})();
+</script></body></html>
