@@ -931,6 +931,7 @@ async function load(){
     root.innerHTML='<section class="traffic-view" id="trafficStatsView" aria-label="'+e(t('navVisitors'))+'">'+
       cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+languageList(d.languages||[])+
       list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div>'+
+      '<section class="vault-entry"><div class="vault-entry-copy"><span class="vault-entry-icon">↗</span><div><small>MOVEXA / OWNER ONLY</small><h2>Sales Operating System</h2><p>Prospects · Review · Pipeline · Follow-ups</p></div></div><a class="vault-open" href="/movexa-sales">Open Sales OS →</a></section>'+ 
       vaultEntry()+
       '<div class="note">'+e(d.note||'')+'</div></section>'+
       '<div class="traffic-view" id="companyView" hidden>'+companiesShell()+'</div>'+
