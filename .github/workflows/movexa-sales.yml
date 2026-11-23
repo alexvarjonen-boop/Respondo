@@ -1,0 +1,43 @@
+name: Movexa Sales OS
+on:
+  pull_request:
+    branches: [production-respondo-fi]
+    paths:
+      - 'movexa-sales-os.mjs'
+      - 'server.mjs'
+      - 'public/traffic.html'
+      - 'tests/movexa-sales*.test.mjs'
+      - '.github/workflows/movexa-sales.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sales-os:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: movexa_test
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: movexa_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U movexa_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MOVEXA_TEST_DATABASE_URL: postgresql://movexa_test:ci-only-password@localhost:5432/movexa_test
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node --check server.mjs && node --check movexa-sales-os.mjs
+      - run: node --test tests/movexa-sales-os.test.mjs tests/movexa-sales-integration.test.mjs
