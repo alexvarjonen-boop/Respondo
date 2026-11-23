@@ -1,3 +1,4 @@
+import {installMovexaSales} from './movexa-sales-os.mjs';
 import { groundedSupportedServiceLanguages } from './supported-service-languages.mjs';
 import { approvedProductLinkAnswer } from './product-url-match.mjs';
 import { approvedCurrentPageProduct } from './page-context-product.mjs';
@@ -9511,6 +9512,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.text({ type: 'text/plain', limit: '20kb' }));
 installSalesPartnerRoutes(app,{db:pool,customerAuth:auth,ownerOnly:ownerTrafficOnly,secret:JWT,base:BASE,stripe});
 app.use(rateLimit({ windowMs:60000, limit:600, standardHeaders:true, legacyHeaders:false, keyGenerator:req=>publicRateKey(req,'global') }));
+installMovexaSales(app,{db:pool,auth,ownerOnly:ownerTrafficOnly});
 installInternalVaultRoutes(app, {
   auth,
   q,
