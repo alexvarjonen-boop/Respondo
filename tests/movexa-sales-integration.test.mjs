@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import express from 'express';
+import pg from 'pg';
+import {installMovexaSales} from '../movexa-sales-os.mjs';
+test('real database and HTTP sales lifecycle', {skip:!process.env.MOVEXA_TEST_DATABASE_URL},async()=>{
+  const pool=new pg.Pool({connectionString:process.env.MOVEXA_TEST_DATABASE_URL});
+  const schema='movexa_test_'+Date.now();
+  await pool.query('CREATE SCHEMA '+schema);
+  const client=await pool.connect();
+  await client.query('SET search_path TO '+schema);
+  const app=express();app.use(express.json());
+  const auth=(req,res,next)=>{if(!req.get('X-Test-Actor'))return res.sendStatus(401);req.user={sub:'test-owner',role:req.get('X-Test-Actor')};next();};
+  const ownerOnly=(req,res,next)=>req.user.role==='owner'?next():res.sendStatus(403);
+  installMovexaSales(app,{db:client,auth,ownerOnly});
+  const server=app.listen(0,'127.0.0.1');
+  await new Promise((resolve,reject)=>{server.once('listening',resolve);server.once('error',reject);});
+  const base='http://127.0.0.1:'+server.address().port;
+  const root='/api/owner/movexa-sales';
+  const req=(path,body,actor='owner',site='same-origin')=>fetch(base+path,{method:body?'POST':'GET',headers:{...(actor?{'X-Test-Actor':actor}:{}),...(body?{'Content-Type':'application/json','X-Movexa-Action':'1','Sec-Fetch-Site':site}:{})},body:body?JSON.stringify(body):undefined});
+  const p={name:'Example',website:'https://www.example.com',source:'https://example.com/about',role:'Director',evidence:'Public service catalogue',email:'sales@example.com',lang:'en',roleFit:true,serviceFit:true,needFit:true};
+  try{
+    assert.equal((await req('/movexa-sales',null,'')).status,401);
+    assert.equal((await req(root,null,'agent')).status,403);
+    assert.equal((await req(root,p,'owner','cross-site')).status,403);
+    const html=await req('/movexa-sales');assert.equal(html.status,200);assert.match(html.headers.get('cache-control'),/no-store/);
+    const script=(await html.text()).match(/<script>([\s\S]*?)<\/script>/)[1];
+    assert.doesNotThrow(()=>new Function(script));
+    const added=await req(root,p);assert.equal(added.status,201);const {id}=await added.json();
+    assert.equal((await req(root,{...p,website:'https://example.com'})).status,409);
+    assert.equal((await req(root+'/'+id+'/draft')).status,404);
+    assert.equal((await req(root+'/'+id+'/stage',{stage:'approved',reviewed:true})).status,409);
+    assert.equal((await req(root+'/'+id+'/stage',{stage:'review'})).status,200);
+    assert.equal((await req(root+'/'+id+'/stage',{stage:'approved'})).status,409);
+    assert.equal((await req(root+'/'+id+'/stage',{stage:'approved',reviewed:true})).status,200);
+    const draft=await req(root+'/'+id+'/draft');assert.equal(draft.status,200);assert.match((await draft.json()).body,/Reply if you do not/);
+    assert.equal((await req(root+'/'+id+'/stage',{stage:'contacted',reviewed:true})).status,200);
+    const list=await (await req(root)).json();assert.equal(list.rows[0].stage,'contacted');assert.ok(list.rows[0].followup_at);
+    assert.equal((await req(root+'/'+id+'/stage',{stage:'blocked'})).status,200);
+    const blocked=(await (await req(root)).json()).rows[0];assert.equal(blocked.email,'');assert.equal(blocked.evidence,'');assert.equal(blocked.stage,'blocked');
+    assert.equal((await req(root,p)).status,409);
+    assert.equal((await req(root+'/'+id+'/draft')).status,404);
+    assert.equal((await req(root+'/'+id+'/stage',{stage:'review'})).status,409);
+  }finally{await new Promise(resolve=>server.close(resolve));await client.query('SET search_path TO public');await client.query('DROP SCHEMA '+schema+' CASCADE');client.release();await pool.end();}
+});
