@@ -34,8 +34,8 @@ test('Observatory styles load last and are homepage-scoped',()=>{
   assert.match(html,/home-observatory\.css\?v=20261027-observatory-polish-v2/);
   assert.match(html,/spiral-hero-motion\.js\?v=20261026-orbit10-v1-observatory-v1/);
   assert.match(html,/app\.js\?v=[^"]+-observatory-v1/);
-  assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1/);
-  assert.match(apple,/spiral-hero\.js\?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1/);
+  assert.match(read('app.js'),/apple-home\.js\?v=20261125-demo-first-v1/);
+  assert.match(read('apple-home.js'),/demoFirstHero/);
   assert.match(theme,/#app \.apple-home-page/);
   assert.match(theme,/max-width:600px/);
   assert.match(theme,/prefers-reduced-motion:reduce/);
@@ -59,9 +59,8 @@ test('ten icons remain in view during scroll and the intro button opens the actu
 
 test('existing production pricing and assistant infrastructure stay unchanged',()=>{
   assert.match(app,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
-  assert.match(app,/card\('Advanced',49/);
-  assert.match(app,/card\('Premium',129/);
-  assert.match(app,/card\('Enterprise',149/);
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);assert.match(pricing,/intent=demo/);
   assert.match(html,/logo-reveal\.js/);
   assert.match(html,/effects\.js/);
 });
