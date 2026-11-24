@@ -11,7 +11,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1-booking-request-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261125-demo-first-v1-restore-orbit-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261125-demo-first-v1-restore-orbit-v1-self-service-v1';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261107-movexa-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -2787,7 +2787,7 @@ function pricingSection() {
         <h3>${appText('Valinnainen käyttöönottopalvelu','Valfri installationstjänst','Optional assisted setup')}</h3>
         <p><strong>200 €</strong> · ${appText('kertamaksu (sis. ALV Suomessa)','engångsavgift (inkl. moms i Finland)','one-time fee (includes VAT in Finland)')}</p>
         <p>${appText('Asennus, yrityskohtainen konfigurointi ja testaus puolestasi.','Installation, företagsanpassning och testning åt dig.','Installation, business-specific configuration and testing for you.')}</p>
-        <div class="price-actions"><a class="btn price-btn" href="/yhteystiedot?lang=${currentLang()}&amp;intent=demo">${appText('Varaa demo','Boka demo','Book a demo')} →</a><a class="pricing-feature-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso ominaisuudet','Se funktioner','See features')} →</a></div>
+        <div class="price-actions"><a class="btn price-btn" href="/tilaus?plan=respondo_monthly&amp;lang=${currentLang()}">${appText('Tilaa nyt','Beställ nu','Subscribe now')} →</a><a class="pricing-feature-link" href="/yhteystiedot?lang=${currentLang()}&amp;intent=demo">${appText('Varaa demo','Boka demo','Book a demo')} →</a><a class="pricing-feature-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso ominaisuudet','Se funktioner','See features')} →</a></div>
       </article></div></div></section>`;
 }
 function bindPricingPeriodSwitch() {
@@ -3371,7 +3371,7 @@ function setupServiceOption() {
     <label class="setup-service-option">
       <input type="checkbox" name="setupService" value="1">
       <span class="setup-service-copy">
-        <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b data-setup-price>199 €</b></span>
+        <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b data-setup-price>200 €</b></span>
         <small data-setup-copy>${appText('Valinnainen kertamaksu. Analysoimme verkkosivusi, otamme botin käyttöön puolestasi ja lähetämme kirjautumistiedot henkilökohtaisesti sähköpostitse viimeistään viikon kuluessa. Tilauspaketin laskutus alkaa vasta, kun olemme toimittaneet kirjautumistiedot ja vahvistaneet luovutuksen. Tämän jälkeen alkaa 3 päivän maksuton kokeilu.','Valfri engångsavgift. Vi analyserar din webbplats, installerar botten och skickar inloggningsuppgifterna personligen via e-post inom en vecka. Abonnemanget debiteras först efter att vi har levererat inloggningsuppgifterna och bekräftat överlämningen. Därefter börjar en gratis provperiod på 3 dagar.','Optional one-time fee. We review your website, set up the bot for you and personally email the login details within one week. Subscription billing is held until we deliver your login credentials and confirm handover. Your 3-day free trial begins after confirmation.')}</small>
       </span>
     </label>
@@ -3484,7 +3484,7 @@ function bindSetupServiceOptions() {
     );
     let lastCode=null,seq=0;
     const showPromo=(free)=>{
-      if(price) price.textContent=free?'0 €':'199 €';
+      if(price) price.textContent=free?'0 €':'200 €';
       if(note) note.textContent=free?promoDescription:baseNote;
       if(planPrice) planPrice.textContent=free?'0 €':basePlanPrice;
       if(hint) hint.textContent=free
@@ -3547,18 +3547,11 @@ function signup() {
   const params = new URLSearchParams(location.search);
   const ownerTestAccessToken = String(params.get('owner-test-token') || '').trim();
   const ownerTestAccess = params.get('owner-test') === '1' && cfg.ownerTestEnabled === true && Boolean(ownerTestAccessToken);
-  const requestedPlan = params.get('plan') || 'basic_monthly';
-  const allowedPlans = new Set(['basic_monthly','basic_yearly','advanced_monthly','advanced_yearly','business_monthly','business_yearly','owner_test']);
-  const normalizedRequestedPlan = requestedPlan.replace(/^starter_/, 'basic_').replace(/^premium_/, 'advanced_').replace(/^enterprise_/, 'business_');
-  const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : 'basic_monthly';
-  const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
+  const requestedPlan = params.get('plan') || 'respondo_monthly';
+  const plan = requestedPlan === 'owner_test' && ownerTestAccess ? 'owner_test' : 'respondo_monthly';
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
-  const planDetails = {
-    basic: { name:'Advanced', monthly:49, yearly:39, yearlyTotal:468 },
-    advanced: { name:'Premium', monthly:129, yearly:119, yearlyTotal:1428 },
-    business: { name:'Enterprise', monthly:149, yearly:139, yearlyTotal:1668 },
-  }[plan.split('_')[0]] || { name:'Advanced', monthly:49, yearly:39, yearlyTotal:468 };
-  const annualBilling = plan.endsWith('_yearly');
+  const planDetails = { name:'Respondo AI', monthly:350 };
+  const annualBilling = false;
   const testBilling = plan === 'owner_test';
   const selectedPrice = testBilling ? '0,50 €' : (annualBilling ? planDetails.yearly : planDetails.monthly) + ' €' + appText('/kk','/mån','/month');
   const billingExplanation = testBilling
@@ -3584,13 +3577,13 @@ function signup() {
             <div class="signup-plan-summary field full" role="note" aria-label="${appText('Valittu paketti','Valt abonnemang','Selected plan')}">
               <div class="signup-plan-summary-top">
                 <span>${appText('VALITSEMASI PAKETTI','DITT VALDA ABONNEMANG','YOUR SELECTED PLAN')}</span>
-                <a href="/hinnat?lang=${currentLang()}${referralCode ? '&amp;ref=' + encodeURIComponent(referralCode) : ''}" class="signup-change-plan">${appText('Vaihda pakettia','Byt abonnemang','Change plan')} <span aria-hidden="true">↗</span></a>
+                <a href="/hinnat?lang=${currentLang()}" class="signup-change-plan">${appText('Näytä hinnasto','Visa priser','View pricing')}</a>
               </div>
               <div class="signup-plan-summary-main">
                 <strong>${testBilling ? appText('Omistajan testi','Ägarens test','Owner test') : planDetails.name}</strong>
                 <b>${selectedPrice}</b>
               </div>
-              <p>${billingExplanation}</p>
+              <p>${billingExplanation}</p><small>${appText('Hinta sisältää ALV:n Suomessa.','Priset inkluderar moms i Finland.','Price includes VAT in Finland.')}</small>
             </div>
             ${testBilling ? '' : setupServiceOption()}
             <div class="field full referral-signup-field">
@@ -3985,14 +3978,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
           <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120"></label>
           <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40"></label>
           ${checkoutBillingCountryField()}
-          <label><span>${appText('Tilaus','Abonnemang','Subscription')}</span><select name="plan">
-            <option value="basic_monthly">Advanced 49 € / kk</option>
-            <option value="advanced_monthly">Premium 129 € / kk</option>
-            <option value="business_monthly">Enterprise 149 € / kk</option>
-            <option value="basic_yearly">Advanced 39 € / kk · 468 € / vuosi</option>
-            <option value="advanced_yearly">Premium 119 € / kk · 1 428 € / vuosi</option>
-            <option value="business_yearly">Enterprise 139 € / kk · 1 668 € / vuosi</option>
-          </select></label>
+          <label><span>${appText('Tilaus','Abonnemang','Subscription')}</span><select name="plan"><option value="respondo_monthly">Respondo AI · 350 €${appText('/kk','/mån','/month')}</option></select></label>
           ${setupServiceOption()}
           <label><span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span><input name="referralCode" maxlength="40" autocomplete="off" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}"></label>
           ${checkoutBusinessTerms('acceptedTerms', 'workspace-terms')}
@@ -4422,14 +4408,7 @@ async function dashboard(options = {}) {
             <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120" placeholder="${appText('Yrityksen nimi','Företagsnamn','Company name')}"></label>
             <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40" placeholder="1234567-8"></label>
           ${checkoutBillingCountryField()}
-            <div class="workspace-plan-grid">
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>${appText('Advanced · 49 €/kk','Advanced · 49 €/mån','Advanced · €49/month')}</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_monthly"><span><b>${appText('Premium · 129 €/kk','Premium · 129 €/mån','Premium · €129/month')}</b><small>10 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_monthly"><span><b>${appText('Enterprise · 149 €/kk','Enterprise · 149 €/mån','Enterprise · €149/month')}</b><small>20 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_yearly"><span><b>${appText('Advanced · 39 €/kk vuosittain','Advanced · 39 €/mån årsvis','Advanced · €39/month annual')}</b><small>${appText('468 € kerran vuodessa · säästät 120 €','468 € per år · spara 120 €','€468/year · save €120')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_yearly"><span><b>${appText('Premium · 119 €/kk vuosittain','Premium · 119 €/mån årsvis','Premium · €119/month annual')}</b><small>${appText('1 428 € kerran vuodessa · säästät 120 €','1 428 € per år · spara 120 €','€1,428/year · save €120')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_yearly"><span><b>${appText('Enterprise · 139 €/kk vuosittain','Enterprise · 139 €/mån årsvis','Enterprise · €139/month annual')}</b><small>${appText('1 668 € kerran vuodessa · säästät 120 €','1 668 € per år · spara 120 €','€1,668/year · save €120')}</small></span></label>
-            </div>
+            <div class="workspace-plan-grid"><label class="workspace-plan-option"><input type="radio" name="plan" value="respondo_monthly" checked><span><b>Respondo AI · 350 €${appText('/kk','/mån','/month')}</b><small>20 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label></div>
             ${setupServiceOption()}
             <label>
               <span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span>
@@ -5455,7 +5434,7 @@ async function dashboard(options = {}) {
                       ? 'Premium'
                       : planCode.startsWith('business_') || ['monthly','yearly','owner_test'].includes(planCode)
                         ? 'Enterprise'
-                        : 'Respondo';
+                        : 'Respondo AI';
                   const billing=planCode==='yearly' || planCode.endsWith('_yearly')
                     ? appText('Vuositilaus','Årsabonnemang','Annual plan')
                     : appText('Kuukausitilaus','Månadsabonnemang','Monthly plan');
@@ -5761,8 +5740,6 @@ let unbindProductStory;
 
 async function route() {
   const path = location.pathname.replace(/\/+$/, '') || '/';
-  // Public pricing is contact-only until the new billing configuration is verified.
-  if (path === '/tilaus') { const q = new URLSearchParams(location.search); q.delete('plan'); q.set('intent','demo'); location.replace('/yhteystiedot?' + q.toString()); return; }
   const workspacePage = ['/assistant', '/app', '/demo'].includes(path);
   document.body.classList.toggle('dashboard-page', workspacePage);
   document.documentElement.classList.toggle('static-workspace', workspacePage);
