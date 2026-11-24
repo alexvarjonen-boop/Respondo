@@ -4,28 +4,17 @@ import { readFileSync } from 'node:fs';
 import { app } from '../server.mjs';
 import { seoPricingMarkup, SEO_PRICING_TIERS } from '../public/seo-pricing-ssr.mjs';
 
-test('pricing SSR accurately represents the actual package prices and annual billing',()=>{
+test('pricing SSR accurately represents the single monthly offer',()=>{
   const client=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
-  assert.equal(SEO_PRICING_TIERS.length,3);
-  for(const tier of SEO_PRICING_TIERS){
-    assert.equal(tier.monthly-tier.annualEquivalent,10);
-    assert.equal(tier.annualEquivalent*12,tier.annualTotal);
-    // Client pricing card derives the same package price and annual discount.
-    assert.ok(client.includes('monthly-10'),'client annual discount must remain aligned');
-    assert.ok(client.includes('pricingSection()'),'pricing page should use live client card generator');
-  }
+  assert.equal(SEO_PRICING_TIERS.length,1);
+  assert.equal(SEO_PRICING_TIERS[0].monthly,350);
+  assert.ok(client.includes('pricingSection()'));
   for(const lang of ['fi','sv','en']){
     const html=seoPricingMarkup(lang);
     assert.equal((html.match(/<h1>/g)||[]).length,1);
-    assert.ok((html.match(/<h2>/g)||[]).length>=3);
-    assert.ok(html.length>2800,lang+' should have meaningful pricing and FAQs');
-    for(const price of ['49','129','149','468','1428','1668'])
-      assert.ok(html.includes(price),lang+' missing valid price '+price);
-    assert.ok(html.includes('120 €'),lang+' annual saving');
-    for(const p of ['/asiakaspalvelubotti','/asiakaspalvelun-automatisointi','/yhteystiedot']){
-      const suffix=lang==='en'?'':'?lang='+lang;
-      assert.ok(html.includes('href="'+p+suffix+'"'),lang+' link '+p);
-    }
+    assert.match(html,/350/);assert.match(html,/200/);
+    assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
+    assert.doesNotMatch(html,/Advanced|Premium|Enterprise|\/tilaus/);
   }
 });
 
@@ -43,9 +32,8 @@ test('public pricing is rendered on server without JS; sitemap URLs are unique a
     const first=html.split('<div id="app">')[1]?.split('</div>')[0] || '';
     assert.ok(first.startsWith('<main '),lang+' SEO markup present on initial load');
     assert.match(html,/<h1>[^<]+<\/h1>/,lang+' heading');
-    assert.ok(html.includes('<h3>Advanced</h3>'),lang+' tier');
-    assert.ok(html.includes('<h3>Premium</h3>'),lang+' tier');
-    assert.ok(html.includes('<h3>Enterprise</h3>'),lang+' tier');
+    assert.ok(html.includes('<h2>Respondo AI</h2>'),lang+' single subscription');
+    assert.match(html,/350/);assert.match(html,/200/);
     assert.ok(html.includes('hreflang="en"'),lang+' cross language URL');
     assert.ok(html.includes('rel="canonical"'),lang+' canonical');
     assert.ok(html.includes('<html lang="'+lang+'">'),lang+' document language');
