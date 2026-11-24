@@ -18,7 +18,7 @@ test('first-party demo answers the screenshot buy question without a full catalo
   const sample=respondoProductFaqMatch('Miten tän voi ostaa','fi',[]);
   assert.equal(sample?.id,'respondo-faq-buy');
   assert.ok(sample.answer.length<210);
-  assert.match(sample.answer,/respondoai.fi\/yhteystiedot/);
+  assert.match(sample.answer,/respondoai.fi\/tilaus/);
   assert.doesNotMatch(sample.answer,/3 päivän|vuositilaukset:|arvonlisäveroa ei peritä/i);
 });
 
