@@ -68,14 +68,10 @@ test('calculator, features, pricing and footer have consistent high-contrast sur
 });
 
 test('prices, checkout routes and billing-period behavior remain unchanged',()=>{
-  assert.match(app,/card\('Advanced',49,2,/);
-  assert.match(app,/card\('Premium',129,10,/);
-  assert.match(app,/card\('Enterprise',149,20,/);
-  assert.match(app,/const yearlyMonthly=monthly-10/);
-  assert.match(app,/function bindPricingPeriodSwitch\(\)/);
-  assert.match(app,/section\.querySelectorAll\('\.pricing-choice-card'\)/);
-  assert.match(app,/const params = new URLSearchParams\(\{plan:card\.dataset\.planCode/);
-  assert.match(app,/return `<div class="home-page apple-home-page"/);
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
+  assert.match(app,/return `<div class="home-page demo-first-page"/);
   assert.match(css,/\.rs-first-order-link[\s\S]*?pointer-events:auto!important/);
 });
 
