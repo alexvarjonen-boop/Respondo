@@ -15,23 +15,22 @@ test('Respondo homepage never answers a broad sales question as an ecommerce gol
 });
 
 
-test('Respondo homepage purchase question answers with signup instructions instead of contact collection',()=>{
+test('Respondo homepage purchase question answers with current demo request and pricing',()=>{
   const fi=respondoProductFaqMatch('Miten tän voi ostaa','fi',[]);
   assert.ok(fi);
   assert.equal(fi.id,'respondo-faq-buy');
-  assert.match(fi.answer,/respondoai\.fi\/tilaus/i);
+  assert.match(fi.answer,/respondoai\.fi\/yhteystiedot/i);
   assert.doesNotMatch(fi.answer,/Kokeile ilmaiseksi|3 päivän|vähäisen liiketoiminnan|arvonlisävero/i);
   assert.ok(fi.answer.length<210,fi.answer);
-  assert.match(fi.answer,/Advanced maksaa 49 €\/kk/);
-  assert.match(fi.answer,/Premium 129 €\/kk/);
-  assert.match(fi.answer,/Enterprise 149 €\/kk/);
+  assert.match(fi.answer,/350 €\/kk/);
+  assert.match(fi.answer,/200 €/);
   assert.doesNotMatch(fi.answer,/jätä.*yhteystiet|puhelinnumeron tai sähköpostin/i);
 
   const en=respondoProductFaqMatch('How can I buy this?','en',[]);
   assert.ok(en);
   assert.equal(en.id,'respondo-faq-buy');
-  assert.match(en.answer,/respondoai\.fi\/tilaus/i);
-  assert.doesNotMatch(en.answer,/Try for free|VAT|3-day trial/i);
+  assert.match(en.answer,/respondoai\.fi\/yhteystiedot/i);
+  assert.doesNotMatch(en.answer,/Try for free|3-day trial/i);
   assert.ok(en.answer.length<210,en.answer);
   assert.doesNotMatch(en.answer,/leave your contact/i);
 });
@@ -72,16 +71,16 @@ test('Respondo homepage B2B questions answer the business model directly',()=>{
 
 test('Respondo purchase instructions are short, accurate and localized in all languages',()=>{
   const examples=[
-    ['Miten voin tilata Respondon?','fi','49 €/kk'],
-    ['Hur beställer jag Respondo?','sv','49 €/mån'],
-    ['How can I subscribe to Respondo?','en','€49/month']
+    ['Miten voin tilata Respondon?','fi','350 €/kk'],
+    ['Hur beställer jag Respondo?','sv','350 €/mån'],
+    ['How can I subscribe to Respondo?','en','€350/month']
   ];
   for(const [q,lang,price] of examples){
     const r=respondoProductFaqMatch(q,lang,[]);
     assert.equal(r?.id,'respondo-faq-buy',lang);
-    assert.ok(r.answer.includes('respondoai.fi/tilaus'),lang);
+    assert.ok(r.answer.includes('respondoai.fi/yhteystiedot'),lang);
     assert.ok(r.answer.includes(price),lang);
     assert.ok(r.answer.length<210,lang);
-    assert.doesNotMatch(r.answer,/Kokeile ilmaiseksi|Prova gratis|Try for free|vähäisen toiminnan|VAT|moms|arvonlisävero/i);
+    assert.doesNotMatch(r.answer,/Kokeile ilmaiseksi|Prova gratis|Try for free|vähäisen toiminnan/i);
   }
 });
