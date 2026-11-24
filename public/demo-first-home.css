@@ -1,30 +1,7 @@
-/* Scoped compact public homepage; no scroll trapping, canvas or animation loop. */
-#app .demo-first-page{background:#101115;color:#f7f7fa;min-height:100vh}
-#app .demo-first-page .df-main{background:#101115;color:#f7f7fa;overflow:visible}
-.df-container{width:min(1120px,calc(100% - 48px));margin:0 auto}
-.df-hero{padding:clamp(84px,12vw,156px) 0 clamp(48px,7vw,88px)}
-.df-hero-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:clamp(28px,6vw,84px);align-items:center}
-.df-eyebrow,.df-number{font-size:12px;letter-spacing:.16em;color:#bbb4ff;font-weight:650}
-#app .df-copy h1{color:#fff;font-size:clamp(40px,6.1vw,76px);line-height:1.02;letter-spacing:-.055em;margin:20px 0}
-#app .df-lead{font-size:clamp(16px,1.7vw,20px);line-height:1.65;color:#c7c8d1;max-width:640px}
-.df-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:28px 0 10px}
-#app .df-primary,#app .df-header-demo{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:8px;padding:14px 21px;background:#d6ceff;color:#18122e;font-weight:700;text-decoration:none;min-height:44px}
-#app .df-secondary{display:inline-flex;align-items:center;padding:13px 18px;border:1px solid #535465;color:#fff;border-radius:8px;text-decoration:none;min-height:44px}
-#app .df-note{font-size:13px;color:#b1b2c0;margin:0}
-.df-example{border:1px solid #3a3b49;border-radius:20px;background:#181920;box-shadow:0 24px 75px #0004;overflow:hidden}
-.df-example-top{padding:18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #343542;color:#fff}
-.df-example-top small{margin-left:auto;color:#c3bdf8}.df-dot{width:10px;height:10px;background:#bcb2ff;border-radius:50%}
-.df-chat{display:grid;gap:14px;padding:24px}
-#app .df-chat p{max-width:88%;padding:13px 15px;border-radius:12px;margin:0;font-size:15px;line-height:1.55}
-#app .df-question{background:#d6ceff;color:#18122e;justify-self:end}
-#app .df-answer{background:#292a35;color:#fff;justify-self:start}
-.df-example-foot{font-size:12px;color:#b1b2c0;padding:0 24px 20px}
-.df-benefits{padding:0 0 52px}.df-benefit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-.df-benefit-grid article{border-top:1px solid #424350;padding:20px 0}
-#app .df-benefit-grid h2{color:#fff;font-size:23px;margin:10px 0}
-#app .df-benefit-grid p{color:#c7c8d1;line-height:1.6;margin:0}
-#app .demo-first-page .pricing-section{padding:52px 0 72px}
-#app .demo-first-page .public-simple-navin{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-#app .demo-first-page .df-header-demo{font-size:13px;padding:9px 13px}
-.df-primary:focus-visible,.df-secondary:focus-visible,.df-header-demo:focus-visible{outline:3px solid #fff;outline-offset:4px}
-@media(max-width:760px){.df-container{width:calc(100% - 32px)}.df-hero-layout,.df-benefit-grid{grid-template-columns:1fr}.df-hero{padding:88px 0 40px}.df-benefit-grid{gap:5px}.df-benefits{padding-bottom:28px}.df-example{max-width:520px}.df-actions{gap:8px}#app .demo-first-page .df-header-demo{padding:8px 10px;font-size:12px}}
+/* Original orbit remains intact. Only the added demo CTA is styled here. */
+#app .apple-home-page .rs-book-demo,#app .apple-home-page .df-header-demo{display:inline-flex!important;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border-radius:8px;background:#7C8CFF!important;color:#0B0D12!important;font-weight:700;text-decoration:none;line-height:1.2;position:relative;z-index:5;pointer-events:auto!important}
+#app .apple-home-page .rs-book-demo{margin:8px 0 0}
+#app .apple-home-page .rs-book-demo:focus-visible,#app .apple-home-page .df-header-demo:focus-visible{outline:3px solid #F5F7FA;outline-offset:4px}
+#app .apple-home-page .public-simple-navin{display:flex!important;flex-wrap:wrap;align-items:center;gap:10px}
+#app .apple-home-page .df-header-demo{font-size:13px;padding:9px 13px}
+@media(max-width:760px){#app .apple-home-page .rs-book-demo{min-height:44px;padding:9px 13px;font-size:13px}#app .apple-home-page .df-header-demo{padding:8px 10px;font-size:12px}}
