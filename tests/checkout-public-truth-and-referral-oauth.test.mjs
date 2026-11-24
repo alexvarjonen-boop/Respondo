@@ -66,19 +66,14 @@ test('regular referral codes survive social sign-up without being added to Googl
   assert.equal(oauthSignupReferral(req,'right-nonce'),'');
 });
 
-test('localized crawlable pricing pages match the paid-country guard',()=>{
-  const samples=[
-    ['fi','Suomessa ja Yhdysvalloissa'],
-    ['sv','Finland och USA'],
-    ['en','Finland and the United States']
-  ];
-  for(const [lang,text] of samples){
+test('localized crawlable pricing points to demo during billing migration',()=>{
+  for(const lang of ['fi','sv','en']){
     const html=seoPricingMarkup(lang);
-    assert.ok(html.includes(text),'Missing correct '+lang+' country statement');
-    assert.match(html,/<a[^>]+href="\/tilaus\?plan=basic_monthly&amp;lang=/);
-    assert.match(html,/120 €/);
+    assert.match(html,/350/);assert.match(html,/200/);
+    assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
+    assert.doesNotMatch(html,/\/tilaus|Advanced|Premium|Enterprise/);
   }
-  assert.doesNotMatch(read('public/seo-pricing-ssr.mjs'),/currently available in Finland\.'/);
+  assert.match(server,/const TAX_CHECKOUT_COUNTRIES = new Set\(\['FI','US'\]\)/);
 });
 
 test('old VAT exemption and Swedish €60 annual savings claims are not retained in public app copy',()=>{
