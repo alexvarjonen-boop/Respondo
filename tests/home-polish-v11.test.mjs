@@ -30,6 +30,6 @@ test('homepage polish ships with fresh css and complete nested browser cache ver
  const html=read('index.html'),app=read('app.js'),apple=read('apple-home.js');
  assert.match(html,/home-polish-v11\.css\?v=20261027-spacing-clarity-v11/);
  assert.match(html,/app\.js\?v=[^"]+-polish-v11/);
- assert.match(app,/apple-home\.js\?v=[^']+-polish-v11/);
- assert.match(apple,/spiral-hero\.js\?v=[^']+-polish-v11/);
+ assert.match(app,/apple-home\.js\?v=20261125-demo-first-v1/);
+ assert.match(apple,/demoFirstHero/);
 });
