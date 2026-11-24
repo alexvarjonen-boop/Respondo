@@ -14,7 +14,7 @@ for (const [index, language, title] of [
     const story = html.match(/<section class="rs-product-story"[\s\S]*?<\/section>/)?.[0];
     assert.ok(story);
     assert.ok(html.indexOf(story) < html.indexOf('id="pricing"'));
-    assert.match(appleHomeMarkup(render,language,0),/df-example/);
+    assert.match(appleHomeMarkup(render,language,0),/rs-studio-orbit-art/);
     assert.ok(story.includes('<strong>'+title+'</strong>'));
     assert.doesNotMatch(story,/Respondo AI|<iframe\b|<form\b|<button\b/i);
     assert.ok(story.includes('/assistant?lang='+language));
