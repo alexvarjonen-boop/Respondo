@@ -18,7 +18,7 @@ test('transparent pricing guide has substantial, non-promissory Finnish, Swedish
     assert.match(html, /<main/);
     assert.match(html, /<h1>/);
     assert.ok(html.length > 4000, 'thin pricing content for ' + lang);
-    for (const [plan,amount] of [['Advanced','49'],['Premium','129'],['Enterprise','149']]) {
+    for (const [plan,amount] of [['Respondo AI','350'],['Setup','200']]) {
       const localizedPrice = lang === 'en' ? '€'+amount : amount+' €';
       assert.ok(html.includes(localizedPrice), lang + ' missing monthly price ' + plan + ' '+localizedPrice);
     }
