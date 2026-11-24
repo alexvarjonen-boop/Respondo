@@ -27,10 +27,10 @@ test('Advanced, Premium and Enterprise have strictly tier-scoped feature lists',
   assert.equal(featureAvailableForPublicPlan('unknown','chat',0),false);
 });
 
-test('pricing shows independent feature links for each tier and filters destination list',()=>{
-  assert.match(app,/class="pricing-feature-link" href="\/ominaisuudet\?plan=\$\{tier\.toLowerCase\(\)\}/);
+test('pricing links to complete feature directory while legacy access gates remain',()=>{
+  assert.match(app,/class="pricing-feature-link" href="\/ominaisuudet\?lang=/);
   assert.match(app,/Katso ominaisuudet','Se funktioner','See features'/);
-  assert.match(app,/const plan = \['advanced','premium','enterprise'\]\.includes\(requestedPlan\)/);
+  assert.match(app,/const plan = '';/);
   assert.match(app,/featureAvailableForPublicPlan\(plan,group\.key,index\)/);
   assert.match(app,/const displayCount = plan \? publicPlanFeatureCount\(plan\) : FEATURE_COUNT/);
   assert.match(app,/const signupTier = \{advanced:'basic',premium:'advanced',enterprise:'business'\}/);
