@@ -18,7 +18,7 @@ test('single-plan pricing gives localized factual guidance without popularity cl
 
 test('one advertised price and optional setup link to demo instead of legacy checkout',()=>{
   assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
-  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
+  assert.match(pricing,/intent=demo/);assert.match(pricing,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(pricing,/pricing-period-option/);
 });
 
 test('v16 remains scoped, accessible and compatible with existing ten-scene homepage', () => {
