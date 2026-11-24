@@ -26,8 +26,8 @@ test('annual billing is exactly 10 euros per month cheaper and retains the tier 
     assert.equal(annual*12,yearly);
     assert.ok(server.includes(code+'_yearly:{tier:'),'missing annual plan');
     assert.ok(server.includes('monthlyPrice:'+annual+',annualTotal:'+yearly));
-    assert.ok(app.includes('value="'+code+'_yearly"'));
-    assert.ok(app.includes('value="'+code+'_monthly"'));
+    assert.ok(!app.includes('value="'+code+'_yearly"'));
+    assert.ok(!app.includes('value="'+code+'_monthly"'));
   }
   assert.match(server,/NEW_YEARLY_PRICE_CENTS/);
   assert.doesNotMatch(server,/Uusille tilauksille on saatavilla vain kuukausilaskutus/);
@@ -86,10 +86,10 @@ test('legacy subscribers keep the full old feature set',()=>{
 });
 
 test('legacy workspace codes remain while public pricing and demo use one subscription',()=>{
-  for(const plan of ['basic_monthly','advanced_monthly','business_monthly'])assert.ok(app.includes('value="'+plan+'"'));
+  assert.ok(app.includes('value="respondo_monthly"'));
   const p=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
   assert.match(p,/350 €/);assert.match(p,/200 €/);assert.match(p,/intent=demo/);
-  assert.doesNotMatch(p,/Advanced|Premium|Enterprise|\/tilaus/);
+  assert.match(p,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(p,/Advanced|Premium|Enterprise/);
   assert.match(effects,/€350\/month/);
 });
 
