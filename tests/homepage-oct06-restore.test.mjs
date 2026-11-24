@@ -11,7 +11,7 @@ test('public homepage renders a compact 3-card feature story instead of legacy i
   assert.ok(start>=0 && end>start);
   const home=app.slice(start,end);
   assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
-  assert.match(home,/apple-home-page/);
+  assert.match(home,/demo-first-page/);
   assert.doesNotMatch(home,/cinematicConversationScene\(\)|horizontalProductStory\(\)|productWorldScene\(\)|motionDepthScene\(\)|trustPortalScene\(\)|dataImpactScene\(\)/);
   assert.doesNotMatch(home,/calculatorSection\(\)|contactSection\(\)/);
 });
