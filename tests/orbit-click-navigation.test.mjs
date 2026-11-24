@@ -134,6 +134,6 @@ test('click bindings are delegated and asset URLs are versioned',()=>{
   assert.match(index,/spiral-hero-motion\.js\?v=[^"]+-orbit-click-v1/);
   assert.match(index,/studio-home\.css\?v=[^"]+-orbit-click-v1/);
   assert.match(index,/app\.js\?v=[^"]+-orbit-click-v1/);
-  assert.match(app,/apple-home\.js\?v=[^']+-orbit-click-v1/);
-  assert.match(apple,/spiral-hero\.js\?v=[^']+-orbit-click-v1/);
+  assert.match(app,/apple-home\.js\?v=20261125-demo-first-v1/);
+  assert.match(apple,/demoFirstHero/);
 });
