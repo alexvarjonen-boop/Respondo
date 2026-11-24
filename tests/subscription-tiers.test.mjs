@@ -85,23 +85,18 @@ test('legacy subscribers keep the full old feature set',()=>{
   assert.match(server,/tier:'business'[\s\S]*agentSeats:20[\s\S]*allCurrentFeatures:true/);
 });
 
-test('homepage signup workspaces and Try Bot offer monthly and annual tiers',()=>{
-  for(const plan of ['basic_monthly','advanced_monthly','business_monthly']) {
-    assert.ok(app.includes('value="'+plan+'"'),plan+' missing from signup/workspace');
-    assert.match(effects,new RegExp('plan='+plan));
-  }
-  assert.match(app,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.ok(app.includes("card('Advanced',49,2"));
-  assert.ok(app.includes("card('Premium',129,10"));
-  assert.ok(app.includes("card('Enterprise',149,20"));
-  assert.match(app,/asiakaspalvelijapaikkaa/);
-  assert.match(app,/plan:card\.dataset\.planCode \+ \(yearly \? '_yearly' : '_monthly'\)/);
+test('legacy workspace codes remain while public pricing and demo use one subscription',()=>{
+  for(const plan of ['basic_monthly','advanced_monthly','business_monthly'])assert.ok(app.includes('value="'+plan+'"'));
+  const p=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(p,/350 €/);assert.match(p,/200 €/);assert.match(p,/intent=demo/);
+  assert.doesNotMatch(p,/Advanced|Premium|Enterprise|\/tilaus/);
+  assert.match(effects,/€350\/month/);
 });
 
-test('homepage structured data publishes six approved monthly and annual subscription prices',()=>{
-  for(const price of ['49.00','129.00','149.00','468.00','1428.00','1668.00']) assert.ok(html.includes('"price":"'+price+'"'));
-  for(const price of ['34.90','44.90','54.90']) assert.ok(!html.includes('"price":"'+price+'"'));
-  assert.equal((html.match(/"@type":"Offer"/g)||[]).length,6);
+test('homepage structured data publishes the single monthly subscription',()=>{
+  assert.ok(html.includes('"price":"350.00"'));
+  assert.equal((html.match(/"@type":"Offer"/g)||[]).length,1);
+  for(const price of ['49.00','129.00','149.00','468.00','1428.00','1668.00','34.90','44.90','54.90'])assert.ok(!html.includes('"price":"'+price+'"'));
 });
 
 test('workspace list correctly labels new commercial tiers while preserving old annual billing',()=>{
@@ -118,26 +113,19 @@ test('Business integration controls are available in the dashboard',()=>{
   assert.match(app,/id="testCommerce"/);
   assert.match(app,/api\/app\/commerce/);
   assert.match(app,/api\/app\/commerce\/test/);
-  assert.match(app,/Tarjouspyyntöjen seuranta ja käsittely/);
-  assert.match(app,/Respondon omat asiakas- ja toimintotyökalut/);
+  assert.match(app,/Tarjouspyyntöjen käsittely/);
+  assert.match(app,/Tiimikäyttö ja keskusteluhistoria/);
 });
 
 test('pricing copy does not promise undefined analytics tiers',()=>{
   assert.doesNotMatch(app,/Laajempi analytiikka|Täysi analytiikka/);
-  assert.match(app,/Turvallinen automaattinen tarjouslaskuri/);
-  assert.match(app,/Tarjouspyyntöjen seuranta ja käsittely/);
+  assert.match(app,/Tarjouspyyntöjen käsittely/);
+  assert.match(app,/Tarjouspyyntöjen käsittely/);
 });
 
-test('Advanced Premium Enterprise all include automatic website import',()=>{
-  const lowerStart=app.indexOf("card('Advanced'");
-  const middleStart=app.indexOf("card('Premium'");
-  const upperStart=app.indexOf("card('Enterprise'");
-  assert.ok(lowerStart>0&&middleStart>lowerStart&&upperStart>middleStart);
-  const lowerBlock=app.slice(lowerStart,middleStart);
-  const middleBlock=app.slice(middleStart,upperStart);
-  assert.match(lowerBlock,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(middleBlock,/Kaikki Advanced-ominaisuudet/);
-  assert.doesNotMatch(middleBlock,/Hae tiedot automaattisesti verkkosivulta/);
+test('public subscription includes website knowledge import and legacy access gates remain',()=>{
+  const p=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(p,/verkkosivun tietojen tuonti/);
   assert.match(app,/planAccess\.websiteImport/);
   assert.match(server,/basic_monthly:\{[^}]*websiteImport:true/);
   assert.match(server,/basic_yearly:\{[^}]*websiteImport:true/);
