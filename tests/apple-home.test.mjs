@@ -10,19 +10,19 @@ const styles=readFileSync(new URL('../public/apple-home.css',import.meta.url),'u
 
 for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag'],[2,'en','Your company']]) {
   const t=(...translations)=>translations[index];
-  test('homepage has ten synchronized spiral scenes, then pricing, in '+lang,()=>{
+  test('homepage has compact localized demo-first content, then pricing, in '+lang,()=>{
     const html=appleHomeMarkup(t,lang,145,'<section class="pricing-section" id="pricing">Plans</section>');
     assert.equal((html.match(/class="apple-feature-card /g)||[]).length,0);
-    assert.equal((html.match(/data-rs-card\b/g)||[]).length,10);
-    assert.ok(html.includes('class="apple-hero rs-spiral-section"'));
-    assert.ok(html.includes('id="features"'));
-    assert.ok(html.includes('class="rs-axis"'));
+    assert.equal((html.match(/<article>/g)||[]).length,3);
+    assert.ok(html.includes('class="df-hero"'));
+    assert.ok(html.includes('/assistant?lang='+lang));
+    assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
     assert.ok(!html.includes('data-respondo-hero-cta="signup"'));
     assert.doesNotMatch(html,/data-respondo-ask-form|data-respondo-ask-question|data-respondo-ask-status|rs-chat-entry/);
     assert.doesNotMatch(html,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
     assert.ok(html.includes('class="pricing-section" id="pricing"'));
-    assert.ok(html.indexOf('rs-spiral-section') < html.indexOf('class="pricing-section"'));
-    assert.match(html, /class="rs-axis"[^>]*>[\s\S]*?<svg viewBox="0 0 256 256"/);
+    assert.ok(html.indexOf('df-hero') < html.indexOf('class="pricing-section"'));
+    assert.match(html,/class="df-example"/);assert.doesNotMatch(html,/rs-spiral-section/);
     assert.doesNotMatch(html, /apple-highlights|apple-lead-calculator|rg-growth-section/);
     assert.doesNotMatch(html, /<iframe|<canvas/);
     assert.doesNotMatch(html,/apple-learning-links|Mistä aloittaa tekoälyn kanssa/);
