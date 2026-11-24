@@ -46,7 +46,7 @@ const pages = {
         ],
         [
           "Mikä on automaattisen asiakaspalvelun hinta?",
-          "Hinta riippuu ratkaisuista ja ominaisuuksista. Respondo AI:n kuukausipaketit ovat Advanced 49 €, Premium 129 € ja Enterprise 149 €. Tarkista ehdot hinnastosivulta."
+          "Respondo AI:n kuukausihinta on 350 € + soveltuva ALV. Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti + soveltuva ALV. Pyydä maksuton demo."
         ]
       ],
       "cta": "Tutustu Respondo AI -asiakaspalvelubottiin",
@@ -97,7 +97,7 @@ const pages = {
         ],
         [
           "Vad kostar Respondo AI?",
-          "Månadsplanerna börjar på 49 € för Advanced. Aktuella alternativ och villkor finns på prissidan."
+          "Respondo AI kostar 350 €/mån + tillämplig moms. Valfri installation kostar 200 € som engångsavgift + tillämplig moms. Boka en kostnadsfri demo."
         ]
       ],
       "cta": "Utforska Respondos kundservicebot",
@@ -148,7 +148,7 @@ const pages = {
         ],
         [
           "How much does Respondo AI cost?",
-          "The current Advanced monthly plan is €49. Compare the current subscription options on the pricing page."
+          "Respondo AI costs €350/month + applicable VAT. Optional assisted setup is a one-time €200 fee + applicable VAT. Book a free demo."
         ]
       ],
       "cta": "Explore the Respondo AI support chatbot",
