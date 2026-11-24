@@ -21,31 +21,21 @@ function renderPricing(lang) {
   return build();
 }
 
-test('billing selector renders three real subscription options for FI/SV/EN',()=>{
+test('public pricing renders one VAT-inclusive monthly offer for FI/SV/EN',()=>{
   for(const lang of ['fi','sv','en']){
     const html=renderPricing(lang);
-    assert.equal((html.match(/class="price-card pricing-choice-card/g)||[]).length,3);
-    assert.equal((html.match(/class="pricing-period-option/g)||[]).length,2);
-    assert.match(html,/data-billing-period="monthly" aria-pressed="true"/);
-    assert.match(html,/data-billing-period="yearly" aria-pressed="false"/);
-    assert.match(html,/data-plan-code="basic" data-monthly-price="49" data-yearly-monthly-price="39"/);
-    assert.match(html,/data-plan-code="advanced" data-monthly-price="129" data-yearly-monthly-price="119"/);
-    assert.match(html,/data-plan-code="business" data-monthly-price="149" data-yearly-monthly-price="139"/);
-    assert.equal((html.match(/class="btn price-btn pricing-select-btn"/g)||[]).length,3);
-    assert.ok(html.includes('/tilaus?plan=business_monthly&amp;lang='+lang));
-    assert.ok(html.includes('/tilaus?plan=advanced_monthly&amp;lang='+lang));
-    assert.ok(html.includes('/tilaus?plan=basic_monthly&amp;lang='+lang));
+    assert.equal((html.match(/<article class="price-card/g)||[]).length,1);
+    assert.match(html,/350 €/); assert.match(html,/200 €/);
+    assert.ok(html.includes('lang='+lang+'&amp;intent=demo'));
+    assert.doesNotMatch(html,/pricing-period-option|\/tilaus|Advanced|Premium|Enterprise/);
   }
 });
 
-test('annual display is equivalent monthly price, but full annual charge is disclosed',()=>{
-  const fi=renderPricing('fi');
-  const en=renderPricing('en');
-  assert.match(fi,/468 € laskutetaan vuosittain/);
-  assert.match(fi,/1428 € laskutetaan vuosittain/);
-  assert.match(fi,/1668 € laskutetaan vuosittain/);
-  assert.match(en,/€1668 billed annually/);
-  assert.match(css,/\.pricing-period-option:focus-visible/);
+test('public price shows VAT-inclusive amounts and no annual offer',()=>{
+  const fi=renderPricing('fi'),en=renderPricing('en');
+  assert.match(fi,/Sis\. ALV Suomessa/);
+  assert.match(en,/Includes VAT in Finland/);
+  assert.doesNotMatch(fi,/Vuosittain|120 €|468 €|1428 €|1668 €/);
 });
 
 test('plan toggle updates prices, payment cycle, and checkout destination together',()=>{
