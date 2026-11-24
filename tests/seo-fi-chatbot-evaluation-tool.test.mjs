@@ -79,7 +79,7 @@ test('Finnish scorecard and English counterpart are HTTP-accessible with proper 
   assert.match(xml,/<loc>[^<]*\/tools\/asiakaspalvelubotti-testi.html<\/loc>/);
   assert.match(xml,/<loc>[^<]*\/tools\/ai-chatbot-evaluation.html<\/loc>/);
   const home=await (await fetch(base+'/?lang=fi')).text();
-  assert.match(home,/class="df-hero"/,'homepage SSR should show the compact demo-first hero');
+  assert.match(home,/class="apple-hero rs-spiral-section"/,'homepage SSR should show restored orbit');
   assert.match(home,/intent=demo/);
   assert.doesNotMatch(home,/class="respondo-search-overview"/,'retired homepage link wall must not return');
 });
