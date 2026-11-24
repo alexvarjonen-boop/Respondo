@@ -71,7 +71,7 @@ test('localized crawlable pricing points to demo during billing migration',()=>{
     const html=seoPricingMarkup(lang);
     assert.match(html,/350/);assert.match(html,/200/);
     assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
-    assert.doesNotMatch(html,/\/tilaus|Advanced|Premium|Enterprise/);
+    assert.match(html,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(html,/Advanced|Premium|Enterprise/);
   }
   assert.match(server,/const TAX_CHECKOUT_COUNTRIES = new Set\(\['FI','US'\]\)/);
 });
