@@ -14,11 +14,11 @@ for (const [lang,label] of [['fi','Varaa demo'],['sv','Boka demo'],['en','Book a
     assert.ok(html.includes('/assistant?lang='+lang));
     assert.equal((html.match(/data-rs-card\b/g)||[]).length,10);
     assert.ok(html.includes('id="pricing"'));
-    assert.match(html,/rs-studio-orbit-art/);assert.match(html,/class="rs-book-demo"/);assert.doesNotMatch(html,/rs-product-journeys|\/tilaus/);
+    assert.match(html,/rs-studio-orbit-art/);assert.match(html,/class="rs-book-demo"/);assert.match(html,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(html,/rs-product-journeys/);
     assert.ok(html.startsWith(demoFirstHero(t,lang)));
     const pricing=seoPricingMarkup(lang);
     assert.match(pricing,/350/);assert.match(pricing,/200/);
-    assert.doesNotMatch(pricing,/Advanced|Premium|Enterprise|\/tilaus/);
+    assert.match(pricing,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(pricing,/Advanced|Premium|Enterprise/);
   });
 }
 test('homepage SSR, client and asset integration',()=>{
