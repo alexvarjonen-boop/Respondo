@@ -51,7 +51,7 @@ test('Pricing, contact inputs, legal and mobile retain consistent accessible con
   assert.match(css,/#app \.legalpage \.r-brand-legal-copy>\.r-brand-legal-section/);
   assert.match(css,/@media\(max-width:600px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(app,/card\('Advanced',49/);
-  assert.match(app,/card\('Premium',129/);
-  assert.match(app,/card\('Enterprise',149/);
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
 });
