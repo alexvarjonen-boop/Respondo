@@ -1,0 +1,46 @@
+# Isolated test deployment only. Do NOT supply production database or live Stripe credentials.
+# No paid compute or database is provisioned by this blueprint.
+services:
+  - type: web
+    name: respondo-free-preview
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: render-free-preview
+    autoDeployTrigger: 'off'
+    buildCommand: npm install --include=dev --no-audit --no-fund && npm run check && npm test
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_ENCRYPTION_KEY
+        generateValue: true
+      - key: RESPONDO_CONVERSATIONAL_AI_ENABLED
+        value: '0'
+      - key: FIRECRAWL_ENABLED
+        value: '0'
+      - key: SALES_PARTNER_PROGRAM_ENABLED
+        value: '0'
+      - key: BASE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_BASIC_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_BASIC_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_ADVANCED_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_ADVANCED_YEARLY_PRICE_ID
+        sync: false
+      - key: STRIPE_BUSINESS_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_BUSINESS_YEARLY_PRICE_ID
+        sync: false
