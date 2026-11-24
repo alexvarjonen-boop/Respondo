@@ -19,9 +19,9 @@ for(const [lang,n] of [['fi',0],['sv',1],['en',2]]){
     assert.match(hero,/rs-studio-grid/);
     assert.match(hero,/rs-studio-haze/);
     assert.match(hero,/rs-studio-orbit-label/);
-    assert.ok(home.indexOf('rs-spiral-section')<home.indexOf('LIVE PRICING'));
+    assert.ok(home.indexOf('df-hero')>=0 && home.indexOf('df-hero')<home.indexOf('LIVE PRICING'));
     assert.doesNotMatch(hero,/<canvas|<iframe|data-respondo-ask-form|data-respondo-hero-cta/);
-    assert.match(home, /rs-spiral-section/);
+    assert.match(home, /df-hero/);
   });
 }
 
@@ -42,9 +42,9 @@ test('reference aesthetic preserves official approved logo, real plans and first
   assert.ok(file('spiral-hero.js').includes(official));
   const app=file('app.js');
   assert.match(app,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
-  assert.match(app,/card\('Advanced',49/);
-  assert.match(app,/card\('Premium',129/);
-  assert.match(app,/card\('Enterprise',149/);
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
   assert.match(index,/spiral-hero-motion\.js/);
   assert.match(index,/logo-reveal\.js/);
 });
