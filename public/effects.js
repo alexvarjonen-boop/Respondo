@@ -945,53 +945,12 @@
               <div class="owner-save-status" id="ownerSaveStatus"></div>
             </form>
 
-            <section class="assistant-order" aria-label="Tilaa RESPONDO AI">
-              <div class="assistant-order-head">
-                <small>${pageTx('HALUATKO TÄMÄN OMALLE SIVULLESI?','VILL DU HA DETTA PÅ DIN EGEN WEBBPLATS?','WANT THIS ON YOUR WEBSITE?')}</small>
-                <h2>${pageTx('Valitse yrityksellesi sopiva Respondo.','Välj rätt Respondo för ditt företag.','Choose the right Respondo plan for your business.')}</h2>
-                <p>${pageTx('Kaikissa kuukausitilauksissa on 3 päivän ilmainen kokeilu.','Alla månadsabonnemang har 3 dagars gratis provperiod.','Every monthly plan includes a 3-day free trial.')}</p>
-              </div>
-              <div class="assistant-order-grid assistant-order-grid-three">
-                <article class="assistant-order-card">
-                  <div class="assistant-order-label">ADVANCED</div>
-                  <h3>49 € <span>/ kk</span></h3>
-                  <ul>
-                    <li>${pageTx('Ajanvaraukset ja yhteydenotot','Bokningar och kontaktförfrågningar','Bookings and contact requests')}</li>
-                    <li>${pageTx('Omat kysymys–vastausparit','Egna frågor och svar','Your own Q&A knowledge')}</li>
-                    <li>${pageTx('2 asiakaspalvelijapaikkaa','2 kundserviceplatser','2 customer-service seats')}</li>
-                  </ul>
-                  <div class="assistant-order-actions">
-                    <a class="assistant-order-btn" href="/tilaus?plan=basic_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
-                  </div>
-                </article>
-                <article class="assistant-order-card featured">
-                  <div class="assistant-order-top"><div class="assistant-order-label">PREMIUM</div><span class="assistant-save">${pageTx('SUOSITUIN','POPULÄRAST','MOST POPULAR')}</span></div>
-                  <h3>129 € <span>/ kk</span></h3>
-                  <ul>
-                    <li>${pageTx('Kaikki Advanced-ominaisuudet','Alla Advanced-funktioner','Everything in Advanced')}</li>
-                    <li>${pageTx('Hae tiedot sivustolta','Hämta information från webbplatsen','Website knowledge import')}</li>
-                    <li>${pageTx('10 asiakaspalvelijapaikkaa','10 kundserviceplatser','10 customer-service seats')}</li>
-                    <li>Google Calendar</li>
-                  </ul>
-                  <div class="assistant-order-actions">
-                    <a class="assistant-order-btn primary" href="/tilaus?plan=advanced_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
-                  </div>
-                </article>
-                <article class="assistant-order-card">
-                  <div class="assistant-order-label">ENTERPRISE</div>
-                  <h3>149 € <span>/ kk</span></h3>
-                  <ul>
-                    <li>${pageTx('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features')}</li>
-                    <li>${pageTx('20 asiakaspalvelijapaikkaa','20 kundserviceplatser','20 customer-service seats')}</li>
-                    <li>${pageTx('Live takeover ja kieliohjaus','Live takeover och språkstyrning','Live takeover and language routing')}</li>
-                  </ul>
-                  <div class="assistant-order-actions">
-                    <a class="assistant-order-btn" href="/tilaus?plan=business_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
-                  </div>
-                </article>
-              </div>
-              <div class="assistant-order-trust"><span>✓ ${pageTx('Maksut turvallisesti Stripessä','Säkra betalningar via Stripe','Secure payments with Stripe')}</span><span>✓ ${pageTx('Ei veloitusta 3 päivän kokeilun aikana','Ingen debitering under provperioden','No charge during the 3-day trial')}</span><span>✓ ${pageTx('Hinnat sisältävät ALV:n','Priserna inkluderar moms','Price includes VAT')}</span></div>
-            </section>
+            <section class="assistant-order" aria-label="Respondo AI">
+  <div class="assistant-order-head"><h2>${pageTx("Yksi tilaus. Kaikki ominaisuudet.","Ett abonnemang. Alla funktioner.","One subscription. All features.")}</h2>
+  <p>${pageTx("350 €/kk + soveltuva ALV","350 €/mån + tillämplig moms","€350/month + applicable VAT")}</p>
+  <p>${pageTx("Valinnainen käyttöönottopalvelu 200 € + soveltuva ALV","Valfri installationstjänst 200 € + tillämplig moms","Optional assisted setup €200 + applicable VAT")}</p>
+  <a class="assistant-order-btn primary" href="/yhteystiedot?intent=demo">${pageTx("Varaa maksuton demo","Boka en kostnadsfri demo","Book a free demo")} →</a></div>
+</section>
           </section>
           <div class="assistant-demo-column" id="assistantDemoColumn" aria-label="Testibotti ja tilaus"></div>
         </main>`;
