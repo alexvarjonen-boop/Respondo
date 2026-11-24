@@ -13,9 +13,9 @@ test('Finnish public content links to Finnish canonical URLs when English is def
     customerServiceLandingMarkup('fi'),
     aiTopicMarkup('/tekoaly-asiakaspalvelu', 'fi'),
     seoIntentMarkup('/asiakaspalvelun-automatisointi', 'fi'),
-    seoPricingMarkup('fi'),
     verticalLandingMarkup(VERTICAL_LANDING_PATHS[0], 'fi'),
   ];
+  assert.ok(seoPricingMarkup('fi').includes('/yhteystiedot?intent=demo&amp;lang=fi'));
   for (const html of pages) {
     assert.equal(typeof html, 'string');
     assert.match(html, /href="\/(?:asiakaspalvelubotti|hinnat|tekoaly-asiakaspalvelu|ominaisuudet|guides)(?:\/[^"]*)?\?lang=fi"/);
