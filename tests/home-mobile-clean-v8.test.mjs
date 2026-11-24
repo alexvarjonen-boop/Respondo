@@ -63,5 +63,5 @@ test('hero try-the-bot CTA reaches the public demo in each language',()=>{
     assert.ok(hero.includes('href="/assistant?lang='+lang+'"'));
     assert.ok(!hero.includes('href="#pricing"'));
   }
-  assert.ok(html.includes('demo-first-20261125-v1'));assert.ok(parent.includes('20261125-demo-first-v1'));assert.match(child,/df-secondary/);
+  assert.ok(html.includes('demo-first-20261125-v1'));assert.ok(parent.includes('20261125-demo-first-v1'));assert.match(child,/spiralHeroMarkup/);
 });
