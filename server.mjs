@@ -123,6 +123,7 @@ import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './public/seo-i
 import { ecommerceCustomerServiceMeta, ecommerceCustomerServiceMarkup } from './public/ecommerce-customer-service.mjs';
 import { seoPricingMarkup } from './public/seo-pricing-ssr.mjs';
 import { spiralHeroMarkup } from './public/spiral-hero.js';
+import { demoFirstHero } from './public/apple-home.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -601,8 +602,8 @@ async function renderIndexHtml(req) {
   // In particular, never reintroduce the removed SEO explainer link wall via SSR.
   // The app replaces this pre-rendered scene after its JavaScript has loaded.
   const homepageFirstPaint = routePath === '/'
-    ? '<div class="home-page apple-home-page"><main class="immersive-home apple-home">' +
-      spiralHeroMarkup((fi, sv, en) => seo.lang === 'sv' ? sv : seo.lang === 'en' ? en : fi, seo.lang) +
+    ? '<div class="home-page demo-first-page"><main class="df-main">' +
+      demoFirstHero((fi, sv, en) => seo.lang === 'sv' ? sv : seo.lang === 'en' ? en : fi, seo.lang) +
       '</main></div>'
     : null;
   html = html.replace('<div id="app"></div>', '<div id="app">' +
