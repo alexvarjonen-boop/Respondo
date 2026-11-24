@@ -9233,3 +9233,9 @@ body.deletion-modal-open{overflow:hidden!important}
   #app .signup-page #signup{padding:20px!important}
   #app .signup-page .formgrid{grid-template-columns:minmax(0,1fr)!important}
 }
+
+
+/* Single-plan pricing: use the full viewport width, without affecting other layouts. */
+.pricing-section:has(.pricing-wrap > .price-card:only-child) > .container{width:100%!important;max-width:none!important;padding-inline:clamp(16px,3vw,48px)!important;box-sizing:border-box}
+.pricing-section .pricing-wrap:has(> .price-card:only-child){display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:none!important;margin-inline:0!important}
+.pricing-section .pricing-wrap > .price-card:only-child{grid-column:1/-1!important;width:100%!important;max-width:none!important;justify-self:stretch!important;box-sizing:border-box;rotate:none}
