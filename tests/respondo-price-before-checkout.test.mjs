@@ -10,18 +10,18 @@ import {
 import { respondoProductFaqMatch } from '../server.mjs';
 
 const priceCases=[
-  ['how much does your cheapest package cost','en','respondo-faq-cheapest-pricing',/Advanced.*€49\/month.*€39\/month/],
-  ['what is your most affordable plan?','en','respondo-faq-cheapest-pricing',/Advanced/],
-  ['which plan has the lowest price?','en','respondo-faq-cheapest-pricing',/€49\/month/],
-  ['How much does Respondo cost?','en','respondo-faq-pricing',/€49\/month/],
-  ['what do your plans cost','en','respondo-faq-pricing',/Premium - €129\/month/],
-  ['Paljonko halvin paketti maksaa?','fi','respondo-faq-cheapest-pricing',/Advanced: 49 €\/kk/],
-  ['Mikä on edullisin Respondon paketti?','fi','respondo-faq-cheapest-pricing',/39 €\/kk/],
-  ['Paljonko Respondo maksaa?','fi','respondo-faq-pricing',/Advanced - 49€\/kk/],
-  ['Vilket är ert billigaste abonnemang?','sv','respondo-faq-cheapest-pricing',/49 €\/mån/],
-  ['Vad kostar Respondo?','sv','respondo-faq-pricing',/129 €\/mån/],
-  ['How much does annual billing cost?','en','respondo-faq-annual-pricing',/€468\/year/],
-  ['How much does monthly billing cost?','en','respondo-faq-monthly-pricing',/Advanced - €49\/month/],
+  ['how much does your cheapest package cost','en','respondo-faq-cheapest-pricing',/€350\/month/],
+  ['what is your most affordable plan?','en','respondo-faq-cheapest-pricing',/€350\/month/],
+  ['which plan has the lowest price?','en','respondo-faq-cheapest-pricing',/€350\/month/],
+  ['How much does Respondo cost?','en','respondo-faq-pricing',/€350\/month/],
+  ['what do your plans cost','en','respondo-faq-pricing',/€350\/month/],
+  ['Paljonko halvin paketti maksaa?','fi','respondo-faq-cheapest-pricing',/350 €\/kk/],
+  ['Mikä on edullisin Respondon paketti?','fi','respondo-faq-cheapest-pricing',/350 €\/kk/],
+  ['Paljonko Respondo maksaa?','fi','respondo-faq-pricing',/350 €\/kk/],
+  ['Vilket är ert billigaste abonnemang?','sv','respondo-faq-cheapest-pricing',/350 €\/mån/],
+  ['Vad kostar Respondo?','sv','respondo-faq-pricing',/350 €\/mån/],
+  ['How much does annual billing cost?','en','respondo-faq-annual-pricing',/Annual billing is not currently offered/],
+  ['How much does monthly billing cost?','en','respondo-faq-monthly-pricing',/€350\/month/],
 ];
 
 for(const [message,lang,expectedId,expectedAnswer] of priceCases){
