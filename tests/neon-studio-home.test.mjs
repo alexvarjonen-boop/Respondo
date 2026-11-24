@@ -29,7 +29,7 @@ for (const lang of ['fi','sv','en']) {
     assert.match(hero,/rs-spiral-section/);
     assert.match(hero,/data-rs-announcement/);
     assert.doesNotMatch(hero,/rs-hero-talk|data-open-site-assistant/);
-    assert.ok(page.indexOf('rs-spiral-section')<page.indexOf('Real plans'));
+    assert.ok(page.indexOf('df-hero')>=0 && page.indexOf('df-hero')<page.indexOf('Real plans'));
     assert.doesNotMatch(page,/respondo-search-overview|respondo-search-links|AI-asiakaspalvelija yrityksen verkkosivuille/);
     assert.doesNotMatch(page,/<canvas|<iframe|<script/i);
     assert.doesNotMatch(page,/Yodixa|Xezcreative/i);
@@ -53,8 +53,8 @@ test('original navy Respondo palette and orbit motion are home-only',()=>{
   assert.match(index,/studio-home\.css\?v=20261026-orbit10-v1/);
   assert.match(index,/spiral-hero-motion\.js\?v=20261026-orbit10-v1/);
   assert.match(index,/app\.js\?v=[^"]+-orbit10-v1/);
-  assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1/);
-  assert.match(apple,/spiral-hero\.js\?v=20261026-orbit10-v1/);
+  assert.match(app,/apple-home\.js\?v=20261125-demo-first-v1/);
+  assert.match(apple,/demoFirstHero/);
   assert.match(js,/--rs-orbit-spin/);
   assert.match(js,/--rs-grid-scale/);
   assert.match(js,/--rs-panel-turn/);
@@ -67,14 +67,16 @@ test('real pricing checkout and first-party assistant remain unchanged',()=>{
  assert.match(app,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
  assert.match(app,/function bindPricingPeriodSwitch/);
  assert.match(app,/function pricingSection/);
- assert.match(app,/href="\/tilaus\?plan=\$\{code\}_monthly/);
+   const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
  assert.match(js,/prefers-reduced-motion: reduce/);
  assert.doesNotMatch(js,/setInterval\(/);
 });
 
 test('SSR homepage first paint is the cinematic Respondo scene, not SEO link wall',()=>{
   const server = readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
-  assert.ok(server.includes('spiralHeroMarkup((fi, sv, en)'));
+  assert.ok(server.includes('demoFirstHero((fi, sv, en)'));
   assert.match(server,/homepageFirstPaint/);
   assert.doesNotMatch(server,/homeSearchMarkup/);
   assert.match(server,/X-Respondo-Homepage/);
