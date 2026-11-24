@@ -20,9 +20,9 @@ test('Respondo v12 mobile keeps a single usable hero CTA and a legible reading l
 test('readable pricing does not mutate prices or introduce more homepage sections',()=>{
  const app=read('app.js'),css=read('home-polish-v11.css');
  assert.match(css,/\.price-card:focus-within/);
- for(const part of ["card('Advanced',49","card('Premium',129","card('Enterprise',149"]){
-   assert.ok(app.includes(part),part);
- }
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
  const home=spiralHeroMarkup((fi,sv,en)=>en,'en');
  assert.equal((home.match(/class="rs-first-order-link"/g)||[]).length,1);
  assert.doesNotMatch(home,/rs-hero-demo-link|rs-hero-actions|Ask Respondo/);
