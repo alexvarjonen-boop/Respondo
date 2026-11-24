@@ -90,7 +90,7 @@ export function spiralHeroMarkup(t, lang) {
           <span>${t('Pyydä demo','Begär demo','Request a demo')}</span>
         </a>
         <a class="rs-product-jump" href="/assistant?lang=${lang}">${t('Kokeile bottia','Testa botten','Try the bot')} <span aria-hidden="true">↗</span></a>
-        <a class="rs-chat-navigation-note" href="/hinnat?lang=${lang}">${t('Hinta 350 €/kk + ALV →','Pris 350 €/mån + moms →','Pricing €350/month + VAT →')}</a>
+        <a class="rs-chat-navigation-note" href="/hinnat?lang=${lang}">${t('Hinta 350 €/kk →','Pris 350 €/mån →','Pricing €350/month →')}</a>
       </div>
       <div class="rs-spiral-orbit" role="group" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">
         <div class="rs-studio-orbit-art">
