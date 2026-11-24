@@ -602,7 +602,7 @@ async function renderIndexHtml(req) {
   // In particular, never reintroduce the removed SEO explainer link wall via SSR.
   // The app replaces this pre-rendered scene after its JavaScript has loaded.
   const homepageFirstPaint = routePath === '/'
-    ? '<div class="home-page demo-first-page"><main class="df-main">' +
+    ? '<div class="home-page apple-home-page"><main class="immersive-home apple-home">' +
       demoFirstHero((fi, sv, en) => seo.lang === 'sv' ? sv : seo.lang === 'en' ? en : fi, seo.lang) +
       '</main></div>'
     : null;
@@ -18128,7 +18128,7 @@ app.use(async (req, res, next) => {
       if (req.path === '/') {
         res.setHeader('CDN-Cache-Control', 'no-store');
         res.setHeader('Surrogate-Control', 'no-store');
-        res.setHeader('X-Respondo-Homepage', 'demo-first-20261125-v1');
+        res.setHeader('X-Respondo-Homepage', 'restore-orbit-20261125-v1');
       }
       res.status(seo.isKnown ? 200 : 404);
       res.setHeader('Link','<' + seo.canonical + '>; rel="canonical"');
