@@ -160,9 +160,9 @@
     {
       keys:['hinta','maksaa','49','129','149','39','119','139','kuukausi','vuosi','yearly','annual','årsabonnemang','price','pricing','cost','month','pris','kostar','kostnad','månad','manad'],
       answer:{
-        fi:'Respondo AI:n kuukausihinta on 350 € + soveltuva ALV. Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti + soveltuva ALV. Pyydä maksuton demo.',
-        sv:'Respondo AI kostar 350 €/mån + tillämplig moms. Valfri installation kostar 200 € som engångsavgift + tillämplig moms. Boka en kostnadsfri demo.',
-        en:'Respondo AI costs €350/month + applicable VAT. Optional assisted setup is a one-time €200 fee + applicable VAT. Book a free demo.'
+        fi:'Respondo AI:n kuukausihinta on 350 € (sis. ALV Suomessa). Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti (sis. ALV Suomessa). Pyydä maksuton demo.',
+        sv:'Respondo AI kostar 350 €/mån (inkl. moms i Finland). Valfri installation kostar 200 € som engångsavgift (inkl. moms i Finland). Boka en kostnadsfri demo.',
+        en:'Respondo AI costs €350/month (includes VAT in Finland). Optional assisted setup is a one-time €200 fee (includes VAT in Finland). Book a free demo.'
       }
     },
     {
@@ -947,8 +947,8 @@
 
             <section class="assistant-order" aria-label="Respondo AI">
   <div class="assistant-order-head"><h2>${pageTx("Yksi tilaus. Kaikki ominaisuudet.","Ett abonnemang. Alla funktioner.","One subscription. All features.")}</h2>
-  <p>${pageTx("350 €/kk + soveltuva ALV","350 €/mån + tillämplig moms","€350/month + applicable VAT")}</p>
-  <p>${pageTx("Valinnainen käyttöönottopalvelu 200 € + soveltuva ALV","Valfri installationstjänst 200 € + tillämplig moms","Optional assisted setup €200 + applicable VAT")}</p>
+  <p>${pageTx("350 €/kk (sis. ALV Suomessa)","350 €/mån (inkl. moms i Finland)","€350/month (includes VAT in Finland)")}</p>
+  <p>${pageTx("Valinnainen käyttöönottopalvelu 200 € (sis. ALV Suomessa)","Valfri installationstjänst 200 € (inkl. moms i Finland)","Optional assisted setup €200 (includes VAT in Finland)")}</p>
   <a class="assistant-order-btn primary" href="/yhteystiedot?intent=demo">${pageTx("Varaa maksuton demo","Boka en kostnadsfri demo","Book a free demo")} →</a></div>
 </section>
           </section>
