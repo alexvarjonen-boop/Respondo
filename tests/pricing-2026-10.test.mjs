@@ -8,19 +8,15 @@ const effects = readFileSync(new URL('../public/effects.js', import.meta.url), '
 const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
 const guides = readFileSync(new URL('../public/global-resources.mjs', import.meta.url), 'utf8');
 
-test('three new monthly prices agree across checkout backend and public UI', () => {
-  for (const [tier, amount, internal] of [
-    ['Advanced', '49', 'basic'],
-    ['Premium', '129', 'advanced'],
-    ['Enterprise', '149', 'business'],
-  ]) {
-    assert.match(app, new RegExp("card\\('"+tier+"',"+amount+","));
-    assert.match(app, new RegExp('value="'+internal+'_monthly"'));
-    assert.match(effects, new RegExp(tier+'[^\\n]*'+amount+' €|'+amount+' €[^\\n]*'+tier));
-    assert.match(guides, new RegExp(tier+'[^\\n]*'+amount));
+test('legacy checkout price validation is retained separately from new public offer',()=>{
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350/);assert.match(pricing,/200/);
+  assert.doesNotMatch(pricing,/\/tilaus|Advanced|Premium|Enterprise/);
+  for(const [tier,amount,internal] of [['Advanced','49','basic'],['Premium','129','advanced'],['Enterprise','149','business']]){
+    assert.match(app,new RegExp('value="'+internal+'_monthly"'));
+    assert.ok(server.includes(internal+'_monthly:'+amount+'00'));
   }
-  assert.match(server, /NEW_MONTHLY_PRICE_CENTS\s*=\s*Object\.freeze\(\{\s*basic_monthly:4900,\s*advanced_monthly:12900,\s*business_monthly:14900\s*\}\)/);
-  assert.match(server, /stripe\.prices\.retrieve\(priceId\)/);
+  assert.match(server,/stripe\.prices\.retrieve\(priceId\)/);
 });
 
 test('new annual subscriptions are available for each tier and save 120 euros per year', () => {
@@ -37,12 +33,10 @@ test('new annual subscriptions are available for each tier and save 120 euros pe
   assert.doesNotMatch(server, /Uusille tilauksille on saatavilla vain kuukausilaskutus/);
 });
 
-test('homepage structured data advertises approved monthly and annual prices', () => {
-  assert.equal((html.match(/"@type":"Offer"/g) ?? []).length, 6);
-  for (const price of ['49.00','129.00','149.00','468.00','1428.00','1668.00']) {
-    assert.ok(html.includes('"price":"'+price+'"'), 'missing '+price);
-  }
-  assert.match(html, /"category":"annual subscription"/);
+test('homepage structured data advertises one monthly price',()=>{
+  assert.equal((html.match(/"@type":"Offer"/g)||[]).length,1);
+  assert.ok(html.includes('"price":"350.00"'));
+  assert.match(html,/"category":"monthly subscription"/);
 });
 
 test('historical monthly subscriber prices retain explicit mapping', () => {
