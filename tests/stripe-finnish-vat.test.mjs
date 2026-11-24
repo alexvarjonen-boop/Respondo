@@ -15,7 +15,7 @@ test('new Finnish subscriptions include 25.5% VAT in prices without any extra ch
   assert.match(server,/country:'FI'/);
   assert.equal((server.match(/await checkoutItemsWithDomesticVat\(/g)||[]).length,2);
   assert.equal((server.match(/line_items:checkoutLineItems,/g)||[]).length,2);
-  assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 19900/);
+  assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 20000/);
   assert.match(server,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
   assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*checkoutCountry\.automaticTax\s*\}/);
   assert.match(server,/return \{ok:true,country,policyVersion:TAX_COUNTRY_POLICY_VERSION,automaticTax:false\}/);
