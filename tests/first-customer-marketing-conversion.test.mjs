@@ -17,14 +17,14 @@ for(const [lang,i,label] of [['fi',0,'Varaa demo'],['sv',1,'Boka demo'],['en',2,
     const html=seoPricingMarkup(lang);
     assert.match(html,/350/);assert.match(html,/200/);
     assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
-    assert.doesNotMatch(html,/\/tilaus|Advanced|Premium|Enterprise/);
+    assert.match(html,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(html,/Advanced|Premium|Enterprise/);
   });
 }
 test('public pricing avoids legacy checkout while billing migration is pending',()=>{
   const app=read('app.js'),index=read('index.html'),css=read('demo-first-home.css');
   const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
   assert.match(pricing,/350/);assert.match(pricing,/200/);
-  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
+  assert.match(pricing,/intent=demo/);assert.match(pricing,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(pricing,/pricing-period-option/);
   assert.match(index,/demo-first-home\.css/);
   assert.match(css,/focus-visible/);assert.doesNotMatch(css,/@keyframes|scroll-snap-type/);
 });
