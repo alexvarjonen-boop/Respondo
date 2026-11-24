@@ -36,7 +36,7 @@ test('buying Respondo gets the current short answer rather than outdated promo o
     const result=fn(message,lang,[]);
     assert.equal(result?.id,'respondo-faq-buy',message);
     assert.ok(result.answer.length<280,result.answer.length+' chars');
-    assert.ok(result.answer.includes('respondoai.fi/tilaus'));
+    assert.ok(result.answer.includes('respondoai.fi/yhteystiedot'));
     assert.doesNotMatch(result.answer,/Kokeile ilmaiseksi|Try for free|Prova gratis|vähäisen liiketoiminnan/i);
   }
 });
