@@ -1,36 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {spiralHeroMarkup} from '../public/spiral-hero.js';
+import {demoFirstHero} from '../public/apple-home.js';
 import {seoPricingMarkup} from '../public/seo-pricing-ssr.mjs';
 const read=p=>readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
-for(const [lang,i,label] of [['fi',0,'Kokeile bottia'],['sv',1,'Testa botten'],['en',2,'Try the bot']]){
-  test('first-customer homepage links to the public bot demo while preserving the orbit and removed Ask CTA '+lang,()=>{
-    const markup=spiralHeroMarkup((...v)=>v[i],lang);
+for(const [lang,i,label] of [['fi',0,'Varaa demo'],['sv',1,'Boka demo'],['en',2,'Book a demo']]){
+  test('demo-first homepage has booking and public bot actions '+lang,()=>{
+    const markup=demoFirstHero((...v)=>v[i],lang);
     assert.ok(markup.includes(label));
-    assert.match(markup,new RegExp('class="rs-first-order-link" href="/assistant\\?lang='+lang+'"'));
-    assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
-    assert.doesNotMatch(markup,/rs-hero-talk|data-open-site-assistant|Ask Respondo|data-respondo-hero-cta/);
+    assert.ok(markup.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
+    assert.ok(markup.includes('/assistant?lang='+lang));
+    assert.doesNotMatch(markup,/rs-hero-talk|data-open-site-assistant|Ask Respondo|rs-spiral/);
   });
-  test('crawlable pricing in '+lang+' lets every plan be ordered without client JavaScript',()=>{
+  test('crawlable pricing displays one offer and safe demo path '+lang,()=>{
     const html=seoPricingMarkup(lang);
-    for(const code of ['basic','advanced','business']){
-      assert.ok(html.includes('href="/tilaus?plan='+code+'_monthly&amp;lang='+lang+'"'),code+' monthly');
-      assert.ok(html.includes('href="/tilaus?plan='+code+'_yearly&amp;lang='+lang+'"'),code+' yearly');
-    }
-    assert.ok(html.includes('href="/assistant'+(lang==='en'?'':'?lang='+lang)+'"'));
-    assert.ok(html.includes('href="/yhteystiedot'+(lang==='en'?'':'?lang='+lang)+'"'));
+    assert.match(html,/350/);assert.match(html,/200/);
+    assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
+    assert.doesNotMatch(html,/\/tilaus|Advanced|Premium|Enterprise/);
   });
 }
-test('SPA checkout pricing paths, annual disclosure, and gentle alternate next actions are preserved',()=>{
-  const app=read('app.js'),index=read('index.html'),css=read('home-observatory.css'),buyers=read('first-order.css');
-  assert.match(app,/card\('Advanced',49/);
-  assert.match(app,/card\('Premium',129/);
-  assert.match(app,/card\('Enterprise',149/);
-  assert.match(app,/pricing-assist-links/);
-  assert.match(index,/first-order\.css\?v=20261027-first-customer-v1/);
-  assert.match(index,/app\.js\?v=[^"]+-first-order-v1/);
-  assert.match(css,/rs-first-order-link/);
-  assert.match(buyers,/seo-pricing-buy/);
-  assert.doesNotMatch(buyers,/@keyframes|scroll-snap-type/);
+test('public pricing avoids legacy checkout while billing migration is pending',()=>{
+  const app=read('app.js'),index=read('index.html'),css=read('demo-first-home.css');
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350/);assert.match(pricing,/200/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
+  assert.match(index,/demo-first-home\.css/);
+  assert.match(css,/focus-visible/);assert.doesNotMatch(css,/@keyframes|scroll-snap-type/);
 });
