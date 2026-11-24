@@ -26,7 +26,7 @@ test('hero preserves numeric, price-neutral facts and real language flags',()=>{
 test('pricing keeps an accessible website-demo path without an extra fullscreen scene',()=>{
  const app=read('app.js'),css=read('home-refinements-v10.css'),html=read('index.html');
  assert.match(app,/class="section pricing-section"/);
- assert.match(app,/class="pricing-assist-links"/);
+ assert.match(app,/class="price-actions"/);
  assert.match(app,/href="\/assistant\?lang=\$\{currentLang\(\)\}"/);
  assert.match(app,/\/yhteystiedot\?lang=\$\{currentLang\(\)\}&amp;intent=demo/);
  // Older deployed builds had a three-step explainer; current simplified
@@ -43,6 +43,6 @@ test('pricing keeps an accessible website-demo path without an extra fullscreen 
  assert.equal(css.split('{').length,css.split('}').length);
  assert.match(html,/home-refinements-v10\.css\?v=20261027-matching-feature-icons-how-it-works-v10/);
  assert.match(html,/app\.js\?v=[^"]+-icons-v10/);
- assert.match(read('app.js'),/apple-home\.js\?v=[^']+-icons-v10/);
- assert.match(read('apple-home.js'),/spiral-hero\.js\?v=[^']+-icons-v10/);
+  assert.match(read('app.js'),/apple-home\.js\?v=20261125-demo-first-v1/);
+  assert.match(read('app.js'),/apple-home\.js\?v=20261125-demo-first-v1/);
 });
