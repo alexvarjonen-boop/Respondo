@@ -13,24 +13,24 @@ test('localized landing content and homepage cinematic hero are present without 
   // On slow phones, first paint must match the new homepage—not show the
   // older, full-page SEO explainer until client hydration completes.
   for (const [url, heading, lang] of [
-    ['/', 'More enquiries.', 'en'],
-    ['/?lang=fi', 'Enemmän yhteydenottoja.', 'fi'],
-    ['/?lang=sv', 'Fler förfrågningar.', 'sv'],
-    ['/?lang=en', 'More enquiries.', 'en']
+    ['/', 'Smarter', 'en'],
+    ['/?lang=fi', 'Älykkäämpää', 'fi'],
+    ['/?lang=sv', 'Smartare', 'sv'],
+    ['/?lang=en', 'Smarter', 'en']
   ]) {
     const response = await fetch(origin + url);
     assert.equal(response.status, 200, url);
     const html = await response.text();
     assert.match(html, new RegExp('<html lang="' + lang + '"'), url);
-    assert.match(html, /<div id="app"><div class="home-page demo-first-page">/);
-    assert.match(html, /<main class="df-main">/);
+    assert.match(html, /<div id="app"><div class="home-page apple-home-page">/);
+    assert.match(html, /<main class="immersive-home apple-home">/);
     assert.ok(html.includes('<h1 id="apple-home-title">' + heading), 'missing localized cinematic hero for ' + url);
-    assert.match(html, /class="df-example"/);
+    assert.match(html, /class="rs-studio-orbit-art"/);
     assert.match(html, /intent=demo/);
-    assert.doesNotMatch(html, /class="rs-studio-orbit-art"/);
+    assert.match(html, /class="rs-book-demo"/);
     assert.doesNotMatch(html, /class="respondo-search-overview"/);
     assert.match(response.headers.get('cache-control') || '', /no-store/);
-    assert.equal(response.headers.get('x-respondo-homepage'), 'demo-first-20261125-v1');
+    assert.equal(response.headers.get('x-respondo-homepage'), 'restore-orbit-20261125-v1');
     assert.match(html, /rel="alternate" hreflang="en"/);
     assert.match(html, /rel="alternate" hreflang="sv"/);
     assert.match(html, /rel="canonical"/);
