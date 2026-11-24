@@ -44,7 +44,7 @@ test('reference aesthetic preserves official approved logo, real plans and first
   assert.match(app,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
   const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
   assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
-  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
+  assert.match(pricing,/intent=demo/);assert.match(pricing,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(pricing,/pricing-period-option/);
   assert.match(index,/spiral-hero-motion\.js/);
   assert.match(index,/logo-reveal\.js/);
 });
