@@ -949,7 +949,7 @@
   <div class="assistant-order-head"><h2>${pageTx("Yksi tilaus. Kaikki ominaisuudet.","Ett abonnemang. Alla funktioner.","One subscription. All features.")}</h2>
   <p>${pageTx("350 €/kk (sis. ALV Suomessa)","350 €/mån (inkl. moms i Finland)","€350/month (includes VAT in Finland)")}</p>
   <p>${pageTx("Valinnainen käyttöönottopalvelu 200 € (sis. ALV Suomessa)","Valfri installationstjänst 200 € (inkl. moms i Finland)","Optional assisted setup €200 (includes VAT in Finland)")}</p>
-  <a class="assistant-order-btn primary" href="/yhteystiedot?intent=demo">${pageTx("Varaa maksuton demo","Boka en kostnadsfri demo","Book a free demo")} →</a></div>
+  <a class="assistant-order-btn primary" href="/tilaus?plan=respondo_monthly">${pageTx("Tilaa nyt","Beställ nu","Subscribe now")} →</a><a class="assistant-order-btn" href="/yhteystiedot?intent=demo">${pageTx("Varaa maksuton demo","Boka en kostnadsfri demo","Book a free demo")} →</a></div>
 </section>
           </section>
           <div class="assistant-demo-column" id="assistantDemoColumn" aria-label="Testibotti ja tilaus"></div>
