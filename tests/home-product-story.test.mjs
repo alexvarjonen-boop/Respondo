@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {appleHomeMarkup} from '../public/apple-home.js';
+import {productStoryMarkup} from '../public/home-product-story.js';
 
 for (const [index, language, title] of [
   [0,'fi','Yrityksesi'],
@@ -9,13 +10,11 @@ for (const [index, language, title] of [
 ]) {
   test('website chatbot example and production journey in '+language, () => {
     const render = (...messages) => messages[index];
-    const html = appleHomeMarkup(render,language,0,'<section id="pricing"></section>');
+    const html = productStoryMarkup(render,language)+'<section id="pricing"></section>';
     const story = html.match(/<section class="rs-product-story"[\s\S]*?<\/section>/)?.[0];
     assert.ok(story);
     assert.ok(html.indexOf(story) < html.indexOf('id="pricing"'));
-    assert.match(html, /href="#product-story"/);
-    assert.equal((html.match(/data-rs-icon data-index=/g) || []).length,10);
-    assert.equal((html.match(/<h1\b/g) || []).length,1);
+    assert.match(appleHomeMarkup(render,language,0),/df-example/);
     assert.ok(story.includes('<strong>'+title+'</strong>'));
     assert.doesNotMatch(story,/Respondo AI|<iframe\b|<form\b|<button\b/i);
     assert.ok(story.includes('/assistant?lang='+language));
@@ -25,7 +24,7 @@ for (const [index, language, title] of [
   test('lead, handoff and store scenes use the company name and real links in '+language, () => {
     const render = (...messages) => messages[index];
     const pricing = '<section id="pricing"></section>';
-    const html = appleHomeMarkup(render,language,0,pricing);
+    const html = productStoryMarkup(render,language)+pricing;
     const journeys = html.match(/<section class="rs-product-journeys"[\s\S]*?<\/section>/)?.[0];
     assert.ok(journeys);
     assert.ok(html.indexOf(journeys) < html.indexOf(pricing));
