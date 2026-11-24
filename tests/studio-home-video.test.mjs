@@ -19,9 +19,9 @@ for(const [lang,n] of [['fi',0],['sv',1],['en',2]]){
     assert.match(hero,/rs-studio-grid/);
     assert.match(hero,/rs-studio-haze/);
     assert.match(hero,/rs-studio-orbit-label/);
-    assert.ok(home.indexOf('df-hero')>=0 && home.indexOf('df-hero')<home.indexOf('LIVE PRICING'));
+    assert.ok(home.indexOf('rs-spiral-section')>=0 && home.indexOf('rs-spiral-section')<home.indexOf('LIVE PRICING'));
     assert.doesNotMatch(hero,/<canvas|<iframe|data-respondo-ask-form|data-respondo-hero-cta/);
-    assert.match(home, /df-hero/);
+    assert.match(home, /rs-spiral-section/);
   });
 }
 
