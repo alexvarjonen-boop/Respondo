@@ -6,30 +6,19 @@ const read = name => readFileSync(new URL('../public/'+name, import.meta.url), '
 const app = read('app.js');
 const css = read('home-finish-v13.css');
 const index = read('index.html');
-const pricing = app.slice(app.indexOf('function pricingSection()'),app.indexOf('function pricingSection()')+16000);
+const pricing = app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
 const v16 = css.slice(css.indexOf('/* Observatory v16:'));
 
-test('v16 presents grounded, localized audience guidance instead of an invented popularity claim', () => {
-  assert.ok(pricing.includes("tier==='Advanced'"));
-  assert.ok(pricing.includes("tier==='Premium'"));
-  assert.ok(pricing.includes('AI-asiakaspalvelun aloittamiseen.'));
-  assert.ok(pricing.includes('För kundserviceteam som arbetar tillsammans.'));
-  assert.ok(pricing.includes('For larger support teams and quote workflows.'));
-  assert.match(pricing,/class="pricing-plan-fit">\$\{planFit\}<\/p>/);
-  assert.ok(pricing.includes("appText('TIIMEILLE','FÖR TEAM','FOR TEAMS')"));
+test('single-plan pricing gives localized factual guidance without popularity claims',()=>{
+  assert.match(pricing,/Yksi selkeä kuukausihinta/);
+  assert.match(pricing,/Ett tydligt månadspris/);
+  assert.match(pricing,/One clear monthly price/);
   assert.doesNotMatch(pricing,/SUOSITUIN|POPULÄRAST|MOST POPULAR/);
 });
 
-test('v16 preserves monthly and annual plan amounts, seats and checkout options', () => {
-  for (const source of ["card('Advanced',49,2","card('Premium',129,10","card('Enterprise',149,20"]) {
-    assert.ok(pricing.includes(source),source);
-  }
-  assert.match(pricing,/const yearlyMonthly=monthly-10/);
-  assert.match(pricing,/const yearlyTotal=yearlyMonthly\*12/);
-  assert.match(pricing,/\/tilaus\?plan=\$\{code\}_monthly/);
-  assert.match(pricing,/data-yearly-note=/);
-  assert.match(pricing,/data-billing-period="yearly"/);
-  assert.match(pricing,/\/assistant\?lang=\$\{currentLang\(\)\}/);
+test('one advertised price and optional setup link to demo instead of legacy checkout',()=>{
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
 });
 
 test('v16 remains scoped, accessible and compatible with existing ten-scene homepage', () => {
