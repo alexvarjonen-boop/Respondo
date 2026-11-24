@@ -14,7 +14,7 @@ test('pricing SSR accurately represents the single monthly offer',()=>{
     assert.equal((html.match(/<h1>/g)||[]).length,1);
     assert.match(html,/350/);assert.match(html,/200/);
     assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
-    assert.doesNotMatch(html,/Advanced|Premium|Enterprise|\/tilaus/);
+    assert.match(html,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(html,/Advanced|Premium|Enterprise/);
   }
 });
 
