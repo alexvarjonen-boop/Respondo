@@ -13,9 +13,9 @@ for(const [lang,indexLang] of [['fi',0],['sv',1],['en',2]]){
     const tx=(...args)=>args[indexLang];
     const marker='<section id="pricing" class="pricing-section">Plan</section>';
     const markup=appleHomeMarkup(tx,lang,7,marker);
-    assert.ok(markup.includes('rs-spiral-section'));
+    assert.ok(markup.includes('df-hero'));
     assert.ok(markup.includes(marker));
-    assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
+    assert.equal((markup.match(/<article>/g)||[]).length,3);
     const afterPricing=markup.slice(markup.indexOf(marker)+marker.length).trim();
     assert.equal(afterPricing,'', 'the homepage should end with pricing');
     assert.doesNotMatch(markup,/respondo-search-overview|respondo-search-links/);
@@ -44,7 +44,7 @@ test('footer ends after standard product company legal information',()=>{
   assert.match(footer,/class="legalbar"/);
   assert.match(index,/app\.js\?v=[^"]*header-login-v5/);
   assert.match(index,/mobile-public-polish\.css\?v=[^"]*header-login-v5/);
-  assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1/);
+  assert.match(app,/apple-home\.js\?v=20261125-demo-first-v1/);
 });
 
 
@@ -57,7 +57,7 @@ test('homepage hides the SEO product-link footer column while preserving legal l
   assert.match(index,/app\.js\?v=[^"]+-orbit10-v1-mobile-footer-pricing-v1/);
 });
 
-test('general pricing replies are exactly three localized monthly price lines',async()=>{
+test('general pricing replies show one localized monthly subscription and setup fee',async()=>{
   const {respondoProductFaqMatch}=await import('../server.mjs');
   for (const [question,lang] of [
     ['Mitä paketit maksavat?','fi'],
@@ -69,12 +69,9 @@ test('general pricing replies are exactly three localized monthly price lines',a
     const result=respondoProductFaqMatch(question,lang,[]);
     assert.ok(result,'missing direct pricing FAQ for '+question);
     assert.equal(result.id,'respondo-faq-pricing','wrong intent for '+question);
-    const expected={
-      fi:'Advanced - 49€/kk\nPremium - 129€/kk\nEnterprise - 149€/kk',
-      sv:'Advanced - 49 €/mån\nPremium - 129 €/mån\nEnterprise - 149 €/mån',
-      en:'Advanced - €49/month\nPremium - €129/month\nEnterprise - €149/month'
-    };
-    assert.equal(result.answer,expected[lang]);
+    assert.match(result.answer,/350/);
+    assert.match(result.answer,/200/);
+    assert.doesNotMatch(result.answer,/Advanced|Premium|Enterprise/);
   }
 });
 
@@ -82,11 +79,11 @@ test('explicit annual pricing keeps annual billing details; general monthly pric
   const {respondoProductFaqMatch}=await import('../server.mjs');
   const monthly=respondoProductFaqMatch('Kuukausihinnat?', 'fi');
   assert.equal(monthly?.id,'respondo-faq-monthly-pricing');
-  assert.equal(monthly?.answer,'Advanced - 49€/kk\nPremium - 129€/kk\nEnterprise - 149€/kk');
+  assert.match(monthly?.answer||'',/350 €\/kk/);
   const annual=respondoProductFaqMatch('Paljonko vuositilaus maksaa?', 'fi');
   assert.equal(annual?.id,'respondo-faq-annual-pricing');
-  assert.match(annual?.answer||'',/39\s*€\/kk/);
-  assert.match(annual?.answer||'',/vuosi/);
+  assert.match(annual?.answer||'',/350 €\/kk/);
+  assert.match(annual?.answer||'',/Vuositilausta ei/);
   const css=read('effects.css');
   assert.match(css,/#respondo-site-chat \.fx-chat-bubble\.bot \{ white-space: pre-line!important; \}/);
   assert.match(index,/effects\.css\?v=20261109-firstparty-smart-assist-v1/);
