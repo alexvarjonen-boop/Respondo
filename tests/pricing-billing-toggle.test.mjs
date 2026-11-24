@@ -27,7 +27,7 @@ test('public pricing renders one VAT-inclusive monthly offer for FI/SV/EN',()=>{
     assert.equal((html.match(/<article class="price-card/g)||[]).length,1);
     assert.match(html,/350 €/); assert.match(html,/200 €/);
     assert.ok(html.includes('lang='+lang+'&amp;intent=demo'));
-    assert.doesNotMatch(html,/pricing-period-option|\/tilaus|Advanced|Premium|Enterprise/);
+    assert.match(html,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(html,/pricing-period-option|Advanced|Premium|Enterprise/);
   }
 });
 
