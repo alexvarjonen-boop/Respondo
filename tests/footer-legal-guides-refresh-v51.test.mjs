@@ -43,7 +43,7 @@ test('recent chatbot, deletion, integration and DPA disclosures appear in all la
     const dpa=LEGAL_20261008.dpa.sections.map(s=>s.body[i]).join(' ');
     assert.match(dpa,/28/,locales[i]);
     const terms=LEGAL_20261008.kayttoehdot.sections.map(s=>s.body[i]).join(' ');
-    assert.match(terms,/199/,locales[i]);
+    assert.match(terms,/200/,locales[i]);
   }
 });
 
@@ -66,11 +66,11 @@ test('new test and setup guides exist with full FI SV EN and SEO paths',()=>{
   assert.ok(server.includes('...GLOBAL_GUIDE_PATHS'));
 });
 
-test('existing pricing guide documents optional 199 euro assisted setup in every language',()=>{
+test('existing pricing guide documents optional 200 euro assisted setup in every language',()=>{
   for(const lang of locales){
     const item=globalGuideData('/guides/ai-chatbot-pricing',lang);
     assert.ok(item);
-    assert.ok(item.sections.some(([,body])=>/199\s*€|€199/.test(body)),lang);
+    assert.ok(item.sections.some(([,body])=>/200\s*€|€200/.test(body)),lang);
   }
 });
 
