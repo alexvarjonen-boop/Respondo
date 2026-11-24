@@ -4,7 +4,8 @@ export function demoFirstHero(t,lang){
   const L=['fi','sv','en'].includes(lang)?lang:'en';
   const html=spiralHeroMarkup(t,L);
   const demo='<a class="rs-book-demo" href="/yhteystiedot?intent=demo&amp;lang='+L+'">'+t('Varaa demo','Boka demo','Book a demo')+'</a>';
-  return html.replace(/<a class="rs-product-jump"[^>]*>[\s\S]*?<\/a>/,demo);
+  const order='<a class="rs-book-demo" href="/tilaus?plan=respondo_monthly&amp;lang='+L+'">'+t('Tilaa nyt','Beställ nu','Subscribe now')+'</a>';
+  return html.replace(/<a class="rs-product-jump"[^>]*>[\s\S]*?<\/a>/,order+demo);
 }
 export function appleHomeMarkup(t,lang,count,pricingMarkup=''){
   return `${demoFirstHero(t,lang)}${pricingMarkup}`;
