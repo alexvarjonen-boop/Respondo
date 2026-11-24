@@ -739,10 +739,10 @@ function assistedSetupCheckoutNotice(lang='fi', ownerFree=false) {
       ? 'Your personal promotion code makes both setup and the subscription €0. No charge is due now or after handover.'
       : 'Henkilökohtaisella kampanjakoodillasi käyttöönottopalvelu ja tilauspaketti maksavat molemmat 0 €. Veloitusta ei tehdä nyt eikä luovutuksen jälkeen.';
   const note=ownerFree ? freeNote : lang==='sv'
-    ? 'Installationstjänsten på 199 € betalas nu. Abonnemanget debiteras först efter att vi personligen levererat inloggningsuppgifterna och bekräftat överlämningen. Därefter börjar en gratis provperiod på 3 dagar.'
+    ? 'Installationstjänsten på 200 € betalas nu. Abonnemanget debiteras först efter att vi personligen levererat inloggningsuppgifterna och bekräftat överlämningen. Därefter börjar en gratis provperiod på 3 dagar.'
     : lang==='en'
-      ? 'The €199 setup fee is payable now. Subscription charges are held until we personally deliver your login details and confirm handover, followed by a 3-day free trial.'
-      : '199 €:n käyttöönottopalvelu veloitetaan nyt. Tilauspaketin laskutus on keskeytetty, kunnes toimitamme kirjautumistiedot henkilökohtaisesti ja vahvistamme luovutuksen. Tämän jälkeen alkaa 3 päivän maksuton kokeilu.';
+      ? 'The €200 setup fee is payable now. Subscription charges are held until we personally deliver your login details and confirm handover, followed by a 3-day free trial.'
+      : '200 €:n käyttöönottopalvelu veloitetaan nyt. Tilauspaketin laskutus on keskeytetty, kunnes toimitamme kirjautumistiedot henkilökohtaisesti ja vahvistamme luovutuksen. Tämän jälkeen alkaa 3 päivän maksuton kokeilu.';
   return note;
 }
 if (process.env.NODE_ENV === 'production') {
@@ -1279,7 +1279,7 @@ async function notifySetupServiceAfterCheckout(session) {
         content:
           '<p style="color:#d6d8de;font-size:15px;line-height:1.8">'+(ownerFreeSetup
             ? 'Omistajan henkilökohtaisella koodilla käyttöönottopalvelu ja tilaus ovat 0 €. Asiakkaalta ei veloiteta maksua. Aloita verkkosivuston analysointi ja botin viimeistely.'
-            : 'Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.')+'</p>'+
+            : 'Asiakas on ostanut 200 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.')+'</p>'+
           '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>'+
           (requestedGreeting?'<p style="color:#d6d8de;font-size:14px;line-height:1.7">Toivottu tervehdys: '+escapeEmailHtml(requestedGreeting)+'</p>':'<p style="color:#aebbd0;font-size:14px">Asiakas ei antanut tervehdystoivetta.</p>')+
           (setupToken?'<p style="margin:0 0 20px"><a style="color:#aaccff" href="'+escapeEmailHtml(BASE+'/api/app/internal/setup-service-requests/'+encodeURIComponent(sessionId)+'/image')+'">Avaa asiakkaan toimittama kuva (kirjautuminen vaaditaan) →</a></p>':'')+
@@ -1588,6 +1588,7 @@ async function consumeOwnerFreeCode(_client, value) {
 }
 
 const PLAN_DEFINITIONS = Object.freeze({
+  respondo_monthly:{tier:'business',billing:'monthly',monthlyPrice:350,annualTotal:null,agentSeats:20,websiteImport:true,googleCalendar:true},
   basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49,annualTotal:null,agentSeats:2,websiteImport:true,googleCalendar:false},
   basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:39,annualTotal:468,agentSeats:2,websiteImport:true,googleCalendar:false},
   advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:129,annualTotal:null,agentSeats:10,websiteImport:true,googleCalendar:true},
@@ -1658,6 +1659,7 @@ function stripePriceForPlan(value) {
     advanced_yearly:process.env.STRIPE_ADVANCED_YEARLY_PRICE_ID,
     business_monthly:process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID,
     business_yearly:process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID,
+    respondo_monthly:process.env.STRIPE_RESPONDO_MONTHLY_PRICE_ID,
     owner_test:process.env.STRIPE_OWNER_TEST_PRICE_ID,
   };
   return map[plan] || '';
@@ -1667,8 +1669,8 @@ const NEW_MONTHLY_PRICE_CENTS = Object.freeze({ basic_monthly:4900, advanced_mon
 const NEW_YEARLY_PRICE_CENTS = Object.freeze({ basic_yearly:46800, advanced_yearly:142800, business_yearly:166800 });
 const NEW_MONTHLY_PRODUCT_NAMES = Object.freeze({ basic_monthly:'Respondo Advanced', advanced_monthly:'Respondo Premium', business_monthly:'Respondo Enterprise' });
 const NEW_YEARLY_PRODUCT_NAMES = Object.freeze({ basic_yearly:'Respondo Advanced', advanced_yearly:'Respondo Premium', business_yearly:'Respondo Enterprise' });
-const CURRENT_PRICE_CENTS = Object.freeze({ ...NEW_MONTHLY_PRICE_CENTS, ...NEW_YEARLY_PRICE_CENTS });
-const CURRENT_PRODUCT_NAMES = Object.freeze({ ...NEW_MONTHLY_PRODUCT_NAMES, ...NEW_YEARLY_PRODUCT_NAMES });
+const CURRENT_PRICE_CENTS = Object.freeze({ ...NEW_MONTHLY_PRICE_CENTS, ...NEW_YEARLY_PRICE_CENTS, respondo_monthly:35000 });
+const CURRENT_PRODUCT_NAMES = Object.freeze({ ...NEW_MONTHLY_PRODUCT_NAMES, ...NEW_YEARLY_PRODUCT_NAMES, respondo_monthly:'Respondo AI' });
 async function assertCurrentCheckoutPrice(plan, priceId) {
   if (!Object.hasOwn(CURRENT_PRICE_CENTS, plan)) return;
   if (!stripe || !priceId) throw Object.assign(new Error('Stripe plan is not configured.'),{publicStatus:503});
@@ -1752,7 +1754,7 @@ async function bindSetupImageToSession(client,token,sessionId){
   if(!found.rowCount)
     throw Object.assign(new Error('Kuvan liittäminen tilaukseen epäonnistui. Lataa kuva uudelleen.'),{publicStatus:422});
 }
-const SETUP_SERVICE_PRICE_CENTS = 19900;
+const SETUP_SERVICE_PRICE_CENTS = 20000;
 function setupServiceCheckoutLineItem(ownerFree=false) {
   return {
     price_data:{
@@ -1812,6 +1814,7 @@ function ownerFreeSetupCheckoutLineItem(plan) {
 function planFromStripePriceId(priceId) {
   const id=String(priceId||'');
   const pairs=[
+    ['respondo_monthly',process.env.STRIPE_RESPONDO_MONTHLY_PRICE_ID],
     ['basic_monthly',process.env.STRIPE_BASIC_MONTHLY_PRICE_ID],
     ['basic_yearly',process.env.STRIPE_BASIC_YEARLY_PRICE_ID],
     ['advanced_monthly',process.env.STRIPE_ADVANCED_MONTHLY_PRICE_ID],
@@ -2381,7 +2384,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   ) {
     return {
       id:'respondo-faq-buy',
-      answer:answer("Respondo AI maksaa 350 €/kk, ja valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti. Hinnat sisältävät ALV:n Suomessa. Pyydä maksuton demo osoitteessa respondoai.fi/yhteystiedot.", "Respondo AI kostar 350 €/mån och valfri installation kostar 200 € som engångsavgift. Priserna inkluderar moms i Finland. Boka en kostnadsfri demo på respondoai.fi/yhteystiedot.", "Respondo AI costs €350/month and optional assisted setup costs €200 once. Prices include VAT in Finland. Book a free demo at respondoai.fi/yhteystiedot.")
+      answer:answer("Tilaa Respondo AI osoitteessa respondoai.fi/tilaus. Hinta 350 €/kk, valinnainen käyttöönotto 200 €. Hinnat sisältävät ALV:n Suomessa. Voit myös varata demon.", "Beställ Respondo AI på respondoai.fi/tilaus. 350 €/mån, valfri installation 200 €. Priser inkl. moms i Finland. Du kan även boka en demo.", "Subscribe at respondoai.fi/tilaus. €350/month, optional setup €200. Prices include VAT in Finland. You can also book a demo.")
     };
   }
 
@@ -2515,7 +2518,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   if (/(?:3 paivan|3 päivän|kolmen paivan|free trial|trial|gratis prov|provperiod|kokeilu).*(?:toim|maks|veloitet|peru|cancel|works|cost|charge|funger|kostar)?|(?:kokeilu|trial|provperiod)/.test(q)) {
     return {
       id:'respondo-faq-trial',
-      answer:answer("Voit pyytää maksuttoman demon osoitteessa respondoai.fi/yhteystiedot.", "Boka en kostnadsfri demo på respondoai.fi/yhteystiedot.", "Book a free demo at respondoai.fi/yhteystiedot.")
+      answer:answer("Voit aloittaa tilauksen osoitteessa respondoai.fi/tilaus. Tilausmaksua ei veloiteta 3 päivän kokeilun aikana; valinnainen käyttöönotto maksaa 200 €.", "Starta abonnemanget på respondoai.fi/tilaus. Ingen abonnemangsavgift under provperioden på 3 dagar; valfri installation kostar 200 €.", "Start at respondoai.fi/tilaus. No subscription charge during the 3-day trial; optional assisted setup costs €200.")
     };
   }
 
@@ -11788,6 +11791,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   }
   const email = cleanEmail(req.body.email);
   const normalizedPlan = normalizeCheckoutPlan(plan);
+  if (!['respondo_monthly','owner_test'].includes(normalizedPlan)) return res.status(409).json({error:'Pricing has changed. Please reload the order page to confirm the current price.'});
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
   const usFirstYearCampaign = isUSFirstYearCampaign(referralCode);
@@ -12773,6 +12777,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=normalizeCheckoutPlan(req.body?.plan);
+  if (plan !== 'respondo_monthly') return res.status(409).json({error:'Pricing has changed. Please reload the workspace form to confirm the current price.'});
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
   const usFirstYearCampaign=isUSFirstYearCampaign(referralCode);
@@ -18115,13 +18120,6 @@ app.use(async (req, res, next) => {
   // HEAD requests, which must receive the same status and SEO headers as GET.
   // Express automatically omits the HTML body for a HEAD response.
   if (['GET','HEAD'].includes(req.method) && !req.path.startsWith('/api/')) {
-    if (req.path === '/tilaus' || req.path === '/tilaus/') {
-      const query = new URLSearchParams();
-      if (['fi','sv','en'].includes(String(req.query.lang))) query.set('lang',String(req.query.lang));
-      if (typeof req.query.ref === 'string') query.set('ref',req.query.ref);
-      query.set('intent','demo');
-      return res.redirect(302,'/yhteystiedot?'+query.toString());
-    }
     try {
       const { html, seo } = await renderIndexHtml(req);
       res.setHeader('Cache-Control','no-store, max-age=0, must-revalidate');
