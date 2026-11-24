@@ -11,7 +11,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1-booking-request-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1-direct-features-v35-product-story-v2';
+import { appleHomeMarkup } from './apple-home.js?v=20261125-demo-first-v1';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261107-movexa-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -2206,6 +2206,7 @@ function nav() {
     <div class="container navin public-simple-navin">
       ${logo()}
       <div class="navactions">${languageSwitch()}</div>
+      ${location.pathname==='/'?`<a class="df-header-demo" href="/yhteystiedot?intent=demo&amp;lang=${currentLang()}">${appText('Varaa demo','Boka demo','Book a demo')}</a>`:''}
       <a class="public-header-login" href="/kirjaudu?lang=${currentLang()}">${appText('Kirjaudu','Logga in','Log in')}</a>
     </div>
   </header>`;
@@ -2786,7 +2787,7 @@ function pricingSection() {
         <h3>${appText('Valinnainen käyttöönottopalvelu','Valfri installationstjänst','Optional assisted setup')}</h3>
         <p><strong>200 €</strong> · ${appText('kertamaksu (sis. ALV Suomessa)','engångsavgift (inkl. moms i Finland)','one-time fee (includes VAT in Finland)')}</p>
         <p>${appText('Asennus, yrityskohtainen konfigurointi ja testaus puolestasi.','Installation, företagsanpassning och testning åt dig.','Installation, business-specific configuration and testing for you.')}</p>
-        <div class="price-actions"><a class="btn price-btn" href="/yhteystiedot?intent=demo&amp;lang=${currentLang()}">${appText('Varaa maksuton demo','Boka en kostnadsfri demo','Book a free demo')} →</a><a class="pricing-feature-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso ominaisuudet','Se funktioner','See features')} →</a></div>
+        <div class="price-actions"><a class="btn price-btn" href="/yhteystiedot?intent=demo&amp;lang=${currentLang()}">${appText('Varaa demo','Boka demo','Book a demo')} →</a><a class="pricing-feature-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso ominaisuudet','Se funktioner','See features')} →</a></div>
       </article></div></div></section>`;
 }
 function bindPricingPeriodSwitch() {
@@ -3287,9 +3288,9 @@ function seoLandingPage(path) {
 
 async function home(){
   // Public homepage only; dashboard, subscription, contact and bot implementation are untouched.
-  return `<div class="home-page apple-home-page">
+  return `<div class="home-page demo-first-page">
     ${nav()}
-    <main class="immersive-home apple-home">${appleHomeMarkup(appText,currentLang(),FEATURE_COUNT,pricingSection())}</main>
+    <main class="df-main">${appleHomeMarkup(appText,currentLang(),FEATURE_COUNT,pricingSection())}</main>
     ${footer()}
   </div>`;
 }
