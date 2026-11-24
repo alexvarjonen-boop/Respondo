@@ -39,12 +39,9 @@ test('all public navigation, feature, pricing, contact, content and legal routes
 });
 
 test('no plan, translations, legal body text, checkout behavior or bot state changes',()=>{
-  const price = app.slice(app.indexOf('function pricingSection()'),app.indexOf('function featuresPage()'));
-  assert.match(price,/card\('Advanced',49/);
-  assert.match(price,/card\('Premium',129/);
-  assert.match(price,/card\('Enterprise',149/);
-  assert.match(price,/pricing-billing-switch/);
-  assert.match(price,/href="\/tilaus\?plan=\$\{code\}_monthly/);
+  const price = app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(price,/350 €/);assert.match(price,/200 €/);
+  assert.match(price,/intent=demo/);assert.doesNotMatch(price,/\/tilaus|pricing-period-option/);
   assert.match(app,/function legal\(type\)/);
   assert.match(app,/LEGAL_20261008\[type\]/);
   assert.match(app,/function contactPage\(\)/);
