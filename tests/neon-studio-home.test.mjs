@@ -29,7 +29,7 @@ for (const lang of ['fi','sv','en']) {
     assert.match(hero,/rs-spiral-section/);
     assert.match(hero,/data-rs-announcement/);
     assert.doesNotMatch(hero,/rs-hero-talk|data-open-site-assistant/);
-    assert.ok(page.indexOf('df-hero')>=0 && page.indexOf('df-hero')<page.indexOf('Real plans'));
+    assert.ok(page.indexOf('rs-spiral-section')>=0 && page.indexOf('rs-spiral-section')<page.indexOf('Real plans'));
     assert.doesNotMatch(page,/respondo-search-overview|respondo-search-links|AI-asiakaspalvelija yrityksen verkkosivuille/);
     assert.doesNotMatch(page,/<canvas|<iframe|<script/i);
     assert.doesNotMatch(page,/Yodixa|Xezcreative/i);
