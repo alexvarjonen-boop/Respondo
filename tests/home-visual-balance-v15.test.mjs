@@ -43,7 +43,7 @@ test('v15 keeps the same localized hero, ten chapters and verified pricing contr
   const app = read('app.js');
   const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
   assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
-  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
+  assert.match(pricing,/intent=demo/);assert.match(pricing,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(pricing,/pricing-period-option/);
   assert.match(html,/home-finish-v13\.css\?v=20261028-observatory-balance-v15[^\/\"]*/);
   assert.ok(html.indexOf('/home-finish-v13.css')>html.indexOf('/home-polish-v11.css'));
 });
