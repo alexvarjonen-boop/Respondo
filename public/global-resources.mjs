@@ -410,7 +410,7 @@ const guides = {
         ],
         [
           "Respondo AI:n julkiset hinnat",
-          "Respondo AI:n kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilaus maksaa Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) tai Enterprise 139 €/kk (1 668 €/vuosi). Säästö on 120 €/vuosi, ja koko vuosi maksetaan kerralla. Nykyisiin tilauksiin sisältyy kolmen päivän maksuton kokeilu. Tarkista lopullinen laskutettava summa ja saatavilla olevat ominaisuudet aina tilausnäkymästä ennen maksua. Maksulliset tilaukset ovat toistaiseksi vain suomalaisille yrityksille."
+          "Respondo AI:n kuukausihinta on 350 € + soveltuva ALV. Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti + soveltuva ALV. Pyydä maksuton demo."
         ],
         [
           "Mitä pakettien välillä kannattaa vertailla?",
@@ -436,7 +436,7 @@ const guides = {
       "faq": [
         [
           "Paljonko Respondo AI maksaa kuukaudessa?",
-          "Kuukausitilausten hinnat ovat Advanced 49 €, Premium 129 € ja Enterprise 149 €. Vuositilaus maksaa Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) tai Enterprise 139 €/kk (1 668 €/vuosi). Säästö on 120 €/vuosi, ja koko vuosi maksetaan kerralla."
+          "Respondo AI:n kuukausihinta on 350 € + soveltuva ALV. Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti + soveltuva ALV. Pyydä maksuton demo."
         ],
         [
           "Voiko asiakaspalvelubottia kokeilla maksutta?",
@@ -462,7 +462,7 @@ const guides = {
         ],
         [
           "Respondo AI:s publicerade priser",
-          "Respondo AI erbjuder Advanced för 49 €/månad, Premium för 129 €/månad och Enterprise för 149 €/månad. Årsabonnemang kostar Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Du sparar 120 €/år och betalar årsvis. En gratis provperiod på tre dagar ingår i de aktuella paketen. Kontrollera alltid slutligt belopp och funktioner i beställningen. Betalda företagsabonnemang är för närvarande endast tillgängliga för företag i Finland."
+          "Respondo AI kostar 350 €/mån + tillämplig moms. Valfri installation kostar 200 € som engångsavgift + tillämplig moms. Boka en kostnadsfri demo."
         ],
         [
           "Vilka abonnemangsfunktioner är viktiga?",
@@ -488,7 +488,7 @@ const guides = {
       "faq": [
         [
           "Vad kostar Respondo AI per månad?",
-          "Advanced kostar 49 €, Premium 129 € och Enterprise 149 € per månad. Årsabonnemang kostar Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Du sparar 120 €/år och betalar årsvis."
+          "Respondo AI kostar 350 €/mån + tillämplig moms. Valfri installation kostar 200 € som engångsavgift + tillämplig moms. Boka en kostnadsfri demo."
         ],
         [
           "Finns det en gratis provperiod?",
@@ -514,7 +514,7 @@ const guides = {
         ],
         [
           "Respondo AI monthly pricing",
-          "Respondo AI currently offers Advanced at €49/month, Premium at €129/month and Enterprise at €149/month. Annual plans are Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year), paid annually, saving €120/year. The current plans include a three-day free trial. Always review the actual checkout total, current plan features and terms before paying. Paid Respondo AI business subscriptions are presently available only to businesses in Finland."
+          "Respondo AI costs €350/month + applicable VAT. Optional assisted setup is a one-time €200 fee + applicable VAT. Book a free demo."
         ],
         [
           "Compare plan capabilities rather than price alone",
@@ -540,7 +540,7 @@ const guides = {
       "faq": [
         [
           "How much does Respondo AI cost per month?",
-          "Monthly plans are Advanced €49, Premium €129 and Enterprise €149. Annual billing saves €120/year: Advanced €468/year, Premium €1,428/year and Enterprise €1,668/year."
+          "Respondo AI costs €350/month + applicable VAT. Optional assisted setup is a one-time €200 fee + applicable VAT. Book a free demo."
         ],
         [
           "Is there a free chatbot trial?",
@@ -615,7 +615,7 @@ Object.assign(guides,{
       title:'Respondo AI:n käyttöönotto, integraatiot ja tietosuoja',
       subtitle:'Opas yritykselle: tietopohjan tarkistaminen, työntekijät, käyttöönottopalvelu, vapaaehtoiset yhteydet ja asiakkaan henkilötiedot.',
       sections:[
-        ['Valitse käyttöönotto','Voit täyttää yrityksen verkkosivun, botin nimen ja kuvakkeen sekä yhteystiedot käyttöönotossa. Kysymys–vastaustietoja voi täydentää käsin. Valinnainen 199 € käyttöönottopalvelu on erillinen kertamaksu: Respondo käy annetut tiedot läpi ja toimittaa kirjautumistiedot sovitun prosessin mukaan. Maksut ja kokeilun alkaminen riippuvat valitusta tilauspolusta; tarkista ajantasaiset käyttöehdot.'],
+        ['Valitse käyttöönotto','Voit täyttää yrityksen verkkosivun, botin nimen ja kuvakkeen sekä yhteystiedot käyttöönotossa. Kysymys–vastaustietoja voi täydentää käsin. Valinnainen 200 € käyttöönottopalvelu on erillinen kertamaksu: Respondo käy annetut tiedot läpi ja toimittaa kirjautumistiedot sovitun prosessin mukaan. Maksut ja kokeilun alkaminen riippuvat valitusta tilauspolusta; tarkista ajantasaiset käyttöehdot.'],
         ['Tarkista tuodut verkkosivutiedot','Hae vain tarpeelliset yritystiedot, kuten palvelut, hinnat, toimipaikat, aukioloajat, tuotteet ja yhteystiedot. Tarkista vanhentuneet hinnat, ristiriitaiset toimitus- ja palautusehdot ja valmistajien yhteystiedot ennen kuin botti käyttää niitä. Verkkosivun automaattinen tuonti ei takaa kaikkien sivujen löytymistä.'],
         ['Määritä henkilöstö ja toimialueet','Myönnä työntekijöille tehtävän mukaiset käyttöoikeudet ja tarkista, mitä työtilan tietoja he voivat nähdä. Botin tulee erottaa eri toimipisteiden aukioloajat ja asiakaskohtaiset varaukset yleisistä palvelutiedoista. Testaa puhe- ja kysymyskielen vaihdot.'],
         ['Yhdistä integraatiot harkiten','Respondon omat ajanvaraus- ja asiakastyökalut ovat eri asia kuin ulkoinen integraatio. Ulkoiset yhteydet tulevat hallintapaneeliin näkyviin vain, kun palveluntarjoajan edellytykset on määritetty. Tämän jälkeenkin asiakkaan pitää valtuuttaa ja testata oma yhteytensä. Älä pidä chatissa mainittua varausta tai maksua vahvistettuna ilman järjestelmän todellista vahvistusta.'],
@@ -631,7 +631,7 @@ Object.assign(guides,{
       title:'Kom i gång med Respondo AI: integrationer och dataskydd',
       subtitle:'En företagsguide till webbplatsimport, personal, installation, valfria anslutningar och kunduppgifter.',
       sections:[
-        ['Välj installation','Ange företagets webbplats, botnamn, ikon och kontaktuppgifter. Du kan komplettera frågor och svar manuellt. Den valfria installationstjänsten kostar 199 € som separat engångsavgift. Abonnemangets fakturering och provperiod följer det valda beställningsflödet och gällande villkor.'],
+        ['Välj installation','Ange företagets webbplats, botnamn, ikon och kontaktuppgifter. Du kan komplettera frågor och svar manuellt. Den valfria installationstjänsten kostar 200 € som separat engångsavgift. Abonnemangets fakturering och provperiod följer det valda beställningsflödet och gällande villkor.'],
         ['Granska importerade uppgifter','Kontrollera tjänster, priser, öppettider, produkter, kontakter och butiksvillkor. En automatisk webbplatsimport garanterar inte att allt innehåll hittas.'],
         ['Hantera personal och företag','Begränsa personalens behörigheter efter arbetsuppgift. Testa uppgifter för olika verksamhetsställen och samtal på finska, svenska och engelska.'],
         ['Aktivera anslutningar med omsorg','Respondos egna boknings- och kundverktyg är inte samma sak som externa integrationer. Externa anslutningar visas bara när leverantörens grundinställningar är klara. Varje företag måste därefter auktorisera och testa sin anslutning. Bekräfta inte en beställning eller bokning utan en riktig systembekräftelse.'],
@@ -647,7 +647,7 @@ Object.assign(guides,{
       title:'Respondo AI setup, integrations and data protection',
       subtitle:'A practical business guide to website knowledge, staff access, assisted setup, optional connections and end-customer data.',
       sections:[
-        ['Choose the setup route','Provide your website, bot name and icon, contact details and any custom Q&A. Optional assisted setup is a separate one-time €199 service. Trial and subscription billing follow the selected checkout flow and current terms.'],
+        ['Choose the setup route','Provide your website, bot name and icon, contact details and any custom Q&A. Optional assisted setup is a separate one-time €200 service. Trial and subscription billing follow the selected checkout flow and current terms.'],
         ['Review imported website knowledge','Check services, prices, locations, opening hours, product information and store policies. Automatic website import does not guarantee that every page or fact is found.'],
         ['Set up staff permissions','Assign staff access according to duties and test whether the bot distinguishes locations, departments and languages. Do not treat unverified booking information as a confirmed customer record.'],
         ['Enable integrations selectively','Respondo’s native booking and customer tools are distinct from external integrations. External connections are shown only after the provider prerequisites are configured. Each business must still authorize and test its own account. Do not claim a confirmed order, payment or booking without actual confirmation from the relevant system.'],
@@ -663,15 +663,15 @@ Object.assign(guides,{
 });
 guides['/guides/ai-chatbot-pricing'].fi.sections.push([
   'Valinnainen käyttöönottopalvelu ja kokonaiskustannus',
-  'Respondo AI:n valinnainen käyttöönottopalvelu maksaa erikseen 199 € kertaluonteisesti. Se ei sisälly kuukausi- tai vuosipaketin ilmoitettuun hintaan, ellei tilauksessa oleva alennus muuta tätä. Vertaile aina toistuvia maksuja, kertaluonteista käyttöönottoa ja mahdollisia ulkoisten integraatioiden kustannuksia. Kolmen päivän kokeilun alkaminen riippuu käyttöönottopalvelun valinnasta; tarkista tarkat ehdot ennen tilausta.'
+  'Respondo AI:n valinnainen käyttöönottopalvelu maksaa erikseen 200 € kertaluonteisesti. Se ei sisälly kuukausi- tai vuosipaketin ilmoitettuun hintaan, ellei tilauksessa oleva alennus muuta tätä. Vertaile aina toistuvia maksuja, kertaluonteista käyttöönottoa ja mahdollisia ulkoisten integraatioiden kustannuksia. Kolmen päivän kokeilun alkaminen riippuu käyttöönottopalvelun valinnasta; tarkista tarkat ehdot ennen tilausta.'
 ]);
 guides['/guides/ai-chatbot-pricing'].sv.sections.push([
   'Valfri installation och total kostnad',
-  'Respondo AI erbjuder en valfri installationstjänst som kostar 199 € separat som engångsavgift, om inte en godkänd rabatt påverkar priset. Jämför löpande avgifter, installation och eventuella tredjepartskostnader. Starten för den tre dagar långa provperioden beror på installationsvalet; kontrollera gällande villkor vid beställning.'
+  'Respondo AI erbjuder en valfri installationstjänst som kostar 200 € separat som engångsavgift, om inte en godkänd rabatt påverkar priset. Jämför löpande avgifter, installation och eventuella tredjepartskostnader. Starten för den tre dagar långa provperioden beror på installationsvalet; kontrollera gällande villkor vid beställning.'
 ]);
 guides['/guides/ai-chatbot-pricing'].en.sections.push([
   'Optional assisted setup and total cost',
-  'Respondo AI offers optional assisted setup for a separate one-time €199 charge unless an applied discount changes it. Compare recurring fees, setup and any third-party integration costs. The three-day trial start depends on whether assisted setup is selected; check the current checkout terms before ordering.'
+  'Respondo AI offers optional assisted setup for a separate one-time €200 charge unless an applied discount changes it. Compare recurring fees, setup and any third-party integration costs. The three-day trial start depends on whether assisted setup is selected; check the current checkout terms before ordering.'
 ]);
 
 // Smart Quote Engine: safeguards reflect the verified server-side calculator.
