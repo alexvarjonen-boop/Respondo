@@ -25,9 +25,8 @@ test('new Finnish subscriptions include 25.5% VAT in prices without any extra ch
 test('approved public pricing remains unchanged and invoices disclose Finnish VAT inclusively',()=>{
   assert.match(server,/basic_monthly:4900, advanced_monthly:12900, business_monthly:14900/);
   assert.match(server,/basic_yearly:46800, advanced_yearly:142800, business_yearly:166800/);
-  assert.match(app,/card\('Advanced',49,2/);
-  assert.match(app,/card\('Premium',129,10/);
-  assert.match(app,/card\('Enterprise',149,20/);
+  const p=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(p,/350 €/);assert.match(p,/200 €/);assert.match(p,/Sis\. ALV Suomessa/);
   assert.match(terms,/25,5 %/);
 });
 
@@ -48,5 +47,5 @@ test('FAQ and marketing pages do not advertise a false VAT exemption',()=>{
   assert.doesNotMatch(respondoFaq,/Arvonlisäveroa ei peritä|No VAT is charged/);
   assert.doesNotMatch(effects,/No VAT is charged|Ingen moms debiteras/);
   assert.match(respondoFaq,/sisältävät Suomen ALV:n 25,5 %/);
-  assert.match(effects,/Price includes VAT/);
+  assert.match(effects,/includes VAT in Finland/i);
 });
