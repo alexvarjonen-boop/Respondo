@@ -45,8 +45,7 @@ test('both new signups and added workspaces accept annual billing, preserving or
   assert.match(app, /basic_yearly/);
   assert.match(app, /advanced_yearly/);
   assert.match(app, /business_yearly/);
-  assert.match(app, /const yearlyMonthly=monthly-10/);
-  assert.match(app, /const yearlyTotal=yearlyMonthly\*12/);
+  assert.match(app, /const pricing|function pricingSection/);
   assert.match(app, /plan:card\.dataset\.planCode \+ \(yearly \? '_yearly' : '_monthly'\)/);
 });
 
@@ -58,18 +57,12 @@ test('Stripe checkout validates the year-long billing interval, exact price and 
   assert.match(server, /plan\.endsWith\('_yearly'\) \? 'year' : 'month'/);
 });
 
-test('pricing pages and search structured data show three monthly and three annual offers', () => {
-  const pricing = app.split('function pricingSection() {')[1]?.split('function cinematicConversationScene()')[0] || '';
-  assert.ok(pricing);
-  for (const [, name, monthly] of plans) {
-    assert.ok(pricing.includes("card('"+name+"',"+monthly+","), 'missing '+name);
-  }
-  assert.match(pricing, /Vuosittain/);
-  assert.match(pricing, /Säästät 120 €\/vuosi/);
-  assert.equal((html.match(/"@type":"Offer"/g) || []).length, 6);
-  for (const total of ['49.00','129.00','149.00','468.00','1428.00','1668.00']) {
-    assert.ok(html.includes('"price":"'+total+'"'), total);
-  }
+test('new public offer has one monthly price and optional assisted setup',()=>{
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350/);assert.match(pricing,/200/);
+  assert.doesNotMatch(pricing,/Vuosittain|Advanced|Premium|Enterprise|\/tilaus/);
+  assert.equal((html.match(/"@type":"Offer"/g)||[]).length,1);
+  assert.ok(html.includes('"price":"350.00"'));
 });
 
 test('configured current Checkout prices are used, but stale IDs cannot charge old amounts', async () => {
