@@ -19,12 +19,12 @@ test('public demo enquiry uses existing contact form backend and does not introd
 });
 for(const lang of ['fi','sv','en']){
  test('pricing page links to website-tailored demo in '+lang,()=>{
-  assert.ok(seoPricingMarkup(lang).includes('/yhteystiedot?lang='+lang+'&amp;intent=demo'));
+  assert.ok(seoPricingMarkup(lang).includes('/yhteystiedot?intent=demo&amp;lang='+lang'));
  });
 }
 test('client pricing also routes demo enquiries through the current contact page',()=>{
  assert.match(app,/\/yhteystiedot\?lang=\$\{currentLang\(\)\}&amp;intent=demo/);
- assert.match(app,/Pyydä esittely omalle sivulle/);
+ assert.match(app,/Varaa demo/);
 });
 
 test('optional Calendly demo booking is localized, secure and does not replace the first-party form',()=>{
