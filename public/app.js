@@ -2787,7 +2787,7 @@ function pricingSection() {
         <h3>${appText('Valinnainen käyttöönottopalvelu','Valfri installationstjänst','Optional assisted setup')}</h3>
         <p><strong>200 €</strong> · ${appText('kertamaksu (sis. ALV Suomessa)','engångsavgift (inkl. moms i Finland)','one-time fee (includes VAT in Finland)')}</p>
         <p>${appText('Asennus, yrityskohtainen konfigurointi ja testaus puolestasi.','Installation, företagsanpassning och testning åt dig.','Installation, business-specific configuration and testing for you.')}</p>
-        <div class="price-actions"><a class="btn price-btn" href="/yhteystiedot?intent=demo&amp;lang=${currentLang()}">${appText('Varaa demo','Boka demo','Book a demo')} →</a><a class="pricing-feature-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso ominaisuudet','Se funktioner','See features')} →</a></div>
+        <div class="price-actions"><a class="btn price-btn" href="/yhteystiedot?lang=${currentLang()}&amp;intent=demo">${appText('Varaa demo','Boka demo','Book a demo')} →</a><a class="pricing-feature-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso ominaisuudet','Se funktioner','See features')} →</a></div>
       </article></div></div></section>`;
 }
 function bindPricingPeriodSwitch() {
