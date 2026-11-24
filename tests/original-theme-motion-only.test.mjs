@@ -11,7 +11,7 @@ const home = read('public/apple-home.js');
 test('the original homepage markup, Apple-style sheet and branding remain in use', () => {
   assert.match(html, /href="\/apple-home\.css\?/);
   assert.match(html, /src="\/app\.js\?/);
-  assert.match(home, /spiralHeroMarkup\(t, lang\)/);
+  assert.match(home, /demoFirstHero\(t,lang\)/);
   assert.match(read('public/spiral-hero.js'), /<section class="apple-hero rs-spiral-section"/);
   assert.doesNotMatch(home, /apple-highlights|apple-lead-calculator|rg-growth-section/);
   assert.match(home, /\$\{pricingMarkup\}/);
