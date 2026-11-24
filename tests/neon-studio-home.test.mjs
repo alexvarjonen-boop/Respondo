@@ -69,7 +69,7 @@ test('real pricing checkout and first-party assistant remain unchanged',()=>{
  assert.match(app,/function pricingSection/);
    const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
   assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
-  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
+  assert.match(pricing,/intent=demo/);assert.match(pricing,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(pricing,/pricing-period-option/);
  assert.match(js,/prefers-reduced-motion: reduce/);
  assert.doesNotMatch(js,/setInterval\(/);
 });
