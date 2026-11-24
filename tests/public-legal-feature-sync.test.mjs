@@ -65,7 +65,7 @@ test('plans and features are synchronized to the server access gates',()=>{
 
 test('terms specify billing and avoid unsupported guarantees',()=>{
   const terms=LEGAL_20261008.kayttoehdot.sections.map(x=>x.body[0]).join(' ');
-  for(const token of ['350 €/kk','200 €','hinta sisältää ALV:n 25,5 %','kolmen päivän','Stripe','Google Calendar']){
+  for(const token of ['350 €/kk','200 €','hinta sisältää ALV:n 25,5 %','Kolmen päivän','Stripe','Google Calendar']){
     assert.ok(terms.includes(token),'missing '+token);
   }
   assert.match(terms,/kaikkien tuotteiden|kaikkien.*tietojen/);
@@ -93,7 +93,7 @@ test('current legal update retains paid setup and deferred recurring billing in 
     assert.match(terms,/Stripe/,'Stripe processing language '+index);
     assert.match(terms,/365/,'technical Stripe hold language '+index);
     assert.match(terms,/info@respondoai\.fi/,'refund contact language '+index);
-    assert.match(terms,/kolmen päivän|tredagars|tre dagar|three-day/,'trial after handover language '+index);
+    assert.match(terms,/kolmen päivän|tredagars|tre dagar|three-day/i,'trial after handover language '+index);
     assert.match(privacy,/kirjautumistunnuk|inloggnings-ID|login ID/,'manual credential processing language '+index);
     assert.match(privacy,/tiiviste|envägshash|one-way password hash/,'password handling language '+index);
     assert.match(cookies,/Käyttöönottopalvelun|installationstjänst|assisted setup/,'cookie settings language '+index);
