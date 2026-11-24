@@ -13,9 +13,9 @@ for(const [lang,indexLang] of [['fi',0],['sv',1],['en',2]]){
     const tx=(...args)=>args[indexLang];
     const marker='<section id="pricing" class="pricing-section">Plan</section>';
     const markup=appleHomeMarkup(tx,lang,7,marker);
-    assert.ok(markup.includes('df-hero'));
+    assert.ok(markup.includes('rs-spiral-section'));
     assert.ok(markup.includes(marker));
-    assert.equal((markup.match(/<article>/g)||[]).length,3);
+    assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
     const afterPricing=markup.slice(markup.indexOf(marker)+marker.length).trim();
     assert.equal(afterPricing,'', 'the homepage should end with pricing');
     assert.doesNotMatch(markup,/respondo-search-overview|respondo-search-links/);
