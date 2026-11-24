@@ -42,9 +42,9 @@ test('both new signups and added workspaces accept annual billing, preserving or
   assert.match(server, /await stripeCheckoutLineItem\(plan\)/);
   assert.match(server, /assistedSetupCheckoutTrial\(setupService\)/);
   assert.match(read('assisted-setup-billing.mjs'), /ASSISTED_SETUP_CUSTOMER_TRIAL_DAYS = 3/);
-  assert.match(app, /basic_yearly/);
-  assert.match(app, /advanced_yearly/);
-  assert.match(app, /business_yearly/);
+  assert.match(server, /basic_yearly/);
+  assert.match(server, /advanced_yearly/);
+  assert.match(server, /business_yearly/);
   assert.match(app, /const pricing|function pricingSection/);
   assert.match(app, /plan:card\.dataset\.planCode \+ \(yearly \? '_yearly' : '_monthly'\)/);
 });
@@ -60,7 +60,7 @@ test('Stripe checkout validates the year-long billing interval, exact price and 
 test('new public offer has one monthly price and optional assisted setup',()=>{
   const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
   assert.match(pricing,/350/);assert.match(pricing,/200/);
-  assert.doesNotMatch(pricing,/Vuosittain|Advanced|Premium|Enterprise|\/tilaus/);
+  assert.match(pricing,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(pricing,/Vuosittain|Advanced|Premium|Enterprise/);
   assert.equal((html.match(/"@type":"Offer"/g)||[]).length,1);
   assert.ok(html.includes('"price":"350.00"'));
 });
