@@ -37,7 +37,7 @@ test('v14 stylesheet version reaches iOS Safari after existing v13 finishing CSS
   assert.match(index, /home-finish-v13\.css\?v=20261028-[^\/\"]+/);
   assert.match(index, /spiral-hero-motion\.js/);
   const app = read('app.js');
-  for (const price of ["card('Advanced',49", "card('Premium',129", "card('Enterprise',149"]) {
-    assert.ok(app.includes(price));
-  }
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);
+  assert.match(pricing,/intent=demo/);assert.doesNotMatch(pricing,/\/tilaus|pricing-period-option/);
 });
