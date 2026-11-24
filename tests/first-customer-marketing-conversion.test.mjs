@@ -10,7 +10,8 @@ for(const [lang,i,label] of [['fi',0,'Varaa demo'],['sv',1,'Boka demo'],['en',2,
     assert.ok(markup.includes(label));
     assert.ok(markup.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
     assert.ok(markup.includes('/assistant?lang='+lang));
-    assert.doesNotMatch(markup,/rs-hero-talk|data-open-site-assistant|Ask Respondo|rs-spiral/);
+    assert.match(markup,/rs-studio-orbit-art/);
+    assert.doesNotMatch(markup,/rs-hero-talk|data-open-site-assistant|Ask Respondo/);
   });
   test('crawlable pricing displays one offer and safe demo path '+lang,()=>{
     const html=seoPricingMarkup(lang);
