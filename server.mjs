@@ -18128,7 +18128,7 @@ app.use(async (req, res, next) => {
       if (req.path === '/') {
         res.setHeader('CDN-Cache-Control', 'no-store');
         res.setHeader('Surrogate-Control', 'no-store');
-        res.setHeader('X-Respondo-Homepage', 'cinematic-blue-mobile-firstpaint-v2');
+        res.setHeader('X-Respondo-Homepage', 'demo-first-20261125-v1');
       }
       res.status(seo.isKnown ? 200 : 404);
       res.setHeader('Link','<' + seo.canonical + '>; rel="canonical"');
