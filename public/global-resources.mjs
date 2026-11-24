@@ -410,7 +410,7 @@ const guides = {
         ],
         [
           "Respondo AI:n julkiset hinnat",
-          "Respondo AI:n kuukausihinta on 350 € + soveltuva ALV. Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti + soveltuva ALV. Pyydä maksuton demo."
+          "Respondo AI:n kuukausihinta on 350 € (sis. ALV Suomessa). Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti (sis. ALV Suomessa). Pyydä maksuton demo."
         ],
         [
           "Mitä pakettien välillä kannattaa vertailla?",
@@ -436,7 +436,7 @@ const guides = {
       "faq": [
         [
           "Paljonko Respondo AI maksaa kuukaudessa?",
-          "Respondo AI:n kuukausihinta on 350 € + soveltuva ALV. Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti + soveltuva ALV. Pyydä maksuton demo."
+          "Respondo AI:n kuukausihinta on 350 € (sis. ALV Suomessa). Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti (sis. ALV Suomessa). Pyydä maksuton demo."
         ],
         [
           "Voiko asiakaspalvelubottia kokeilla maksutta?",
@@ -462,7 +462,7 @@ const guides = {
         ],
         [
           "Respondo AI:s publicerade priser",
-          "Respondo AI kostar 350 €/mån + tillämplig moms. Valfri installation kostar 200 € som engångsavgift + tillämplig moms. Boka en kostnadsfri demo."
+          "Respondo AI kostar 350 €/mån (inkl. moms i Finland). Valfri installation kostar 200 € som engångsavgift (inkl. moms i Finland). Boka en kostnadsfri demo."
         ],
         [
           "Vilka abonnemangsfunktioner är viktiga?",
@@ -488,7 +488,7 @@ const guides = {
       "faq": [
         [
           "Vad kostar Respondo AI per månad?",
-          "Respondo AI kostar 350 €/mån + tillämplig moms. Valfri installation kostar 200 € som engångsavgift + tillämplig moms. Boka en kostnadsfri demo."
+          "Respondo AI kostar 350 €/mån (inkl. moms i Finland). Valfri installation kostar 200 € som engångsavgift (inkl. moms i Finland). Boka en kostnadsfri demo."
         ],
         [
           "Finns det en gratis provperiod?",
@@ -514,7 +514,7 @@ const guides = {
         ],
         [
           "Respondo AI monthly pricing",
-          "Respondo AI costs €350/month + applicable VAT. Optional assisted setup is a one-time €200 fee + applicable VAT. Book a free demo."
+          "Respondo AI costs €350/month (includes VAT in Finland). Optional assisted setup is a one-time €200 fee (includes VAT in Finland). Book a free demo."
         ],
         [
           "Compare plan capabilities rather than price alone",
@@ -540,7 +540,7 @@ const guides = {
       "faq": [
         [
           "How much does Respondo AI cost per month?",
-          "Respondo AI costs €350/month + applicable VAT. Optional assisted setup is a one-time €200 fee + applicable VAT. Book a free demo."
+          "Respondo AI costs €350/month (includes VAT in Finland). Optional assisted setup is a one-time €200 fee (includes VAT in Finland). Book a free demo."
         ],
         [
           "Is there a free chatbot trial?",
