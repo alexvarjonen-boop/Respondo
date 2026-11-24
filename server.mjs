@@ -215,7 +215,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
     '/autokorjaamo-chatbot': ['Chatbot autokorjaamolle – huolto ja ajanvaraus | Respondo AI', 'Autokorjaamon chatbot vastaa huolto-, rengas- ja palvelukysymyksiin korjaamon omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.'],
     '/lvi-chatbot': ['Chatbot LVI-yritykselle – putkityöt ja huolto | Respondo AI', 'LVI-yrityksen chatbot auttaa putki-, lämmitys- ja huoltopalvelujen kysymyksissä yrityksen hyväksymillä tiedoilla ja kerää yhteydenottopyyntöjä.'],
-    '/hinnat': ["AI-asiakaspalvelubotin hinnat yrityksille | Respondo AI", "Paljonko AI-asiakaspalvelubotti maksaa? Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vertaa myös vuositilauksia ja kokeile 3 päivää maksutta."],
+    '/hinnat': ["AI-asiakaspalvelubotin hinnat yrityksille | Respondo AI", "Respondo AI maksaa 350 €/kk, ja valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti. Hinnat sisältävät ALV:n Suomessa. Pyydä maksuton demo osoitteessa respondoai.fi/yhteystiedot."],
     '/yhteystiedot': ['Yhteystiedot | Respondo AI', 'Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
     '/yritystiedot': ['Yritystiedot | Respondo AI', 'Respondo AI on Movexan tarjoama palvelu. Viralliset yritys- ja yhteystiedot.'],
@@ -239,7 +239,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Bokningschatbot för företag | Respondo AI', 'En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
     '/autokorjaamo-chatbot': ['Chatbot för bilverkstad | Respondo AI', 'Chatbot för bilverkstad besvarar frågor om service, däck och bokning med verkstadens egna godkända uppgifter och samlar kontaktförfrågningar.'],
     '/lvi-chatbot': ['Chatbot för VVS-företag | Respondo AI', 'Chatbot för VVS-företag svarar på frågor om rör, värme och service med företagets egna godkända uppgifter.'],
-    '/hinnat': ["Priser för AI-kundservicebot till företag | Respondo AI", "Jämför Respondo AI Advanced 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Se årspriser och testa gratis i tre dagar."],
+    '/hinnat': ["Priser för AI-kundservicebot till företag | Respondo AI", "Respondo AI kostar 350 €/mån och valfri installation kostar 200 € som engångsavgift. Priserna inkluderar moms i Finland. Boka en kostnadsfri demo på respondoai.fi/yhteystiedot."],
     '/yhteystiedot': ['Kontakt | Respondo AI', 'Kontakta Respondo AI om kundservicebot för företag, funktioner, priser och att komma igång.'],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
     '/yritystiedot': ['Företagsuppgifter | Respondo AI', 'Respondo AI tillhandahålls av Movexa. Företagets officiella uppgifter och kontaktinformation.'],
@@ -263,7 +263,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Booking Chatbot for Business | Respondo AI', 'A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
     '/autokorjaamo-chatbot': ['Chatbot for Auto Repair Shops | Respondo AI', 'An auto repair chatbot answers questions about services, tyres and bookings using garage-approved information and captures customer contact requests.'],
     '/lvi-chatbot': ['Chatbot for Plumbing and HVAC Companies | Respondo AI', 'A plumbing and HVAC chatbot answers service, heating and maintenance questions using company-approved information and captures enquiries.'],
-    '/hinnat': ["AI Customer Service Chatbot Pricing | Respondo AI", "Compare Respondo AI Advanced €49/month, Premium €129/month and Enterprise €149/month. View annual plans and the three-day free trial."],
+    '/hinnat': ["AI Customer Service Chatbot Pricing | Respondo AI", "Respondo AI costs €350/month and optional assisted setup costs €200 once. Prices include VAT in Finland. Book a free demo at respondoai.fi/yhteystiedot."],
     '/yhteystiedot': ['Contact Respondo AI | Support and Sales', 'Contact Respondo AI about the business customer service chatbot, product information and getting started.'],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
     '/yritystiedot': ['Company Information | Respondo AI', 'Respondo AI is provided by Movexa. Official business and contact details.'],
@@ -396,9 +396,7 @@ function seoStructuredData(seo) {
         'Shopify and WooCommerce commerce workflows'
       ],
       offers:[
-        { '@type':'Offer', name:'Respondo Advanced', price:'49.00', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
-        { '@type':'Offer', name:'Respondo Premium', price:'129.00', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
-        { '@type':'Offer', name:'Respondo Enterprise', price:'149.00', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' }
+        { '@type':'Offer', name:'Respondo AI', price:'350.00', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/hinnat' }
       ],
       publisher:{ '@id':SEO_CANONICAL_ORIGIN + '/#organization' },
     },
@@ -537,9 +535,9 @@ function seoNoScriptMarkup(seo, rawPath) {
     return '<noscript><main><h1>Ajanvaraus-chatbot yritykselle</h1><p>Respondo AI voi auttaa verkkosivuasiakasta siirtymään kysymyksestä ajanvarauspyyntöön ja näyttää vapaita aikoja, kun yritys on määrittänyt ne palveluun.</p><h2>Asiakaskysymyksestä ajanvaraukseen</h2><p>Asiakas voi saada ensin vastauksen ja jatkaa sen jälkeen ajanvaraukseen tai ihmisen asiakaspalveluun tarvittaessa.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
   }
   if (rawPath === '/') {
-    if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Advanced 49 €/mån · Premium 129 €/mån · Enterprise 149 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
-    if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Advanced €49/month · Premium €129/month · Enterprise €149/month.</p><p><a href="/features">See features</a></p></main></noscript>';
-    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Advanced 49 €/kk · Premium 129 €/kk · Enterprise 149 €/kk.</p><p><a href="/ominaisuudet?lang=fi">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti?lang=fi">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu?lang=fi">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille?lang=fi">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a></p></main></noscript>';
+    if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Respondo AI 350 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Respondo AI €350/month.</p><p><a href="/features">See features</a></p></main></noscript>';
+    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Respondo AI 350 €/kk.</p><p><a href="/ominaisuudet?lang=fi">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti?lang=fi">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu?lang=fi">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille?lang=fi">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a></p></main></noscript>';
   }
   return '<noscript><main><h1>' + escapeHtml(seo.title.replace(/\\s*\\|\\s*Respondo AI$/i,'')) + '</h1><p>' + escapeHtml(seo.description) + '</p><p><a href="' + SEO_CANONICAL_ORIGIN + '/">Respondo AI</a></p></main></noscript>';
 }
@@ -2326,22 +2324,14 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   // Give the three advertised monthly prices immediately when the visitor
   // asks a general or monthly pricing question. More detail is supplied only
   // when the visitor explicitly asks about annual billing or a specific plan.
-  const monthlyPlanList = answer(
-    'Advanced - 49€/kk\nPremium - 129€/kk\nEnterprise - 149€/kk',
-    'Advanced - 49 €/mån\nPremium - 129 €/mån\nEnterprise - 149 €/mån',
-    'Advanced - €49/month\nPremium - €129/month\nEnterprise - €149/month'
-  );
+  const monthlyPlanList = answer("Respondo AI maksaa 350 €/kk, ja valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti. Hinnat sisältävät ALV:n Suomessa. Pyydä maksuton demo osoitteessa respondoai.fi/yhteystiedot.", "Respondo AI kostar 350 €/mån och valfri installation kostar 200 € som engångsavgift. Priserna inkluderar moms i Finland. Boka en kostnadsfri demo på respondoai.fi/yhteystiedot.", "Respondo AI costs €350/month and optional assisted setup costs €200 once. Prices include VAT in Finland. Book a free demo at respondoai.fi/yhteystiedot.");
 
   // Superlative price questions need the cheapest plan, not a generic
   // checkout link or an unsorted list of all plans.
   if (/\b(?:cheapest|least expensive|most affordable|lowest (?:price|cost)|halvin|halvimm\w*|edullisin|edullisimm\w*|billigast\w*|for\s*manligast\w*|billigaste)\b/.test(q)) {
     return {
       id:'respondo-faq-cheapest-pricing',
-      answer:answer(
-        'Halvin paketti on Advanced: 49 €/kk kuukausitilauksella tai 39 €/kk vuositilauksella (468 € laskutetaan kerran vuodessa). Voit kokeilla palvelua 3 päivää maksutta.',
-        'Det billigaste paketet är Advanced: 49 €/mån vid månadsbetalning eller 39 €/mån vid årsbetalning (468 € faktureras en gång per år). Du kan prova tjänsten gratis i 3 dagar.',
-        'Our cheapest plan is Advanced: €49/month with monthly billing, or €39/month with annual billing (€468 charged once per year). You can try it free for 3 days.'
-      )
+      answer:answer("Respondo AI maksaa 350 €/kk, ja valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti. Hinnat sisältävät ALV:n Suomessa. Pyydä maksuton demo osoitteessa respondoai.fi/yhteystiedot.", "Respondo AI kostar 350 €/mån och valfri installation kostar 200 € som engångsavgift. Priserna inkluderar moms i Finland. Boka en kostnadsfri demo på respondoai.fi/yhteystiedot.", "Respondo AI costs €350/month and optional assisted setup costs €200 once. Prices include VAT in Finland. Book a free demo at respondoai.fi/yhteystiedot.")
     };
   }
 
@@ -2390,11 +2380,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   ) {
     return {
       id:'respondo-faq-buy',
-      answer:answer(
-        'Aloita valitsemalla paketti osoitteessa respondoai.fi/tilaus. Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilaus on 10 €/kk edullisempi.',
-        'Kom igång genom att välja ett abonnemang på respondoai.fi/tilaus. Advanced kostar 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Med årsbetalning sparar du 10 €/mån.',
-        'Choose a plan at respondoai.fi/tilaus to get started. Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Annual billing saves €10/month.'
-      )
+      answer:answer("Respondo AI maksaa 350 €/kk, ja valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti. Hinnat sisältävät ALV:n Suomessa. Pyydä maksuton demo osoitteessa respondoai.fi/yhteystiedot.", "Respondo AI kostar 350 €/mån och valfri installation kostar 200 € som engångsavgift. Priserna inkluderar moms i Finland. Boka en kostnadsfri demo på respondoai.fi/yhteystiedot.", "Respondo AI costs €350/month and optional assisted setup costs €200 once. Prices include VAT in Finland. Book a free demo at respondoai.fi/yhteystiedot.")
     };
   }
 
@@ -2449,11 +2435,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   ) {
     return {
       id:'respondo-faq-annual-pricing',
-      answer:answer(
-        'Vuositilaus on aina 10 €/kk halvempi: Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Koko vuosisumma maksetaan kerralla. Kuukausitilaukset maksavat 49 €, 129 € tai 149 €/kk.',
-        'Årsabonnemang är 10 €/månad billigare: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Hela årsbeloppet debiteras en gång om året. Månadsabonnemangen kostar 49 €, 129 € respektive 149 €/mån.',
-        'Annual billing saves €10/month: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year). The full year is billed upfront. Monthly subscriptions are €49, €129 and €149/month.'
-      )
+      answer:answer("Uusi tilaus laskutetaan kuukausittain 350 €/kk. Vuositilausta ei tällä hetkellä tarjota.", "Det nya abonnemanget faktureras månadsvis, 350 €/mån. Årsabonnemang erbjuds inte för närvarande.", "The new subscription is billed monthly at €350/month. Annual billing is not currently offered.")
     };
   }
 
@@ -2532,11 +2514,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   if (/(?:3 paivan|3 päivän|kolmen paivan|free trial|trial|gratis prov|provperiod|kokeilu).*(?:toim|maks|veloitet|peru|cancel|works|cost|charge|funger|kostar)?|(?:kokeilu|trial|provperiod)/.test(q)) {
     return {
       id:'respondo-faq-trial',
-      answer:answer(
-        'Respondoa voi kokeilla 3 päivää ilmaiseksi. Kokeilun aikana ei veloiteta tilausmaksua. Jos et halua tilauksen jatkuvan maksullisena, peru se ennen kokeilun päättymistä hallintapaneelin Laskutus-kohdan kautta.',
-        'Du kan prova Respondo gratis i 3 dagar. Ingen abonnemangsavgift tas ut under provperioden. Om du inte vill fortsätta med ett betalt abonnemang ska du säga upp det före provperiodens slut via Fakturering i kontrollpanelen.',
-        'You can try Respondo free for 3 days. No subscription fee is charged during the trial. If you do not want it to continue as a paid subscription, cancel before the trial ends through Billing in the dashboard.'
-      )
+      answer:answer("Voit pyytää maksuttoman demon osoitteessa respondoai.fi/yhteystiedot.", "Boka en kostnadsfri demo på respondoai.fi/yhteystiedot.", "Book a free demo at respondoai.fi/yhteystiedot.")
     };
   }
 
@@ -18136,6 +18114,13 @@ app.use(async (req, res, next) => {
   // HEAD requests, which must receive the same status and SEO headers as GET.
   // Express automatically omits the HTML body for a HEAD response.
   if (['GET','HEAD'].includes(req.method) && !req.path.startsWith('/api/')) {
+    if (req.path === '/tilaus' || req.path === '/tilaus/') {
+      const query = new URLSearchParams();
+      if (['fi','sv','en'].includes(String(req.query.lang))) query.set('lang',String(req.query.lang));
+      if (typeof req.query.ref === 'string') query.set('ref',req.query.ref);
+      query.set('intent','demo');
+      return res.redirect(302,'/yhteystiedot?'+query.toString());
+    }
     try {
       const { html, seo } = await renderIndexHtml(req);
       res.setHeader('Cache-Control','no-store, max-age=0, must-revalidate');
