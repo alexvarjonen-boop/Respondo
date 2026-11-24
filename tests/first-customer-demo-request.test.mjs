@@ -19,7 +19,7 @@ test('public demo enquiry uses existing contact form backend and does not introd
 });
 for(const lang of ['fi','sv','en']){
  test('pricing page links to website-tailored demo in '+lang,()=>{
-  assert.ok(seoPricingMarkup(lang).includes('/yhteystiedot?intent=demo&amp;lang='+lang'));
+  assert.ok(seoPricingMarkup(lang).includes('/yhteystiedot?intent=demo&amp;lang='+lang));
  });
 }
 test('client pricing also routes demo enquiries through the current contact page',()=>{
