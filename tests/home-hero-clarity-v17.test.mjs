@@ -43,13 +43,14 @@ test('v17 product demo remains reachable in both legacy and simplified pricing l
   assert.match(v17,/@media\(prefers-reduced-motion:reduce\)/);
   assert.equal(css.split('{').length,css.split('}').length);
   assert.match(app,/href="\/assistant\?lang=\$\{currentLang\(\)\}"/);
-  assert.match(app,/class="pricing-assist-links"/);
+  assert.match(app,/class="price-actions"/);
   assert.match(app,/\/yhteystiedot\?lang=\$\{currentLang\(\)\}&amp;intent=demo/);
-  for(const price of ["card('Advanced',49","card('Premium',129","card('Enterprise',149"])assert.ok(app.includes(price));
+  const price=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(price,/350 €/);assert.match(price,/200 €/);
 });
 test('v17 asset cache keys reach Safari through both ES-module imports and stylesheet',()=>{
   assert.match(index,/home-finish-v13\.css\?v=[^"]*-hero-clarity-v17/);
   assert.match(index,/app\.js\?v=[^"]*-hero-clarity-v17/);
-  assert.match(app,/apple-home\.js\?v=[^']*-hero-clarity-v17/);
-  assert.match(home,/spiral-hero\.js\?v=[^']*-hero-clarity-v17/);
+  assert.match(read('app.js'),/apple-home\.js\?v=20261125-demo-first-v1/);
+  assert.match(read('apple-home.js'),/demoFirstHero/);
 });
