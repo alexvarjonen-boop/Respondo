@@ -45,7 +45,7 @@ const content = {
     "comparisonTitle": "AI-asiakaspalvelija vai ihminen?",
     "comparison": "Asiakaspalvelijabotti ei korvaa ammattilaista kaikissa tilanteissa. Sen vahvuus on toistuvien, tietopohjasta löytyvien kysymysten nopea käsittely. Ihminen tekee tapauskohtaiset arviot, varmistaa monimutkaiset hinnat ja hoitaa herkät asiakastilanteet. Paras työnjako on usein se, että botti antaa asiakkaalle vahvistetun perustiedon heti ja siirtää tarvittaessa asian työntekijälle.",
     "pricingTitle": "Mitä asiakaspalvelijabotti maksaa?",
-    "pricing": "Respondo AI:n kuukausihinta on 350 € + soveltuva ALV. Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti + soveltuva ALV. Pyydä maksuton demo.",
+    "pricing": "Respondo AI:n kuukausihinta on 350 € (sis. ALV Suomessa). Valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti (sis. ALV Suomessa). Pyydä maksuton demo.",
     "faqTitle": "Usein kysytyt kysymykset asiakaspalvelijabotista",
     "faq": [
       [
@@ -127,7 +127,7 @@ const content = {
     "comparisonTitle": "AI-bot eller mänsklig kundservice?",
     "comparison": "Botten hanterar enklare, återkommande frågor snabbt när svaren finns i företagets kunskapsbas. En människa behövs fortfarande för komplicerade fall, känsliga situationer och individuella offerter. Ett fungerande upplägg kombinerar snabba faktasvar med tydlig överlämning till personalen.",
     "pricingTitle": "Vad kostar en kundservicebot?",
-    "pricing": "Respondo AI kostar 350 €/mån + tillämplig moms. Valfri installation kostar 200 € som engångsavgift + tillämplig moms. Boka en kostnadsfri demo.",
+    "pricing": "Respondo AI kostar 350 €/mån (inkl. moms i Finland). Valfri installation kostar 200 € som engångsavgift (inkl. moms i Finland). Boka en kostnadsfri demo.",
     "faqTitle": "Vanliga frågor om AI-kundservicebotar",
     "faq": [
       [
@@ -209,7 +209,7 @@ const content = {
     "comparisonTitle": "AI chatbot or human customer support?",
     "comparison": "Automated agents work best for repetitive, well-documented requests. Humans remain important for complex decisions, sensitive conversations and bespoke quotes. The practical aim is to resolve straightforward questions promptly while preserving a reliable way to contact staff when necessary.",
     "pricingTitle": "How much does a customer support chatbot cost?",
-    "pricing": "Respondo AI costs €350/month + applicable VAT. Optional assisted setup is a one-time €200 fee + applicable VAT. Book a free demo.",
+    "pricing": "Respondo AI costs €350/month (includes VAT in Finland). Optional assisted setup is a one-time €200 fee (includes VAT in Finland). Book a free demo.",
     "faqTitle": "Frequently asked questions about customer service bots",
     "faq": [
       [
