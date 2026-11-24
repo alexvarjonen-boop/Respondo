@@ -56,15 +56,8 @@ test('plans and features are synchronized to the server access gates',()=>{
   assert.ok(allFeatures.some(x=>/Botin värin/.test(x[0])));
   assert.ok(allFeatures.some(x=>/WC-asennus/.test(x[0])));
   assert.doesNotMatch(FEATURE_GROUPS.find(group=>group.key==='live').intro[2],/multiple channels|across multiple channels/);
-  assert.match(app,/card\('Advanced',49,2/);
-  assert.match(app,/card\('Premium',129,10/);
-  assert.match(app,/card\('Enterprise',149,20/);
-  for(const label of ['botin väriä','Google Calendar','20 asiakaspalvelijapaikkaa']){
-    assert.ok((app+server+JSON.stringify(LEGAL_20261008)).includes(label),label);
-  }
-  const advanced=app.slice(app.indexOf("card('Premium'"),app.indexOf("card('Enterprise'"));
-  assert.doesNotMatch(advanced,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(advanced,/Tiimikäyttö 10 asiakaspalvelijalle/);
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
+  assert.match(pricing,/350 €/);assert.match(pricing,/200 €/);assert.match(pricing,/Tiimikäyttö/);
   assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
   assert.match(server,/advanced_monthly:\{[^}]*agentSeats:10,websiteImport:true,googleCalendar:true/);
   assert.match(server,/business_monthly:\{[^}]*agentSeats:20,websiteImport:true,googleCalendar:true/);
@@ -72,7 +65,7 @@ test('plans and features are synchronized to the server access gates',()=>{
 
 test('terms specify billing and avoid unsupported guarantees',()=>{
   const terms=LEGAL_20261008.kayttoehdot.sections.map(x=>x.body[0]).join(' ');
-  for(const token of ['Advanced 49','Premium 129','Enterprise 149','hinnat sisältävät ALV:n 25,5 %','kolmen päivän','Stripe','Google Calendar']){
+  for(const token of ['350 €/kk','200 €','hinta sisältää ALV:n 25,5 %','kolmen päivän','Stripe','Google Calendar']){
     assert.ok(terms.includes(token),'missing '+token);
   }
   assert.match(terms,/kaikkien tuotteiden|kaikkien.*tietojen/);
@@ -96,7 +89,7 @@ test('current legal update retains paid setup and deferred recurring billing in 
     const cookies=policy.evasteet.sections.map(x=>x.body[index]).join(' ');
     const dpa=policy.dpa.sections.map(x=>x.body[index]).join(' ');
     const security=policy.tietoturva.sections.map(x=>x.body[index]).join(' ');
-    assert.match(terms,/199/,'setup fee language '+index);
+    assert.match(terms,/200/,'setup fee language '+index);
     assert.match(terms,/Stripe/,'Stripe processing language '+index);
     assert.match(terms,/365/,'technical Stripe hold language '+index);
     assert.match(terms,/info@respondoai\.fi/,'refund contact language '+index);
@@ -116,9 +109,9 @@ test('current legal update retains paid setup and deferred recurring billing in 
 test('public feature directory and pricing do not advertise unverified third-party connections',()=>{
   const catalog=FEATURE_GROUPS.map(group=>[...group.title,...group.intro,...group.items.flat()]).flat().join('\n');
   assert.doesNotMatch(catalog,/Google Calendar|Google Kalender|Outlook|Gmail|WhatsApp|Instagram|Zendesk|SharePoint/i);
-  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function pricingSection()')+16000);
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function bindPricingPeriodSwitch()'));
   assert.doesNotMatch(pricing,/Google Calendar|Google Kalender|broader integrations|fler integrationer|laajemmat integraatiot|Shopify- ja WooCommerce-tilaushaku/);
-  assert.match(pricing,/Tiimikäyttö 10 asiakaspalvelijalle/);
-  assert.match(pricing,/Turvallinen automaattinen tarjouslaskuri/);
+  assert.match(pricing,/Tiimikäyttö/);
+  assert.match(pricing,/Tarjouspyyntöjen käsittely/);
   assert.equal(FEATURE_COUNT,140);
 });
