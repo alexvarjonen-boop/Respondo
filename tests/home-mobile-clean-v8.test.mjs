@@ -49,8 +49,8 @@ test('index busts Safari assets, including both nested ES module imports',()=>{
      assert.ok(assetUrl.includes('-mobile-simplify-v9-retry-copy-reset-v4'),asset);
    } else assert.ok(assetUrl.endsWith('-mobile-simplify-v9'),asset);
  }
- assert.ok(read('app.js').includes('-mobile-simplify-v9'));
- assert.ok(read('apple-home.js').includes('-mobile-simplify-v9'));
+ assert.ok(read('app.js').includes('20261125-demo-first-v1'));
+ assert.match(read('apple-home.js'),/demoFirstHero/);
  assert.equal(css.split('{').length,css.split('}').length);
 });
 
@@ -63,5 +63,5 @@ test('hero try-the-bot CTA reaches the public demo in each language',()=>{
     assert.ok(hero.includes('href="/assistant?lang='+lang+'"'));
     assert.ok(!hero.includes('href="#pricing"'));
   }
-  for(const v of [html,child,parent])assert.ok(v.includes('hero-try-bot-v32'));
+  assert.ok(html.includes('demo-first-20261125-v1'));assert.ok(parent.includes('20261125-demo-first-v1'));assert.match(child,/df-secondary/);
 });
