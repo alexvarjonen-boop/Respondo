@@ -22,11 +22,11 @@ test('spiral page renders 10 real feature cards after logo reveal in all languag
     assert.ok(!hero.includes('data-respondo-hero-cta="demo"'));
     assert.ok(!hero.includes('/tilaus?lang=' + lang));
     assert.ok(hero.includes('viewBox="0 0 256 256"'));
-    assert.ok(markup.includes('df-hero'));
+    assert.ok(markup.includes('rs-spiral-section'));
     assert.doesNotMatch(markup, /apple-highlights|apple-lead-calculator|rg-growth-section/);
-    assert.ok(markup.indexOf('df-hero') < markup.indexOf('PLANS'));
-    assert.equal((markup.match(/<article>/g)||[]).length, 3);
-    assert.doesNotMatch(markup,/rs-spiral-section/);
+    assert.ok(markup.indexOf('rs-spiral-section') < markup.indexOf('PLANS'));
+    assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 10);
+    assert.match(markup,/class="rs-book-demo"/);
     assert.ok(!markup.includes('apple-bottom-cta'));
     assert.ok(hero.includes(t('Seuraa keskusteluja ja tunnista','Följ konversationerna och se','Review conversations to see')));
   }
