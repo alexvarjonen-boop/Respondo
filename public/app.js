@@ -3031,18 +3031,12 @@ function featuresPage() {
   const lang = currentLang();
   // Pricing CTAs carry a PUBLIC plan name, never the internal Stripe tier.
   const requestedPlan = new URLSearchParams(location.search).get('plan');
-  const plan = ['advanced','premium','enterprise'].includes(requestedPlan) ? requestedPlan : '';
+  const plan = ''; // Public feature catalogue now covers the single subscription.
   const planTitle = plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : '';
   const displayCount = plan ? publicPlanFeatureCount(plan) : FEATURE_COUNT;
   const signupTier = {advanced:'basic',premium:'advanced',enterprise:'business'}[plan] || '';
   const signupHref = plan ? '/tilaus?plan='+signupTier+'_monthly&amp;lang='+lang : '/tilaus?lang='+lang;
-  const planIntro = plan === 'advanced'
-    ? appText('Advanced sisältää 2 asiakaspalvelijapaikkaa, verkkosivujen tietojen tuonnin ja Respondon oman ajanvarauksen. Yritystason tarjouslaskuri ei kuulu pakettiin.','Advanced innehåller 2 kundserviceplatser, webbplatsimport och Respondos egen bokning. Offertkalkylatorn för Enterprise ingår inte.','Advanced includes 2 support-agent seats, website import and native bookings. The Enterprise quote calculator is not included.')
-    : plan === 'premium'
-      ? appText('Premium sisältää Advanced-ominaisuudet ja 10 asiakaspalvelijapaikkaa. Yritystason tarjouslaskuri ei kuulu pakettiin.','Premium innehåller Advanced-funktionerna och 10 kundserviceplatser. Offertkalkylatorn för Enterprise ingår inte.','Premium includes Advanced features and 10 support-agent seats. The Enterprise quote calculator is not included.')
-      : plan === 'enterprise'
-        ? appText('Enterprise sisältää alempien pakettien ominaisuudet, 20 asiakaspalvelijapaikkaa sekä tarjouslaskurin. Ulkoiset yhteydet näkyvät erikseen vasta käyttövalmiina.','Enterprise innehåller funktionerna i de lägre nivåerna, 20 kundserviceplatser och en offertkalkylator. Externa anslutningar visas separat först när de är tillgängliga.','Enterprise includes lower-tier features, 20 support-agent seats and the quote calculator. External connections appear separately only when available.')
-        : appText('Saatavuus riippuu paketista ja yrityksen asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa. Enterprise: 20 paikkaa ja tarjouslaskuri. Ulkoiset integraatiot eivät kuulu tähän luetteloon ilman vahvistettua käyttöönottoa.','Tillgänglighet beror på paket och inställningar. Advanced: 2 platser, webbplatsimport och egen bokning. Premium: 10 platser. Enterprise: 20 platser och offertkalkylator. Externa integrationer utlovas inte utan verifierad aktivering.','Availability depends on the plan and setup. Advanced: 2 seats, website import and native bookings. Premium: 10 seats. Enterprise: 20 seats and quote calculator. External integrations are not promised without verified activation.');
+  const planIntro = appText('Yksi tilaus sisältää Respondon nykyiset ominaisuudet. Toimintojen saatavuus riippuu yrityksen asetuksista ja käyttöön otetuista integraatioista.','Ett abonnemang omfattar Respondos nuvarande funktioner. Tillgänglighet beror på företagets inställningar och aktiverade integrationer.','One subscription includes the current Respondo features. Availability depends on company settings and enabled integrations.');
   const pick = (triple) => triple[lang === 'sv' ? 1 : lang === 'en' ? 2 : 0];
   let featureNo = 0;
   const restGroups = FEATURE_GROUPS.map((group) => ({
@@ -3993,7 +3987,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
           <label><span>${appText('Tilaus','Abonnemang','Subscription')}</span><select name="plan">
             <option value="basic_monthly">Advanced 49 € / kk</option>
             <option value="advanced_monthly">Premium 129 € / kk</option>
-            <option value="business_monthly">Enterprise 1350 € / kk</option>
+            <option value="business_monthly">Enterprise 149 € / kk</option>
             <option value="basic_yearly">Advanced 39 € / kk · 468 € / vuosi</option>
             <option value="advanced_yearly">Premium 119 € / kk · 1 428 € / vuosi</option>
             <option value="business_yearly">Enterprise 139 € / kk · 1 668 € / vuosi</option>
