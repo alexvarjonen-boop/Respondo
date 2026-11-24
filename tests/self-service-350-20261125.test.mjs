@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {appleHomeMarkup} from '../public/apple-home.js';
+import {seoPricingMarkup} from '../public/seo-pricing-ssr.mjs';
+const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+const client=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+const start=server.indexOf('async function stripeCheckoutLineItem(plan)');
+const end=server.indexOf('function planFromStripePriceId',start);
+const priceSource=server.slice(server.indexOf('const NEW_MONTHLY_PRICE_CENTS'),server.indexOf('async function assertCurrentCheckoutPrice'));
+const setupSource=server.slice(server.indexOf('const SETUP_SERVICE_PRICE_CENTS ='),start);
+test('new subscription checkout uses exact EUR monthly amount and one-time setup, rejecting stale configured prices',async()=>{
+  const ctx={stripePriceForPlan:()=> 'price_old',assertCurrentCheckoutPrice:async()=>{throw Error('stale price');},console:{warn(){}}};
+  const {stripeCheckoutLineItem,setupServiceCheckoutLineItem}=vm.runInNewContext(priceSource+setupSource+server.slice(start,end)+'\n({stripeCheckoutLineItem,setupServiceCheckoutLineItem})',ctx);
+  const line=JSON.parse(JSON.stringify(await stripeCheckoutLineItem('respondo_monthly')));
+  assert.deepEqual(line,{price_data:{currency:'eur',unit_amount:35000,recurring:{interval:'month',interval_count:1},product_data:{name:'Respondo AI'}},quantity:1});
+  const setup=setupServiceCheckoutLineItem();
+  assert.equal(setup.price_data.unit_amount,20000);
+  assert.equal(setup.price_data.recurring,undefined);
+  assert.equal(setupServiceCheckoutLineItem(true).price_data.unit_amount,0);
+});
+test('legacy purchase requests fail closed while legacy subscription definitions remain',()=>{
+  assert.match(server,/if \(!\['respondo_monthly','owner_test'\]\.includes\(normalizedPlan\)\) return res\.status\(409\)/);
+  assert.match(server,/if \(plan !== 'respondo_monthly'\) return res\.status\(409\)/);
+  assert.match(server,/respondo_monthly:\{tier:'business',billing:'monthly',monthlyPrice:350/);
+  assert.match(server,/inclusive:true,/);
+  assert.match(server,/checkoutItemsWithDomesticVat\(/);
+  assert.match(client,/else if \(path === '\/tilaus'\) html = signup\(\)/);
+  assert.match(client,/const plan = requestedPlan === 'owner_test' && ownerTestAccess \? 'owner_test' : 'respondo_monthly'/);
+  assert.match(client,/data-setup-price>200 €/);
+  assert.doesNotMatch(client,/location\.replace\('\/yhteystiedot\?' \+ q\.toString\(\)\)/);
+  assert.doesNotMatch(server,/return res\.redirect\(302,'\/yhteystiedot\?'\+query\.toString\(\)\)/);
+});
+for(const [lang,i] of [['fi',0],['sv',1],['en',2]])test('orbit and both ordering options are available: '+lang,()=>{
+  const t=(...v)=>v[i];
+  const h=appleHomeMarkup(t,lang,140,'');
+  assert.equal((h.match(/data-rs-card\b/g)||[]).length,10);
+  assert.ok(h.includes('/tilaus?plan=respondo_monthly&amp;lang='+lang));
+  assert.ok(h.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
+  const p=seoPricingMarkup(lang);
+  assert.ok(p.includes('/tilaus?plan=respondo_monthly&amp;lang='+lang));
+  assert.ok(p.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
+});
