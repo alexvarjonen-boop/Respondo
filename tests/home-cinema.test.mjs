@@ -19,20 +19,20 @@ test('cinematic script parses and leaves scroll, links and forms untouched',()=>
   assert.doesNotMatch(source,/\bscrollTo\s*\(|scrollIntoView\s*\(|scroll-snap|preventDefault\s*\(|document\.body\.style\.overflow/);
 });
 
-test('homepage renders the spiral then pricing with no redundant lower CTA',async()=>{
+test('homepage renders compact hero then pricing with no redundant lower CTA',async()=>{
   const {appleHomeMarkup}=await import(pathToFileURL(path.join(dir,'apple-home.js')).href);
-  const pricing='<section class="pricing-section" id="pricing"><a href="/tilaus?plan=basic_monthly">Plan</a></section>';
+  const pricing='<section class="pricing-section" id="pricing"><a href="/yhteystiedot?intent=demo">Plan</a></section>';
   for(const lang of ['fi','sv','en']){
     const translate=(fi,sv,en)=>({fi,sv,en})[lang];
     const html=appleHomeMarkup(translate,lang,100,pricing);
-    const markers=['class="apple-hero rs-spiral-section"','class="pricing-section"'];
+    const markers=['class="df-hero"','class="pricing-section"'];
     const indices=markers.map(marker=>html.indexOf(marker));
-    assert.ok(indices.every(v=>v>=0),lang+': missing spiral or pricing');
+    assert.ok(indices.every(v=>v>=0),lang+': missing hero or pricing');
     assert.doesNotMatch(html,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
     assert.deepEqual(indices,[...indices].sort((a,b)=>a-b),lang+': sections out of sequence');
     assert.doesNotMatch(html,/apple-highlights|apple-lead-calculator|rg-growth-section/);
-    assert.match(html,/Seuraa keskusteluja|Följ konversationerna|Review conversations/);
-    assert.match(html,/href="\/tilaus\?plan=basic_monthly"/);
+    assert.match(html,/df-benefits/);assert.doesNotMatch(html,/rs-spiral-section/);
+    assert.match(html,/href="\/yhteystiedot\?intent=demo/);
     assert.match(html,/name="|aria-label=/);
   }
 });
