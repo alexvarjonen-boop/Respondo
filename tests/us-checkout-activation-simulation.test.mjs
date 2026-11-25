@@ -85,7 +85,7 @@ function harness({country='US',state='CA',taxStatus='active',subscriptionStatus=
     ownerTestPlanEnabled:async()=>false,validOwnerTestAccessToken:()=>false,
     stripeCheckoutLineItem:async(plan)=>({price:'price_test_'+plan,quantity:1}),
     assistedSetupCheckoutTrial:(setup)=>setup?{trial_period_days:365}:{trial_period_days:3},
-    ownerFreeSetupCheckoutLineItem:()=>null,setupServiceCheckoutLineItem:()=>({price_data:{currency:'eur',unit_amount:19900},quantity:1}),
+    ownerFreeSetupCheckoutLineItem:()=>null,setupServiceCheckoutLineItem:()=>({price_data:{currency:'eur',unit_amount:20000},quantity:1}),
     checkoutTaxExemptionMessage:()=> 'Seller is not VAT-registered',
     assistedSetupCheckoutNotice:()=> 'Setup charge',
     BASE:'https://www.respondoai.fi',
@@ -115,7 +115,7 @@ function harness({country='US',state='CA',taxStatus='active',subscriptionStatus=
   const buyer={
     email:'us-b2b-simulated@example.invalid',fullName:'Simulation',
     companyName:'Simulation LLC',businessId:'12-3456789',
-    password:'StrongPass1!',plan:'basic_monthly',acceptedTerms:true,
+    password:'StrongPass1!',plan:'respondo_monthly',acceptedTerms:true,
     billingCountry:country,billingState:state,businessPurchase:true,
     setupService:false,language:'en'
   };
@@ -226,7 +226,7 @@ test('US optional assisted setup has two visible checkout items and deferred tri
   assert.equal(result.statusCode,200);
   const p=h.activity.createArgs;
   assert.equal(p.line_items.length,2);
-  assert.equal(p.line_items[1].price_data.unit_amount,19900);
+  assert.equal(p.line_items[1].price_data.unit_amount,20000);
   assert.equal(p.subscription_data.metadata.setup_billing_mode,'after_handover');
   assert.equal(p.subscription_data.trial_period_days,365);
 });
@@ -242,7 +242,7 @@ test('a completed checkout cannot be auto-logged in again using the consumed ses
 });
 
 test('US20YEAR gives a 12-month campaign discount on both monthly and yearly checkout',async()=>{
-  for(const plan of ['basic_monthly','basic_yearly','advanced_yearly','business_monthly']){
+  for(const plan of ['respondo_monthly']){
     const h=harness();
     const result=await h.begin({referralCode:'US20YEAR',plan});
     assert.equal(result.statusCode,200,plan+' promotion signup should succeed');

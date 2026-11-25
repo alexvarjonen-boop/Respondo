@@ -33,44 +33,39 @@ function renderSignup(plan,locale='fi',extra='') {
   return signup();
 }
 
-for(const [plan,name,price,charged] of [
-  ['basic_monthly','Advanced','49 €','Laskutus kuukausittain'],
-  ['basic_yearly','Advanced','39 €','468 € veloitetaan vuosittain'],
-  ['advanced_monthly','Premium','129 €','Laskutus kuukausittain'],
-  ['advanced_yearly','Premium','119 €','1428 € veloitetaan vuosittain'],
-  ['business_monthly','Enterprise','149 €','Laskutus kuukausittain'],
-  ['business_yearly','Enterprise','139 €','1668 € veloitetaan vuosittain']
+// New public signup has one 350 EUR monthly subscription. Old links must never
+// silently revive legacy prices, annual billing or old tier selectors.
+for(const requested of [
+  'respondo_monthly','basic_monthly','basic_yearly',
+  'advanced_monthly','advanced_yearly','business_monthly','business_yearly',
+  'something_else'
 ]){
-  test('signup keeps exact plan without a dropdown: '+plan,()=>{
-    const html=renderSignup(plan);
+  test('signup normalizes old or unknown plan URL to current single plan: '+requested,()=>{
+    const html=renderSignup(requested);
     assert.match(html,/class="signup-dark-shell"/);
     assert.match(html,/name="billingCountry" autocomplete="country" required/);
     assert.match(html,/<option value="FI" selected>/);
-    assert.ok(html.includes('type="hidden" name="plan" value="'+plan+'"'));
+    assert.ok(html.includes('type="hidden" name="plan" value="respondo_monthly"'));
     assert.ok(!html.includes('<select name="plan"'));
     assert.ok(!html.includes('<optgroup'));
-    assert.ok(html.includes('<strong>'+name+'</strong>'));
-    assert.ok(html.includes(price));
-    assert.ok(html.includes(charged));
+    assert.ok(html.includes('<strong>Respondo AI</strong>'));
+    assert.ok(html.includes('350 €/kk'));
+    assert.ok(html.includes('Laskutus kuukausittain'));
     assert.ok(html.includes('href="/hinnat?lang=fi"'));
     assert.match(html,/name="setupService" value="1"/);
-    assert.match(html,/199 €/);
-    assert.ok(html.includes('/api/auth/oauth/google/start?flow=signup&plan='+plan));
+    assert.ok(html.includes('200 €'));
+    assert.ok(html.includes('/api/auth/oauth/google/start?flow=signup&plan=respondo_monthly'));
   });
 }
-
-test('the plan is preserved in Swedish and English signup without selector',()=>{
+test('single plan is identical on Swedish and English checkout',()=>{
   for(const locale of ['sv','en']){
     const html=renderSignup('business_yearly',locale);
-    assert.ok(html.includes('type="hidden" name="plan" value="business_yearly"'));
+    assert.ok(html.includes('type="hidden" name="plan" value="respondo_monthly"'));
     assert.ok(html.includes('href="/hinnat?lang='+locale+'"'));
+    assert.ok(html.includes('350 €'));
     assert.ok(!html.includes('<select name="plan"'));
+    assert.ok(html.includes('200 €'));
   }
-});
-
-test('unsupported plan URL fails closed to existing Advanced monthly signup',()=>{
-  const html=renderSignup('something_else');
-  assert.ok(html.includes('type="hidden" name="plan" value="basic_monthly"'));
 });
 
 test('signup-only dark stylesheet loads after old marketing theme and retains readable contrast',()=>{
