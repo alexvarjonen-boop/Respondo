@@ -58,7 +58,7 @@ test('VAT rate is inclusive, fixed at 25.5%, created once, and not applied to US
 test('Checkout paths use the domestic VAT helper without changing advertised prices',()=>{
   assert.equal((source.match(/line_items:checkoutLineItems,/g)||[]).length,2);
   assert.equal((source.match(/await checkoutItemsWithDomesticVat\(/g)||[]).length,2);
-  assert.match(source,/basic_monthly:35000, advanced_monthly:12900, business_monthly:135000/);
+  assert.match(source,/respondo_monthly:35000/);
   assert.match(source,/NEW_YEARLY_PRICE_CENTS = Object.freeze/);
   assert.match(source,/const SETUP_SERVICE_PRICE_CENTS = 20000;/);
   assert.doesNotMatch(source,/Myyjä ei ole arvonlisäverorekisterissä|The seller is not VAT-registered/);
