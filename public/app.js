@@ -11,7 +11,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1-booking-request-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261125-demo-first-v1-restore-orbit-v1-self-service-v1-approved-design-v5';
+import { appleHomeMarkup } from './apple-home.js?v=20261125-demo-first-v1-restore-orbit-v1-self-service-v1-approved-design-v5-clean-links-v6';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261107-movexa-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';

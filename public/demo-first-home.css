@@ -60,8 +60,6 @@
 #app .df-benefit-copy strong{font-size:clamp(15px,1.6vw,18px);font-weight:740;color:#f7f7fb!important;line-height:1.2}
 #app .df-benefit-copy>span{font-size:14px;line-height:1.3;color:#bdbbcd!important}
 #app .df-chevron{color:#ccc7ed!important;font-size:26px;flex:none}
-#app .df-secondary{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 23px;margin-top:19px;width:100%}
-#app .df-secondary a{display:inline-flex;gap:6px;align-items:center;min-height:44px;color:#cbc2ff!important;font-size:14px;text-decoration:underline;text-underline-offset:4px}
 #app .df-landing a:focus-visible{outline:3px solid #c9bcff!important;outline-offset:4px}
 #app .apple-home-page .rs-spiral-heading #apple-home-title{font-size:clamp(25px,4vw,48px)!important;line-height:1.12!important;color:#f7f7fb!important;letter-spacing:-.045em!important;margin:10px 0!important}
 @media(max-width:760px){

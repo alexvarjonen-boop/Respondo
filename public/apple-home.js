@@ -47,12 +47,12 @@ export function demoFirstHero(t,lang){
       <div class="df-trust">${icon('shield')} ${t('Suunniteltu kasvaville yrityksille','Byggt för växande företag','Built for growing businesses')}</div>
       <h2 class="df-benefit-title">${t('Miksi valita Respondo AI?','Varför välja Respondo AI?','Why choose Respondo AI?')}</h2>
       <div class="df-benefits">${benefitCards}</div>
-      <nav class="df-secondary" aria-label="${t('Tutustu palveluun','Upptäck tjänsten','Explore Respondo')}"><a href="${tryBot}">${t('Kokeile bottia','Testa botten','Try the bot')} ${arrow}</a><a href="${order}">${t('Tilaa nyt','Beställ nu','Subscribe now')} ${arrow}</a><a href="#features">${t('Tutustu ominaisuuksiin','Utforska funktioner','Explore features')} ↓</a></nav>
     </div>
   </section>`;
   // Retain the existing interactive feature orbit and its ten chapters below the new hero.
   const orbit=spiralHeroMarkup(t,L)
     .replace(/<h1 id="apple-home-title">[\s\S]*?<\/h1>/,'<h2 id="apple-home-title">'+t('Tutustu ominaisuuksiin','Utforska funktionerna','Explore the features')+'</h2>')
+    .replace(/<a class="rs-chat-navigation-note"[^>]*>[\s\S]*?<\/a>/,'')
     .replace(/<a class="rs-product-jump"[^>]*>[\s\S]*?<\/a>/,'<a class="rs-book-demo" href="'+order+'">'+t('Tilaa nyt','Beställ nu','Subscribe now')+'</a>');
   return hero+orbit;
 }

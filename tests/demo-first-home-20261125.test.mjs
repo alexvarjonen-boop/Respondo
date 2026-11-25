@@ -14,6 +14,9 @@ for (const [lang,label] of [['fi','Varaa demo'],['sv','Boka demo'],['en','Book a
     assert.match(html,/class="rs-book-demo df-primary"/);
     assert.match(html,/class="df-phone"/);
     assert.match(html,/class="df-benefits"/);
+    assert.doesNotMatch(html,/class="(?:df-secondary|rs-chat-navigation-note)"/);
+    assert.match(html,/class="rs-first-order-link"/);
+    assert.match(html,/class="rs-book-demo" href="\/tilaus\?plan=respondo_monthly/);
     assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
     assert.ok(html.includes('/assistant?lang='+lang));
     assert.equal((html.match(/data-rs-card\b/g)||[]).length,10);
