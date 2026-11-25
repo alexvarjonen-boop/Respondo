@@ -46,8 +46,8 @@ test('price table retains column labels, currency and duration for the same serv
   const url=root+'hinnasto';
   const doc=extractBusinessDocument('<table><tr><th>Palvelu</th><th>Kesto (min)</th><th>Hinta (€)</th></tr><tr><td>Ikkunanpesu</td><td>45</td><td>80</td></tr><tr><td>Toimistosiivous</td><td>60</td><td>95</td></tr></table>',url);
   const rows=essentialWebsiteCandidates({finalUrl:root,pageDocuments:[doc]});
-  assert.ok(rows.some(r=>r.category==='Hinnat'&&/Ikkunanpesu.*Kesto \(min\): 45.*Hinta \(€\): 80/.test(r.answer)));
-  assert.ok(rows.some(r=>r.category==='Hinnat'&&/Toimistosiivous.*Hinta \(€\): 95/.test(r.answer)));
+  assert.ok(rows.some(r=>r.category==='Hinnat'&&/Ikkunanpesu.*Kesto \(min\): 45.*Hinta \(€\): 80 €/.test(r.answer)));
+  assert.ok(rows.some(r=>r.category==='Hinnat'&&/Toimistosiivous.*Hinta \(€\): 95 €/.test(r.answer)));
   assert.ok(!rows.some(r=>r.category==='Hinnat'&&/Ikkunanpesu.*95/.test(r.answer)));
 });
 test('nested sections restore outer heading after child content',()=>{
@@ -57,4 +57,9 @@ test('nested sections restore outer heading after child content',()=>{
 test('table header currency does not leak to following tables',()=>{
   const doc=extractBusinessDocument('<table><tr><th>Palvelu</th><th>Hinta (€)</th></tr><tr><td>Ikkunanpesu</td><td>80</td></tr></table><table><tr><td>Toimistosiivous</td><td>60</td></tr></table>',root+'palvelut');
   assert.ok(!doc.blocks.some(b=>b.verifiedPriceTable&&/Toimistosiivous/.test(b.text)));
+});
+
+test('hidden table cells cannot shift currency onto another column',()=>{
+  const doc=extractBusinessDocument('<table><tr><th>Palvelu</th><th>Hinta (€)</th><th>Kesto</th></tr><tr><td>Ikkunanpesu</td><td hidden>80</td><td>45</td></tr></table>',root+'hinnasto');
+  assert.ok(!doc.blocks.some(b=>b.verifiedPriceTable));
 });
