@@ -5,3 +5,36 @@
 #app .apple-home-page .public-simple-navin{display:flex!important;flex-wrap:wrap;align-items:center;gap:10px}
 #app .apple-home-page .df-header-demo{font-size:13px;padding:9px 13px}
 @media(max-width:760px){#app .apple-home-page .rs-book-demo{min-height:44px;padding:9px 13px;font-size:13px}#app .apple-home-page .df-header-demo{padding:8px 10px;font-size:12px}}
+
+/* Four actual header controls need four distinct grid tracks. Keep the
+   three-control layout on non-home pages and the existing orbit untouched. */
+body #app .apple-home-page .nav .container.navin.public-simple-navin:has(> .df-header-demo) {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto auto auto!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  align-items:center!important;
+  column-gap:clamp(6px,1.5vw,20px)!important;
+}
+body #app .apple-home-page .nav .public-simple-navin:has(> .df-header-demo) > .logo {grid-area:1/1!important;justify-self:start!important;min-width:0!important}
+body #app .apple-home-page .nav .public-simple-navin:has(> .df-header-demo) > .navactions {grid-area:1/2!important;justify-self:center!important;position:static!important;inset:auto!important;transform:none!important;width:auto!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;overflow:visible!important}
+body #app .apple-home-page .nav .public-simple-navin > .df-header-demo {grid-area:1/3!important;justify-self:center!important;white-space:nowrap!important;min-width:0!important;box-sizing:border-box!important;margin:0!important;transform:none!important}
+body #app .apple-home-page .nav .public-simple-navin:has(> .df-header-demo) > .public-header-login {grid-area:1/4!important;justify-self:end!important;min-width:0!important;margin:0!important;box-sizing:border-box!important}
+@media(max-width:760px) {
+  body #app .apple-home-page .nav .container.navin.public-simple-navin:has(> .df-header-demo) {
+    grid-template-columns:minmax(30px,1fr) auto auto auto!important;
+    width:100%!important;max-width:none!important;
+    padding-inline:10px!important;column-gap:6px!important;box-sizing:border-box!important;
+  }
+  body #app .apple-home-page .nav .public-simple-navin:has(> .df-header-demo) > .logo .brand-word {display:none!important}
+  body #app .apple-home-page .nav .public-simple-navin:has(> .df-header-demo) > .logo .brand-mark {width:32px!important;height:32px!important;flex:0 0 32px!important}
+  body #app .apple-home-page .nav .public-simple-navin .navactions .app-language-switch {display:inline-flex!important;gap:0!important;padding:2px!important;margin:0!important}
+  body #app .apple-home-page .nav .public-simple-navin .navactions .app-language-option {width:28px!important;min-width:28px!important;flex:0 0 28px!important;height:36px!important;padding:0!important}
+  body #app .apple-home-page .nav .public-simple-navin > .df-header-demo,
+  body #app .apple-home-page .nav .public-simple-navin:has(> .df-header-demo) > .public-header-login {min-height:44px!important;padding:8px 9px!important;font-size:12px!important;line-height:1.2!important;border-radius:10px!important;white-space:nowrap!important}
+}
+@media(max-width:360px) {
+  body #app .apple-home-page .nav .container.navin.public-simple-navin:has(> .df-header-demo) {column-gap:4px!important;padding-inline:7px!important}
+  body #app .apple-home-page .nav .public-simple-navin .navactions .app-language-option {width:25px!important;min-width:25px!important;flex-basis:25px!important}
+  body #app .apple-home-page .nav .public-simple-navin > .df-header-demo,
+  body #app .apple-home-page .nav .public-simple-navin:has(> .df-header-demo) > .public-header-login {padding-inline:7px!important;font-size:11px!important}
+}
