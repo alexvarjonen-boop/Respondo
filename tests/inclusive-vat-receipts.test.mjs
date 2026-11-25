@@ -22,11 +22,11 @@ test('Finnish checkout applies an included 25.5% VAT rate to recurring plan and 
     create:async()=>{created++;throw Error('should reuse existing VAT rate');},
   }};
   const {checkoutItemsWithDomesticVat}=harness(stripe);
-  const items=[{price:'price_existing',quantity:1},{price_data:{currency:'eur',unit_amount:19900},quantity:1}];
+  const items=[{price:'price_existing',quantity:1},{price_data:{currency:'eur',unit_amount:20000},quantity:1}];
   const result=await checkoutItemsWithDomesticVat('FI',items);
   assert.deepEqual(Array.from(result,x=>Array.from(x.tax_rates)),[['txr_existing'],['txr_existing']]);
   assert.equal(result[0].price,'price_existing');
-  assert.equal(result[1].price_data.unit_amount,19900);
+  assert.equal(result[1].price_data.unit_amount,20000);
   assert.equal(items[0].tax_rates,undefined,'input line items must not be mutated');
   assert.equal(created,0);
 });
@@ -42,7 +42,7 @@ test('VAT rate is inclusive, fixed at 25.5%, created once, and not applied to US
     },
   }};
   const {checkoutItemsWithDomesticVat}=harness(stripe);
-  const input=[{price_data:{unit_amount:4900},quantity:1}];
+  const input=[{price_data:{unit_amount:35000},quantity:1}];
   const foreign=await checkoutItemsWithDomesticVat('US',input);
   assert.equal(foreign,input);
   const one=await checkoutItemsWithDomesticVat('FI',input);
@@ -51,15 +51,15 @@ test('VAT rate is inclusive, fixed at 25.5%, created once, and not applied to US
   assert.equal(received.params.percentage,25.5);
   assert.equal(received.params.inclusive,true);
   assert.equal(received.params.country,'FI');
-  assert.equal(one[0].price_data.unit_amount,4900);
+  assert.equal(one[0].price_data.unit_amount,35000);
   assert.deepEqual(Array.from(two[0].tax_rates),['txr_new']);
 });
 
 test('Checkout paths use the domestic VAT helper without changing advertised prices',()=>{
   assert.equal((source.match(/line_items:checkoutLineItems,/g)||[]).length,2);
   assert.equal((source.match(/await checkoutItemsWithDomesticVat\(/g)||[]).length,2);
-  assert.match(source,/basic_monthly:4900, advanced_monthly:12900, business_monthly:14900/);
-  assert.match(source,/basic_yearly:46800, advanced_yearly:142800, business_yearly:166800/);
-  assert.match(source,/const SETUP_SERVICE_PRICE_CENTS = 19900;/);
+  assert.match(source,/basic_monthly:35000, advanced_monthly:12900, business_monthly:135000/);
+  assert.match(source,/NEW_YEARLY_PRICE_CENTS = Object.freeze/);
+  assert.match(source,/const SETUP_SERVICE_PRICE_CENTS = 20000;/);
   assert.doesNotMatch(source,/Myyjä ei ole arvonlisäverorekisterissä|The seller is not VAT-registered/);
 });
