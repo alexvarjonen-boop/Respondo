@@ -55,7 +55,7 @@ import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs'
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
 import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
 import {tryGroundedAIResponse} from './grounded-ai-fallback.mjs';
-import {tryConversationalAIResponse,interpretConversationalQuestion,conversationalAIEnabled} from './conversational-ai.mjs';
+import {tryConversationalAIResponse,interpretConversationalQuestion,conversationalAIEnabled,conversationalQuestionSafe} from './conversational-ai.mjs';
 import {reserveHybridCalls,needsHybridReasoning,hybridCacheKey,readHybridCache,writeHybridCache} from './hybrid-ai-usage.mjs';
 import {classifyMainioSemanticIntent,mainioSemanticActions,interpretMainioLocalIntent} from './mainio-semantic-intent.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
@@ -8489,7 +8489,7 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
   };
 }
 
-// Model-first semantic planning improves the search for ordinary customer
+// Local-first hybrid routing reserves model calls for unresolved customer
 // questions. Existing transaction, price and evidence checks remain the
 // authority for sensitive requests, regardless of what the model predicts.
 async function generateGroundedAnswer(args={}) {
@@ -8498,7 +8498,7 @@ async function generateGroundedAnswer(args={}) {
     'contact','booking','payment','warranty','products','quote','sizing']);
   const lexicalProtected=protectedTopics.has(queryTopic(originalQuestion));
   const mayUseModel=args.disableAIFallback!==true && !args.multiPart &&
-    conversationalAIEnabled() && !lexicalProtected;
+    conversationalAIEnabled() && !lexicalProtected && conversationalQuestionSafe(originalQuestion);
   // The local engine runs first. No external calls for ordinary verified replies.
   let rawResult=await generateRuleGroundedAnswer(args);
 
