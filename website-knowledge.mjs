@@ -719,27 +719,36 @@ export function extractBusinessDocument(html, url) {
         heading = clean(decodeHtml(node.text));
         suppressedHeading = review.test(norm(heading)) || junk.test(norm(heading));
       }
-      if ((tag === 'td' || tag === 'th') && !node.skip) {
+      if (tag === 'td' || tag === 'th') {
         const row = stack.findLast(x => x.tag === 'tr');
-        if (row) row.cells.push({text:clean(decodeHtml(node.text)),header:tag==='th',span:node.span});
+        if (row) {
+          if(node.skip)row.invalidCells=true;
+          else row.cells.push({text:clean(decodeHtml(node.text)),header:tag==='th',span:node.span});
+        }
       }
       if (tag === 'tr' && !node.skip && !suppressedHeading && node.cells?.length > 1) {
         const table=stack.findLast(x=>x.tag==='table');
         const cells=node.cells;
         const texts=cells.map(c=>c.text).filter(Boolean);
-        const simple=cells.every(c=>c.span===1&&c.text);
+        const simple=!node.invalidCells&&cells.every(c=>c.span===1&&c.text);
         // Header units belong to their own column. Do not infer a currency
         // from adjacent cells or from the language/country of the site.
         const hasMoneyHeader=c=>/(?:hinta|price|pris|maksu|cost)/i.test(c.text) && /(?:[€$£]|\b(?:eur|usd|sek|nok|dkk|kr)\b)/i.test(c.text);
-        if(table && simple && cells.every(c=>c.header)){
-          table.priceHeaders=cells.some(hasMoneyHeader)?cells.map(c=>c.text):null;
+        if(table && cells.every(c=>c.header)){
+          table.priceHeaders=simple&&cells.some(hasMoneyHeader)?cells.map(c=>c.text):null;
         }else if(table?.priceHeaders && simple && table.priceHeaders.length===cells.length){
           const priceCols=table.priceHeaders.map((h,i)=>hasMoneyHeader({text:h})?i:-1).filter(i=>i>=0);
           const label=cells[0].text;
           if(!priceCols.includes(0) && isConcreteServiceLabel(label) && priceCols.every(i=>/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?$/i.test(cells[i].text))){
             // Preserve duration, tax, quantity and other explicitly labelled
             // columns in the same fact; never split an offer into naked prices.
-            const detail=cells.slice(1).map((c,i)=>table.priceHeaders[i+1]+': '+c.text).join('; ');
+            const detail=cells.slice(1).map((c,i)=>{
+              const header=table.priceHeaders[i+1];
+              const explicitUnit=header.match(/[€$£]|\b(?:EUR|USD|SEK|NOK|DKK|kr)\b/i)?.[0];
+              const unitless=/^\d[\d\s.,]*$/.test(c.text);
+              const value=priceCols.includes(i+1)&&unitless&&explicitUnit?c.text+' '+explicitUnit:c.text;
+              return header+': '+value;
+            }).join('; ');
             blocks.push({text:label+': '+detail,heading:label,verifiedPriceTable:true});
           }else if(texts.length>1)blocks.push({text:texts.join(': '),heading});
         }else if(texts.length>1)blocks.push({text:texts.join(': '),heading});
