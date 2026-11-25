@@ -6502,7 +6502,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     // Ignore obvious CMS demo/template/archive routes before they can consume
     // crawl budget or leak sample contacts/products into company knowledge.
     if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(normalizedPath)) return false;
-    if (/\/(?:tag|product-tag)\//i.test(normalizedPath)) return false;
+    if (/\/(?:tag|product-tag|product-category|category)\//i.test(normalizedPath)) return false;
     if(locationDetailSeed){
       const candidatePath=pathname.replace(/\/+$/,'') || '/';
       const sameDetail=candidatePath===seedPath || candidatePath.startsWith(seedPath+'/');
@@ -6651,7 +6651,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     try {
       const parsed=new URL(contactPage.finalUrl);
       const key=crawlUrlKey(parsed.href,base.href);
-      if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pages.some(page=>page.key===key)){
+      if(key && parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && usefulPath(parsed.href) && !pages.some(page=>page.key===key)){
         fetchedKeys.add(key);
         pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
         collectMedia(contactPage.html,contactPage.finalUrl);
@@ -6677,7 +6677,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
         const resolved=new URL(sample.finalUrl);
         if(resolved.hostname.toLowerCase()!==base.hostname.toLowerCase())continue;
         const key=crawlUrlKey(resolved.href,base.href);
-        if(pages.some(page=>page.key===key))continue;
+        if(!key||!usefulPath(resolved.href)||pages.some(page=>page.key===key))continue;
         const document=extractBusinessDocument(sample.html,sample.finalUrl);
         fetchedKeys.add(key);
         pages.push({url:sample.finalUrl,key,document});
