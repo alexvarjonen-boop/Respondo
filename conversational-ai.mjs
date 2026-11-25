@@ -44,6 +44,7 @@ function safeText(value,max){
       address.test(s)||regulated.test(s)||containsKnowledgeInstructionAttack(s))return '';
   return s;
 }
+export function conversationalQuestionSafe(question){return !!safeText(question,MAX_QUESTION);}
 // General explanatory questions are not merchant claims. A deliberately
 // narrow classifier prevents "what is YOUR return policy?" from becoming
 // a made-up answer from model world knowledge.
@@ -116,8 +117,8 @@ function allowCall(env,now){
   const day=new Date(now).toISOString().slice(0,10);
   if(budget.day!==day)budget={day,used:0,inFlight:0,errors:0,cooldownUntil:0};
   const isCF=env.RESPONDO_CLOUDFLARE_AI_ENABLED==='1';
-  const cap=isCF?10:HARD_DAILY_LIMIT;
-  const fallback=isCF?10:DEFAULT_DAILY_LIMIT;
+  const cap=HARD_DAILY_LIMIT;
+  const fallback=isCF?100:DEFAULT_DAILY_LIMIT;
   const configured=Number(env.RESPONDO_CONVERSATIONAL_AI_MAX_DAILY||fallback);
   const limit=Number.isFinite(configured) ?
     Math.min(cap,Math.max(0,Math.floor(configured))):fallback;
