@@ -733,18 +733,20 @@ export function extractBusinessDocument(html, url) {
         const simple=!node.invalidCells&&cells.every(c=>c.span===1&&c.text);
         // Header units belong to their own column. Do not infer a currency
         // from adjacent cells or from the language/country of the site.
-        const hasMoneyHeader=c=>/(?:hinta|price|pris|maksu|cost)/i.test(c.text) && /(?:[€$£]|\b(?:eur|usd|sek|nok|dkk|kr)\b)/i.test(c.text);
+        const headerUnits=value=>[...String(value||'').matchAll(/[€$£]|\b(?:EUR|USD|SEK|NOK|DKK|kr)\b/gi)].map(m=>m[0]);
+        const hasMoneyHeader=c=>/(?:hinta|price|pris|maksu|cost)/i.test(c.text) && headerUnits(c.text).length===1;
+        if(table && !simple)table.priceHeaders=null;
         if(table && cells.every(c=>c.header)){
           table.priceHeaders=simple&&cells.some(hasMoneyHeader)?cells.map(c=>c.text):null;
         }else if(table?.priceHeaders && simple && table.priceHeaders.length===cells.length){
           const priceCols=table.priceHeaders.map((h,i)=>hasMoneyHeader({text:h})?i:-1).filter(i=>i>=0);
           const label=cells[0].text;
-          if(!priceCols.includes(0) && isConcreteServiceLabel(label) && priceCols.every(i=>/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?$/i.test(cells[i].text))){
+          if(!priceCols.includes(0) && isConcreteServiceLabel(label) && !junk.test(norm(texts.join(' '))) && !review.test(norm(texts.join(' '))) && priceCols.every(i=>/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?$/i.test(cells[i].text))){
             // Preserve duration, tax, quantity and other explicitly labelled
             // columns in the same fact; never split an offer into naked prices.
             const detail=cells.slice(1).map((c,i)=>{
               const header=table.priceHeaders[i+1];
-              const explicitUnit=header.match(/[€$£]|\b(?:EUR|USD|SEK|NOK|DKK|kr)\b/i)?.[0];
+              const explicitUnit=headerUnits(header)[0];
               const unitless=/^\d[\d\s.,]*$/.test(c.text);
               const value=priceCols.includes(i+1)&&unitless&&explicitUnit?c.text+' '+explicitUnit:c.text;
               return header+': '+value;
