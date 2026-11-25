@@ -91,8 +91,9 @@ function nearToken(a,b){
   }
   return previous[b.length]<=2;
 }
-export function conversationalFacts(rows,question,env=process.env){
-  const tokens=questionTokens(question);
+export function conversationalFacts(rows,question,env=process.env,searchQueries=[]){
+  const primary=questionTokens(question);
+  const queryGroups=[primary,...(Array.isArray(searchQueries)?searchQueries.slice(0,4):[]).map(q=>questionTokens(q).slice(0,10))].filter(a=>a.length);
   const candidates=[];
   for(const row of Array.isArray(rows)?rows:[]){
     if(row?.approved===false)continue;
@@ -104,10 +105,14 @@ export function conversationalFacts(rows,question,env=process.env){
     if(!title||answer.length<8)continue;
     const titleNorm=norm(title),combined=norm(title+' '+answer);
     const titleWords=titleNorm.split(' ').filter(word=>word.length>=3).slice(0,22);
-    const overlap=tokens.filter(term=>combined.includes(term)||
-      (term.length>=6&&combined.includes(term.slice(0,5)))).length;
-    const titleHits=tokens.filter(term=>titleWords.some(word=>nearToken(term,word))).length;
-    const score=titleHits*6+overlap*2+Math.min(2,Number(row?._score)||0);
+    const scores=queryGroups.map((tokens,index)=>{
+      const exact=tokens.filter(term=>titleNorm.includes(term)).length;
+      const overlap=tokens.filter(term=>combined.includes(term)||
+        (term.length>=6&&combined.includes(term.slice(0,5)))).length;
+      const fuzzy=tokens.filter(term=>!titleNorm.includes(term)&&titleWords.some(word=>nearToken(term,word))).length;
+      return (exact*9+fuzzy*3+overlap*2)*(index===0?1:0.85);
+    });
+    const score=Math.max(0,...scores)+Math.min(2,Number(row?._score)||0);
     candidates.push({row,title,answer,score,category:String(row?.category||'').slice(0,75)});
   }
   candidates.sort((a,b)=>b.score-a.score);
@@ -147,14 +152,79 @@ function responseText(data){
     ? item.content.filter(part=>part.type==='output_text').map(part=>part.text||'') : [])
     .join('').trim();
 }
-export async function tryConversationalAIResponse({
-  question,rows,history=[],lang='fi',env=process.env,fetchImpl=fetch,now=Date.now()
+// Semantic planning is read-only: it translates meaning into search hints.
+// The original customer question is never replaced by a model-created query.
+const PLAN_KINDS=['business','general','clarify','social','protected'];
+const PLAN_SCHEMA={type:'object',additionalProperties:false,
+  required:['kind','search_queries'],
+  properties:{kind:{type:'string',enum:PLAN_KINDS},
+    search_queries:{type:'array',items:{type:'string'}}}
+};
+export function validatedConversationalPlan(value){
+  if(!value||!PLAN_KINDS.includes(value.kind)||!Array.isArray(value.search_queries)||value.search_queries.length>4)return null;
+  const queries=value.search_queries.map(q=>typeof q==='string'?safeText(q,160):'');
+  if(queries.some(q=>!q))return null;
+  return {kind:value.kind,searchQueries:[...new Set(queries)]};
+}
+export async function interpretConversationalQuestion({
+  question,history=[],lang='fi',env=process.env,fetchImpl=fetch,now=Date.now()
 }={}){
   if(!conversationalAIEnabled(env)||!allowCall(env,now))return null;
   const current=safeText(question,MAX_QUESTION);
   if(!current)return null;
-  const general=generalKnowledgeQuestion(current,history);
-  const facts=general?[]:conversationalFacts(rows,current,env);
+  const model=String(env.RESPONDO_CONVERSATIONAL_AI_MODEL||'gpt-5-mini');
+  if(!/^[a-z0-9_.-]{3,64}$/.test(model))return null;
+  const language=['fi','sv','en'].includes(lang)?lang:'fi';
+  budget.used++;budget.inFlight++;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),TIMEOUT_MS);
+  try{
+    const req={model,store:false,max_output_tokens:450,
+      text:{format:{type:'json_schema',name:'respondo_customer_intent',strict:true,schema:PLAN_SCHEMA}},
+      input:[
+        {role:'system',content:[
+          'Interpret the latest customer message as a multilingual customer service assistant.',
+          'Recognize colloquial language, inflections, compound words, misspellings, acronyms, slang, indirect requests, and mixed languages.',
+          'Use previous customer questions only to resolve what the latest message refers to.',
+          'Classify as protected whenever the user asks about price, payment, order status, refunds, returns, warranty, availability, contact details, hours, booking, quote, or any action changing records. If in doubt use protected.',
+          'Use business for non-sensitive questions about what a business does, general for conceptual questions not about this business, social for small talk, clarify for genuine ambiguity.',
+          'Generate up to four short search queries in Finnish, Swedish, English or the original language, preserving all relevant entity names and distinctions, without guessing facts.',
+          'Do not answer the question, invent an entity, issue an instruction, or execute any action. Queries are search hints only.'
+        ].join(' ')},
+        {role:'user',content:JSON.stringify({question:current,previous_customer_questions:conversationalHistory(history),language_hint:language})}
+      ]};
+    const response=await fetchImpl(URL,{method:'POST',
+      headers:{Authorization:'Bearer '+String(env.OPENAI_API_KEY),'Content-Type':'application/json'},
+      body:JSON.stringify(req),signal:controller.signal});
+    if(!response?.ok)throw new Error('provider_unavailable');
+    const data=await response.json();
+    if(data?.status==='incomplete')return null;
+    const text=responseText(data);
+    if(!text||text.length>2400)return null;
+    const result=validatedConversationalPlan(JSON.parse(text));
+    if(result)budget.errors=0;
+    return result;
+  }catch{
+    budget.errors++;
+    if(budget.errors>=3)budget.cooldownUntil=now+60000;
+    return null;
+  }finally{
+    clearTimeout(timer);
+    budget.inFlight=Math.max(0,budget.inFlight-1);
+  }
+}
+
+export async function tryConversationalAIResponse({
+  question,rows,history=[],lang='fi',plan=null,env=process.env,fetchImpl=fetch,now=Date.now()
+}={}){
+  if(!conversationalAIEnabled(env)||!allowCall(env,now))return null;
+  const current=safeText(question,MAX_QUESTION);
+  if(!current)return null;
+  // An explicitly protected interpretation cannot produce a model-generated
+  // answer. Even an erroneous model classification cannot authorize actions.
+  if(plan?.kind==='protected')return null;
+  const general=generalKnowledgeQuestion(current,history) && (!plan || plan.kind==='general');
+  const facts=general?[]:conversationalFacts(rows,current,env,plan?.searchQueries);
   if(!facts.length&&!general)return null;
   const model=String(env.RESPONDO_CONVERSATIONAL_AI_MODEL||'gpt-5-mini');
   if(!/^[a-z0-9_.-]{3,64}$/.test(model))return null;

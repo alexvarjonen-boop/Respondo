@@ -55,7 +55,7 @@ import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs'
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
 import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
 import {tryGroundedAIResponse} from './grounded-ai-fallback.mjs';
-import {tryConversationalAIResponse} from './conversational-ai.mjs';
+import {tryConversationalAIResponse,interpretConversationalQuestion,conversationalAIEnabled} from './conversational-ai.mjs';
 import {classifyMainioSemanticIntent,mainioSemanticActions,interpretMainioLocalIntent} from './mainio-semantic-intent.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
@@ -8488,31 +8488,20 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
   };
 }
 
-// The proven deterministic answer remains authoritative. Only unanswered
-// generic questions may try a budgeted, evidence-locked model fallback.
-// All protected intents (booking/order changes, contact data, stock, prices,
-// sensitive policies, named services) stay on their audited deterministic path.
+// Model-first semantic planning improves the search for ordinary customer
+// questions. Existing transaction, price and evidence checks remain the
+// authority for sensitive requests, regardless of what the model predicts.
 async function generateGroundedAnswer(args={}) {
+  const originalQuestion=String(args.message||'');
+  const protectedTopics=new Set(['pricing','delivery','returns','stores','hours',
+    'contact','booking','payment','warranty','products','quote','sizing']);
+  const lexicalProtected=protectedTopics.has(queryTopic(originalQuestion));
+  const mayUseModel=args.disableAIFallback!==true && !args.multiPart &&
+    conversationalAIEnabled() && !lexicalProtected;
+  const plan=mayUseModel ? await interpretConversationalQuestion({
+    question:originalQuestion,history:args.history,lang:args.lang
+  }) : null;
   let rawResult=await generateRuleGroundedAnswer(args);
-  // When enabled, the LLM interprets paraphrases, typos, code-switching and
-  // conversation context over THIS tenant's approved knowledge. It cannot
-  // change bookings, execute actions, or create unsupported merchant facts.
-  // Keep already-verified, high-confidence deterministic business answers.
-  const eligibleForConversationalAI=args.disableAIFallback!==true && !args.multiPart &&
-    (rawResult?.handoff || (!rawResult?.sourceIds?.length && rawResult?.confidence<0.8));
-  if(eligibleForConversationalAI){
-    const semantic=await tryConversationalAIResponse({
-      question:String(args.message||''),rows:Array.isArray(args.rows)?args.rows:[],
-      history:args.history,lang:args.lang
-    });
-    if(semantic){
-      const checked=guardCitedNumericFacts(
-        verifyRetailAnswer(semantic,args.rows,args.message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),
-        args.rows
-      );
-      if(checked && !checked.handoff && checked.answer) return checked;
-    }
-  }
 
   // Final answer boundary: older, higher-priority service-price handlers may
   // still return an entire multi-service pricing paragraph. Re-scope once
@@ -8551,6 +8540,25 @@ async function generateGroundedAnswer(args={}) {
   const result=guardCitedNumericFacts(retailChecked,args.rows);
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
+  const sensitiveIntent=/hinta|maksu|varaus|tilau|tarjous|toimitus|palaut|takuu|aukiolo|yhteys|saatavuus|stock|refund|order|booking|price/i;
+  if(mayUseModel && plan && plan.kind!=='protected' && !result?.qualityFlag &&
+      !sensitiveIntent.test(String(result?.intent||''))) {
+    const semantic=await tryConversationalAIResponse({
+      question:message,rows:Array.isArray(args.rows)?args.rows:[],
+      history:args.history,lang:args.lang,plan
+    });
+    if(semantic){
+      const checked=guardCitedNumericFacts(
+        verifyRetailAnswer(semantic,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),
+        args.rows
+      );
+      if(checked && !checked.handoff && checked.answer &&
+         (checked.sourceIds?.length || checked.intent==='Yleistietoa'))return checked;
+    }
+  }
+  // Do not spend another request or override protected/conflicting results
+  // through the legacy optional fallback after semantic planning.
+  if(mayUseModel || lexicalProtected || plan?.kind==='protected')return result;
   if(args.disableAIFallback===true || !result?.handoff || String(result.answer||'').trim() ||
     args.multiPart || !['Asiakaskysymys','Usein kysytyt'].includes(String(result.intent||'')))return result;
   const original=String(args.message||'').trim();

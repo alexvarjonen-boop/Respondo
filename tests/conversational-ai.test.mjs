@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   conversationalAIEnabled,conversationalFacts,conversationalHistory,generalKnowledgeQuestion,
-  tryConversationalAIResponse,resetConversationalAIBudgetForTests
+  tryConversationalAIResponse,interpretConversationalQuestion,validatedConversationalPlan,resetConversationalAIBudgetForTests
 } from '../conversational-ai.mjs';
 
 const env={
@@ -177,4 +177,67 @@ test('fuzzy retrieval finds Finnish inflections even behind unrelated rows',()=>
   const fact={...website,id:'target',title:'Ikkunanpesu',answer:'Teemme ikkunanpesuja yrityksille.'};
   const facts=conversationalFacts([...distractors,fact],'Teettekö ikkunanpesua?',env);
   assert.equal(facts[0]?.row.id,'target');
+});
+
+test('semantic planning interprets a multilingual follow-up using customer questions only',async()=>{
+  resetConversationalAIBudgetForTests();
+  let sent;
+  const result=await interpretConversationalQuestion({
+    question:'entä do you do de där fönstrena oxå?',history:[
+      {question:'Minkälaista siivousta teette?',answer:'PRIVATE REPLY'}
+    ],env,fetchImpl:async(_url,options)=>{
+      sent=JSON.parse(options.body);
+      return completion({kind:'business',search_queries:['ikkunanpesu','window cleaning','fönstertvätt']});
+    }
+  });
+  assert.deepEqual(result,{kind:'business',searchQueries:['ikkunanpesu','window cleaning','fönstertvätt']});
+  assert.equal(sent.store,false);
+  assert.equal(sent.tools,undefined);
+  assert.ok(sent.input[1].content.includes('Minkälaista siivousta teette?'));
+  assert.ok(!sent.input[1].content.includes('PRIVATE REPLY'));
+});
+test('translated semantic query can retrieve evidence in a different language',()=>{
+  const unrelated=Array.from({length:80},(_,i)=>({
+    ...website,id:'d'+i,title:'Office supplies '+i,answer:'We sell office supplies.'
+  }));
+  const swedish={...website,id:'target-sv',title:'Fönstertvätt',answer:'Vi erbjuder fönstertvätt.'};
+  const facts=conversationalFacts([...unrelated,swedish],'Teettekö ikkunapesuu?',env,['fönstertvätt']);
+  assert.equal(facts[0].row.id,'target-sv');
+});
+test('malformed or unsafe model-planned search hints are rejected',()=>{
+  assert.equal(validatedConversationalPlan({kind:'execute',search_queries:[]}),null);
+  assert.equal(validatedConversationalPlan({kind:'business',search_queries:['test@example.com']}),null);
+  assert.equal(validatedConversationalPlan({kind:'business',search_queries:[1]}),null);
+  assert.equal(validatedConversationalPlan({kind:'business',search_queries:['a','b','c','d','e']}),null);
+  assert.deepEqual(validatedConversationalPlan({kind:'protected',search_queries:[]}),{kind:'protected',searchQueries:[]});
+});
+test('protected model classification cannot generate a company answer or take action',async()=>{
+  resetConversationalAIBudgetForTests();
+  let calls=0;
+  const result=await tryConversationalAIResponse({
+    question:'Could you book it?',rows:[website],env,plan:{kind:'protected',searchQueries:[]},
+    fetchImpl:async()=>{calls++;return completion(valid);}
+  });
+  assert.equal(result,null);assert.equal(calls,0);
+});
+test('semantic planning and answers share a single per-process usage cap',async()=>{
+  resetConversationalAIBudgetForTests();
+  const limited={...env,RESPONDO_CONVERSATIONAL_AI_MAX_DAILY:'1'};
+  let calls=0;
+  const plan=await interpretConversationalQuestion({question:'ikkunapesuu?',env:limited,
+    fetchImpl:async()=>{calls++;return completion({kind:'business',search_queries:['ikkunanpesu']});}
+  });
+  assert.equal(plan.kind,'business');
+  const result=await tryConversationalAIResponse({question:'ikkunapesuu?',rows:[website],plan,env:limited,
+    fetchImpl:async()=>{calls++;return completion(valid);}
+  });
+  assert.equal(result,null);assert.equal(calls,1);
+});
+test('disabled provider and apparent PII never reach semantic planning',async()=>{
+  resetConversationalAIBudgetForTests();
+  let calls=0;
+  const fetchImpl=async()=>{calls++;throw Error('unexpected');};
+  assert.equal(await interpretConversationalQuestion({question:'Can you help?',env:{...env,RESPONDO_CONVERSATIONAL_AI_ENABLED:'0'},fetchImpl}),null);
+  assert.equal(await interpretConversationalQuestion({question:'My email is test@example.com',env,fetchImpl}),null);
+  assert.equal(calls,0);
 });
