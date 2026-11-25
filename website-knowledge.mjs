@@ -1028,8 +1028,24 @@ export function essentialWebsiteCandidates(bundle) {
     const productDetailDoc=/\/(?:products?|tuotteet?)\/[^/]+\/?$/i.test(rawDocPath);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
     const registryDoc=/privacy|tietosuoja|rekisteriseloste|privacy-policy|gdpr/.test(docPath);
+    const salesPolicyDoc=/toimitusehd|myyntiehd|ostoehd|shipping.policy|return.policy|refund.policy|terms.of.sale|terms.and.conditions|kopvillkor|leveransvillkor/.test(docPath);
     const blockedLegalDoc=/terms|kayttoeh/.test(docPath);
-    if (/arvostel|reviews|testimonial/.test(docPath) || blockedLegalDoc) continue;
+    if (/arvostel|reviews|testimonial/.test(docPath) || (blockedLegalDoc&&!salesPolicyDoc)) continue;
+    // Sales terms may contain the only published delivery/return rules.
+    // Extract explicit customer-facing policy facts, never unrelated legal,
+    // liability, supplier or personal contact information from these pages.
+    if(salesPolicyDoc && !registryDoc){
+      for(const block of doc.blocks||[]){
+        const text=clean(block.text), heading=clean(block.heading);
+        if(text.length<12||text.length>1000||containsKnowledgeInstructionAttack(text)||
+           manufacturerContactContext(heading+' '+text)||junk.test(norm(text)))continue;
+        const kind=businessFactKind(text,heading);
+        if(!['delivery','returns','warranty','payment'].includes(kind)||policyHeadingOnly(text,kind))continue;
+        if(!(/\d|visa|mastercard|klarna|paypal|mobilepay|faktura|invoice|lasku|(?:toimitetaan|lähetetään|palautetaan|hyvitetään|return|ship|deliver|refund|exchange|betalas|levereras|returneras)/i.test(text)))continue;
+        add(kind,labels[kind],text,doc.url);
+      }
+      continue;
+    }
     if(doc.contactForm && httpUrl(doc.url)) contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for(const threshold of (Array.isArray(doc.shippingThresholdFacts)?doc.shippingThresholdFacts:[]).slice(0,3)){
@@ -1161,6 +1177,11 @@ export function essentialWebsiteCandidates(bundle) {
       const priceText=clean(blocks[index]?.text);
       const detachedPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?$/i.test(priceText);
       if(!detachedPrice || zeroOnlyPrice(priceText)) continue;
+      // A bare number can be a duration, dimension or item count. Require a
+      // currency on the value or its directly associated heading before
+      // constructing a price fact. Never infer EUR from the site's country.
+      const currencyMarker=/(?:[€$£]|\b(?:eur|usd|sek|nok|dkk|kr)\b)/i;
+      if(!currencyMarker.test(priceText) && !currencyMarker.test(String(blocks[index]?.heading||'')))continue;
 
       const ownHeading=clean(blocks[index]?.heading);
       if(ownHeading && pricedServiceLabel(ownHeading)){
