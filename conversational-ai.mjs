@@ -54,17 +54,73 @@ export function generalKnowledgeQuestion(question,history=[]){
   if(/\b(?:teilla|teidan|te|meilla|meidan|yritys|yrityksen|palvelunne|our|your|you|we|company|business|yourself|ni|ert|era|pris|price|cost|hinta|maksaa|toimitus|delivery|warranty|takuu|palautus|refund|booking|varaus|appointment|product|tuote|service|palvelu)\b/.test(text))return false;
   return true;
 }
+const CF_MODEL='@cf/openai/gpt-oss-120b';
+function conversationalProvider(env){
+  // Independent Cloudflare switch. Never fall through to OpenAI when this
+  // provider was requested but its cost/privacy gates or credentials fail.
+  if(env.RESPONDO_CLOUDFLARE_AI_ENABLED==='1'){
+    const account=String(env.CLOUDFLARE_ACCOUNT_ID||'');
+    const token=String(env.CLOUDFLARE_API_TOKEN||'').trim();
+    if(env.RESPONDO_CLOUDFLARE_FREE_CONFIRMED!=='1' ||
+       env.RESPONDO_CLOUDFLARE_PRIVACY_APPROVED!=='1' ||
+       !/^[a-f0-9]{32}$/i.test(account) || !token ||
+       env.RESPONDO_CONVERSATIONAL_AI_ENABLED==='1')return null;
+    return {kind:'cloudflare',model:CF_MODEL,token,
+      url:'https://api.cloudflare.com/client/v4/accounts/'+account+'/ai/v1/responses'};
+  }
+  const model=String(env.RESPONDO_CONVERSATIONAL_AI_MODEL||'gpt-5-mini');
+  if(env.RESPONDO_CONVERSATIONAL_AI_ENABLED==='1' &&
+     /^sk-/.test(String(env.OPENAI_API_KEY||'')) &&
+     !['off','production-disabled'].includes(model) &&
+     /^[a-z0-9_.-]{3,64}$/.test(model))
+    return {kind:'openai',model,token:String(env.OPENAI_API_KEY),url:URL};
+  return null;
+}
 export function conversationalAIEnabled(env=process.env){
-  return env.RESPONDO_CONVERSATIONAL_AI_ENABLED==='1' &&
-    /^sk-/.test(String(env.OPENAI_API_KEY||'')) &&
-    !['off','production-disabled'].includes(String(env.RESPONDO_CONVERSATIONAL_AI_MODEL||''));
+  return !!conversationalProvider(env);
+}
+async function requestConversationalProvider(provider,req,fetchImpl,signal,now){
+  let body=req;
+  if(provider.kind==='cloudflare'){
+    // The Responses endpoint is documented for GPT-OSS. Avoid depending on
+    // server-side strict schema enforcement: explicitly request JSON and
+    // validate it locally. No tools or paid gateway routes are supplied.
+    const {text,...rest}=req;
+    body={...rest,stream:false,reasoning:{effort:'low'},
+      input:req.input.map((m,i)=>i===0?{...m,content:m.content+
+        '\nReturn exactly one JSON object, without Markdown or commentary, matching this schema: '+
+        JSON.stringify(text.format.schema)}:m)};
+  }
+  const response=await fetchImpl(provider.url,{method:'POST',redirect:'error',
+    headers:{Authorization:'Bearer '+provider.token,'Content-Type':'application/json'},
+    body:JSON.stringify(body),signal});
+  if(response?.status===429 && provider.kind==='cloudflare'){
+    // Daily account limits and rate limits share this status. Stop external
+    // requests conservatively until UTC midnight instead of retrying.
+    const next=new Date(now);next.setUTCHours(24,0,0,0);
+    budget.cooldownUntil=next.getTime();
+  }
+  if(!response?.ok)throw new Error('provider_unavailable');
+  return response.json();
+}
+function validAnswerEnvelope(value){
+  return !!value && typeof value==='object' && !Array.isArray(value) &&
+    Object.keys(value).sort().join(',')==='answer,answerable,evidence' &&
+    typeof value.answerable==='boolean' && typeof value.answer==='string' &&
+    Array.isArray(value.evidence) && value.evidence.length<=3 &&
+    value.evidence.every(e=>e && typeof e==='object' && !Array.isArray(e) &&
+      Object.keys(e).sort().join(',')==='quote,source' &&
+      typeof e.source==='string' && typeof e.quote==='string');
 }
 function allowCall(env,now){
   const day=new Date(now).toISOString().slice(0,10);
   if(budget.day!==day)budget={day,used:0,inFlight:0,errors:0,cooldownUntil:0};
-  const configured=Number(env.RESPONDO_CONVERSATIONAL_AI_MAX_DAILY||DEFAULT_DAILY_LIMIT);
+  const isCF=env.RESPONDO_CLOUDFLARE_AI_ENABLED==='1';
+  const cap=isCF?10:HARD_DAILY_LIMIT;
+  const fallback=isCF?10:DEFAULT_DAILY_LIMIT;
+  const configured=Number(env.RESPONDO_CONVERSATIONAL_AI_MAX_DAILY||fallback);
   const limit=Number.isFinite(configured) ?
-    Math.min(HARD_DAILY_LIMIT,Math.max(1,Math.floor(configured))):DEFAULT_DAILY_LIMIT;
+    Math.min(cap,Math.max(0,Math.floor(configured))):fallback;
   return budget.used<limit && budget.inFlight<MAX_IN_FLIGHT && now>=budget.cooldownUntil;
 }
 function questionTokens(message){
@@ -98,7 +154,7 @@ export function conversationalFacts(rows,question,env=process.env,searchQueries=
   for(const row of Array.isArray(rows)?rows:[]){
     if(row?.approved===false)continue;
     const source=String(row?.source_type||row?.sourceType||'manual').toLowerCase();
-    if(source==='manual' && env.RESPONDO_CONVERSATIONAL_AI_INCLUDE_MANUAL!=='1')continue;
+    if(source==='manual' && (env.RESPONDO_CLOUDFLARE_AI_ENABLED==='1' || env.RESPONDO_CONVERSATIONAL_AI_INCLUDE_MANUAL!=='1'))continue;
     if(source!=='website'&&source!=='manual')continue;
     if(source==='website'&&!/^https:\/\//i.test(String(row?.source_url||row?.sourceUrl||'')))continue;
     const title=safeText(row?.title,200),answer=safeText(row?.answer,1700);
@@ -117,13 +173,14 @@ export function conversationalFacts(rows,question,env=process.env,searchQueries=
   }
   candidates.sort((a,b)=>b.score-a.score);
   const distinct=new Set(),facts=[];
+  const contextLimit=env.RESPONDO_CLOUDFLARE_AI_ENABLED==='1'?5000:MAX_CONTEXT;
   let chars=0;
   for(const item of candidates){
     const key=norm(item.title+' '+item.answer);
     if(distinct.has(key))continue;
     const shortened=item.answer.slice(0,950);
     const rendered='Title: '+item.title+'\nAnswer: '+shortened;
-    if(chars+rendered.length>MAX_CONTEXT)continue;
+    if(chars+rendered.length>contextLimit)continue;
     distinct.add(key);
     facts.push({
       ref:'F'+(facts.length+1),
@@ -161,7 +218,7 @@ const PLAN_SCHEMA={type:'object',additionalProperties:false,
     search_queries:{type:'array',items:{type:'string'}}}
 };
 export function validatedConversationalPlan(value){
-  if(!value||!PLAN_KINDS.includes(value.kind)||!Array.isArray(value.search_queries)||value.search_queries.length>4)return null;
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!=='kind,search_queries'||!PLAN_KINDS.includes(value.kind)||!Array.isArray(value.search_queries)||value.search_queries.length>4)return null;
   const queries=value.search_queries.map(q=>typeof q==='string'?safeText(q,160):'');
   if(queries.some(q=>!q))return null;
   return {kind:value.kind,searchQueries:[...new Set(queries)]};
@@ -172,8 +229,9 @@ export async function interpretConversationalQuestion({
   if(!conversationalAIEnabled(env)||!allowCall(env,now))return null;
   const current=safeText(question,MAX_QUESTION);
   if(!current)return null;
-  const model=String(env.RESPONDO_CONVERSATIONAL_AI_MODEL||'gpt-5-mini');
-  if(!/^[a-z0-9_.-]{3,64}$/.test(model))return null;
+  const provider=conversationalProvider(env);
+  if(!provider)return null;
+  const model=provider.model;
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
   budget.used++;budget.inFlight++;
   const controller=new AbortController();
@@ -193,12 +251,8 @@ export async function interpretConversationalQuestion({
         ].join(' ')},
         {role:'user',content:JSON.stringify({question:current,previous_customer_questions:conversationalHistory(history),language_hint:language})}
       ]};
-    const response=await fetchImpl(URL,{method:'POST',
-      headers:{Authorization:'Bearer '+String(env.OPENAI_API_KEY),'Content-Type':'application/json'},
-      body:JSON.stringify(req),signal:controller.signal});
-    if(!response?.ok)throw new Error('provider_unavailable');
-    const data=await response.json();
-    if(data?.status==='incomplete')return null;
+    const data=await requestConversationalProvider(provider,req,fetchImpl,controller.signal,now);
+    if(data?.status==='incomplete' || data?.status==='failed' || data?.error || data?.success===false)return null;
     const text=responseText(data);
     if(!text||text.length>2400)return null;
     const result=validatedConversationalPlan(JSON.parse(text));
@@ -206,7 +260,7 @@ export async function interpretConversationalQuestion({
     return result;
   }catch{
     budget.errors++;
-    if(budget.errors>=3)budget.cooldownUntil=now+60000;
+    if(budget.errors>=3)budget.cooldownUntil=Math.max(budget.cooldownUntil,now+60000);
     return null;
   }finally{
     clearTimeout(timer);
@@ -226,8 +280,9 @@ export async function tryConversationalAIResponse({
   const general=generalKnowledgeQuestion(current,history) && (!plan || plan.kind==='general');
   const facts=general?[]:conversationalFacts(rows,current,env,plan?.searchQueries);
   if(!facts.length&&!general)return null;
-  const model=String(env.RESPONDO_CONVERSATIONAL_AI_MODEL||'gpt-5-mini');
-  if(!/^[a-z0-9_.-]{3,64}$/.test(model))return null;
+  const provider=conversationalProvider(env);
+  if(!provider)return null;
+  const model=provider.model;
   const previous=conversationalHistory(history);
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
   budget.used++;budget.inFlight++;
@@ -264,17 +319,12 @@ export async function tryConversationalAIResponse({
         })}
       ]
     };
-    const response=await fetchImpl(URL,{
-      method:'POST',
-      headers:{Authorization:'Bearer '+String(env.OPENAI_API_KEY),'Content-Type':'application/json'},
-      body:JSON.stringify(req),signal:controller.signal
-    });
-    if(!response?.ok)throw new Error('provider_unavailable');
-    const data=await response.json();
-    if(data?.status==='incomplete')return null;
+    const data=await requestConversationalProvider(provider,req,fetchImpl,controller.signal,now);
+    if(data?.status==='incomplete' || data?.status==='failed' || data?.error || data?.success===false)return null;
     const text=responseText(data);
     if(!text||text.length>3000)return null;
     const parsed=JSON.parse(text);
+    if(!validAnswerEnvelope(parsed))return null;
     if(illegalActions.test(String(parsed?.answer||'')))return null;
     let result;
     if(general){
@@ -292,7 +342,7 @@ export async function tryConversationalAIResponse({
     return general?result:{...result,intent:'Keskusteleva AI',confidence:0.72};
   }catch{
     budget.errors++;
-    if(budget.errors>=3)budget.cooldownUntil=now+60_000;
+    if(budget.errors>=3)budget.cooldownUntil=Math.max(budget.cooldownUntil,now+60_000);
     return null;
   }finally{
     clearTimeout(timer);

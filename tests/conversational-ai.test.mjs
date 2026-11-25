@@ -241,3 +241,69 @@ test('disabled provider and apparent PII never reach semantic planning',async()=
   assert.equal(await interpretConversationalQuestion({question:'My email is test@example.com',env,fetchImpl}),null);
   assert.equal(calls,0);
 });
+
+const cfEnv={
+  ...env,RESPONDO_CONVERSATIONAL_AI_ENABLED:'0',
+  RESPONDO_CLOUDFLARE_AI_ENABLED:'1',
+  RESPONDO_CLOUDFLARE_FREE_CONFIRMED:'1',
+  RESPONDO_CLOUDFLARE_PRIVACY_APPROVED:'1',
+  CLOUDFLARE_ACCOUNT_ID:'a'.repeat(32),CLOUDFLARE_API_TOKEN:'mock-cloudflare-token'
+};
+test('Cloudflare requires independently confirmed free tier and privacy, with paid OpenAI off',()=>{
+  assert.equal(conversationalAIEnabled(cfEnv),true);
+  for(const patch of [
+    {RESPONDO_CLOUDFLARE_FREE_CONFIRMED:'0'},
+    {RESPONDO_CLOUDFLARE_PRIVACY_APPROVED:'0'},
+    {RESPONDO_CONVERSATIONAL_AI_ENABLED:'1'},
+    {CLOUDFLARE_ACCOUNT_ID:'../../bad'},
+    {CLOUDFLARE_API_TOKEN:''}
+  ])assert.equal(conversationalAIEnabled({...cfEnv,...patch}),false);
+});
+test('Cloudflare requests use only the fixed account-scoped free-eligible model endpoint',async()=>{
+  resetConversationalAIBudgetForTests();
+  let seen;
+  const plan=await interpretConversationalQuestion({
+    question:'Pystyttekö auttamaan?',env:cfEnv,
+    fetchImpl:async(url,options)=>{
+      seen={url,options};
+      return completion({kind:'business',search_queries:['palvelut']});
+    }
+  });
+  assert.equal(plan.kind,'business');
+  assert.equal(seen.url,'https://api.cloudflare.com/client/v4/accounts/'+'a'.repeat(32)+'/ai/v1/responses');
+  assert.equal(seen.options.headers.Authorization,'Bearer mock-cloudflare-token');
+  assert.equal(seen.options.redirect,'error');
+  const request=JSON.parse(seen.options.body);
+  assert.equal(request.model,'@cf/openai/gpt-oss-120b');
+  assert.equal(request.store,false);
+  assert.equal(request.stream,false);
+  assert.equal(request.tools,undefined);
+  assert.ok(request.input[0].content.includes('exactly one JSON object'));
+  assert.ok(!seen.options.body.includes('sk-test'));
+});
+test('Cloudflare stops requests after a quota/rate limit until UTC day changes',async()=>{
+  resetConversationalAIBudgetForTests();
+  let calls=0;
+  const now=Date.UTC(2026,10,25,10);
+  const fetchImpl=async()=>{calls++;return {ok:false,status:429}};
+  for(let i=0;i<3;i++)assert.equal(await interpretConversationalQuestion({
+    question:'Can you help?',env:cfEnv,now:now+i*1000,fetchImpl
+  }),null);
+  assert.equal(calls,1);
+});
+test('Cloudflare never includes manual knowledge even when legacy manual flag is enabled',()=>{
+  assert.equal(conversationalFacts([manual],'cleaning',{...cfEnv,RESPONDO_CONVERSATIONAL_AI_INCLUDE_MANUAL:'1'}).length,0);
+});
+test('Cloudflare responses must meet local schema even without provider strict JSON enforcement',async()=>{
+  resetConversationalAIBudgetForTests();
+  const result=await tryConversationalAIResponse({question:'Do you offer cleaning?',rows:[website],env:cfEnv,
+    fetchImpl:async()=>completion({...valid,unexpected:'ignore safety'})});
+  assert.equal(result,null);
+});
+test('Cloudflare valid grounded replies remain tied to tenant evidence',async()=>{
+  resetConversationalAIBudgetForTests();
+  const result=await tryConversationalAIResponse({question:'Do you offer window cleaning?',rows:[website],env:cfEnv,
+    fetchImpl:async()=>completion(valid)});
+  assert.equal(result?.answer,valid.answer);
+  assert.deepEqual(result?.sourceIds,['service-1']);
+});
