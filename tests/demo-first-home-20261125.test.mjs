@@ -10,11 +10,15 @@ for (const [lang,label] of [['fi','Varaa demo'],['sv','Boka demo'],['en','Book a
     const html=appleHomeMarkup(t,lang,0,'<section id="pricing">350 / 200</section>');
     assert.equal((html.match(/<h1\b/g)||[]).length,1);
     assert.ok(html.includes(label));
+    assert.match(html,/class="df-landing"/);
+    assert.match(html,/class="rs-book-demo df-primary"/);
+    assert.match(html,/class="df-phone"/);
+    assert.match(html,/class="df-benefits"/);
     assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang='+lang));
     assert.ok(html.includes('/assistant?lang='+lang));
     assert.equal((html.match(/data-rs-card\b/g)||[]).length,10);
     assert.ok(html.includes('id="pricing"'));
-    assert.match(html,/rs-studio-orbit-art/);assert.match(html,/class="rs-book-demo"/);assert.match(html,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(html,/rs-product-journeys/);
+    assert.match(html,/rs-studio-orbit-art/);assert.match(html,/class="rs-book-demo df-primary"/);assert.match(html,/\/tilaus\?plan=respondo_monthly/);assert.doesNotMatch(html,/rs-product-journeys/);
     assert.ok(html.startsWith(demoFirstHero(t,lang)));
     const pricing=seoPricingMarkup(lang);
     assert.match(pricing,/350/);assert.match(pricing,/200/);
