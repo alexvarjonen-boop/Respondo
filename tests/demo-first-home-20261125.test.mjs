@@ -27,6 +27,9 @@ test('homepage SSR, client and asset integration',()=>{
   const index=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
   assert.ok(server.includes('demoFirstHero((fi, sv, en)'));
   assert.ok(app.includes('appleHomeMarkup(appText,currentLang(),FEATURE_COUNT,pricingSection())'));
-  assert.ok(app.includes('class="df-header-demo"'));
+  const nav=app.slice(app.indexOf('function nav()'),app.indexOf('function bindHomeHeroActions()'));
+  assert.doesNotMatch(nav,/df-header-demo|intent=demo|Book a demo|Varaa demo|Boka demo/);
+  assert.match(nav,/languageSwitch\(\)/);
+  assert.match(nav,/public-header-login/);
   assert.ok(index.includes('/demo-first-home.css'));
 });

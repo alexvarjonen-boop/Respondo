@@ -2206,7 +2206,6 @@ function nav() {
     <div class="container navin public-simple-navin">
       ${logo()}
       <div class="navactions">${languageSwitch()}</div>
-      ${location.pathname==='/'?`<a class="df-header-demo" href="/yhteystiedot?intent=demo&amp;lang=${currentLang()}">${appText('Varaa demo','Boka demo','Book a demo')}</a>`:''}
       <a class="public-header-login" href="/kirjaudu?lang=${currentLang()}">${appText('Kirjaudu','Logga in','Log in')}</a>
     </div>
   </header>`;
