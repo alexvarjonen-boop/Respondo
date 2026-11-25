@@ -721,11 +721,28 @@ export function extractBusinessDocument(html, url) {
       }
       if ((tag === 'td' || tag === 'th') && !node.skip) {
         const row = stack.findLast(x => x.tag === 'tr');
-        if (row) row.cells.push(clean(decodeHtml(node.text)));
+        if (row) row.cells.push({text:clean(decodeHtml(node.text)),header:tag==='th',span:node.span});
       }
-      if (tag === 'tr' && !node.skip && node.cells?.length > 1) {
-        const cells = node.cells.filter(Boolean);
-        if (cells.length > 1) blocks.push({text:cells.join(': '), heading});
+      if (tag === 'tr' && !node.skip && !suppressedHeading && node.cells?.length > 1) {
+        const table=stack.findLast(x=>x.tag==='table');
+        const cells=node.cells;
+        const texts=cells.map(c=>c.text).filter(Boolean);
+        const simple=cells.every(c=>c.span===1&&c.text);
+        // Header units belong to their own column. Do not infer a currency
+        // from adjacent cells or from the language/country of the site.
+        const hasMoneyHeader=c=>/(?:hinta|price|pris|maksu|cost)/i.test(c.text) && /(?:[€$£]|\b(?:eur|usd|sek|nok|dkk|kr)\b)/i.test(c.text);
+        if(table && simple && cells.every(c=>c.header)){
+          table.priceHeaders=cells.some(hasMoneyHeader)?cells.map(c=>c.text):null;
+        }else if(table?.priceHeaders && simple && table.priceHeaders.length===cells.length){
+          const priceCols=table.priceHeaders.map((h,i)=>hasMoneyHeader({text:h})?i:-1).filter(i=>i>=0);
+          const label=cells[0].text;
+          if(!priceCols.includes(0) && isConcreteServiceLabel(label) && priceCols.every(i=>/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?$/i.test(cells[i].text))){
+            // Preserve duration, tax, quantity and other explicitly labelled
+            // columns in the same fact; never split an offer into naked prices.
+            const detail=cells.slice(1).map((c,i)=>table.priceHeaders[i+1]+': '+c.text).join('; ');
+            blocks.push({text:label+': '+detail,heading:label,verifiedPriceTable:true});
+          }else if(texts.length>1)blocks.push({text:texts.join(': '),heading});
+        }else if(texts.length>1)blocks.push({text:texts.join(': '),heading});
       }
       if (tag === 'a' && !node.skip && node.href) links.push({url:node.href, label:clean(decodeHtml(node.text)), context:heading});
       // Contact builders often render "email + street address" inline with no
@@ -734,7 +751,7 @@ export function extractBusinessDocument(html, url) {
       // its own fact instead of becoming e.g. "info@example.fiHallituskatu".
       if (tag === 'a' && !node.skip && (email.test(clean(decodeHtml(node.text))) || phone.test(clean(decodeHtml(node.text))))) flush();
       stack.splice(i);
-      if (tag === 'section' || tag === 'article' || tag === 'details') { heading = ''; suppressedHeading = false; }
+      if (tag === 'section' || tag === 'article' || tag === 'details') { heading = node.outerHeading || ''; suppressedHeading = Boolean(node.outerSuppressed); }
       continue;
     }
     const a = attrs(token), marker = norm([a.class,a.id,a.role,a.itemprop,a['aria-label']].filter(Boolean).join(' '));
@@ -756,7 +773,7 @@ export function extractBusinessDocument(html, url) {
       if (cell) cell.text += ' ';
       else buffer += ' ';
     }
-    if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
+    if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined,span:Math.max(Number(a.colspan||1),Number(a.rowspan||1)),priceHeaders:null,outerHeading:heading,outerSuppressed:suppressedHeading});
   }
   flush();
   return {url, blocks, links, products, faqPairs, servicePairs, specPairs, structuredFacts, storeAvailabilityFacts, shippingThresholdFacts, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
@@ -1213,7 +1230,7 @@ export function essentialWebsiteCandidates(bundle) {
         for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
       }
 
-      const kind = businessFactKind(block.text,block.heading);
+      const kind = block.verifiedPriceTable===true ? 'pricing' : businessFactKind(block.text,block.heading);
       if (!kind) {
         // The old extractor dropped all non-dictionary facts. This lost
         // customer answers about equipment, certifications, processes,
