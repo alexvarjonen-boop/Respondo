@@ -56,9 +56,8 @@ export function crawlPageLinks(html,baseUrl){
 export function sitemapEntries(xml,baseUrl){
   const source=String(xml||'');
   const index=/<(?:[\w.-]+:)?sitemapindex\b/i.test(source);
-  const tag=index?'sitemap':'url';
   const out=[];
-  const pattern=new RegExp('<(?:[\\\\w.-]+:)?'+tag+'(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)<\\\\/(?:[\\\\w.-]+:)?'+tag+'\\\\s*>','gi');
+  const pattern=index?/<(?:[\w.-]+:)?sitemap(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\w.-]+:)?sitemap\s*>/gi:/<(?:[\w.-]+:)?url(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\w.-]+:)?url\s*>/gi;
   for(const m of source.matchAll(pattern)){
     const loc=m[1].match(/<(?:[\w.-]+:)?loc(?:\s[^>]*)?>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]+?))\s*<\/(?:[\w.-]+:)?loc\s*>/i);
     if(!loc)continue;
