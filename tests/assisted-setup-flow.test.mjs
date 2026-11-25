@@ -7,12 +7,12 @@ const server = read('server.mjs');
 const app = read('public/app.js');
 const traffic = read('public/traffic.html');
 
-test('199-euro assisted setup is opt-in, one-time and separately listed in both checkouts', () => {
+test('200-euro assisted setup is opt-in, one-time and separately listed in both checkouts', () => {
   const start=server.indexOf('function setupServiceCheckoutLineItem(ownerFree=false)');
   const end=server.indexOf('async function stripeCheckoutLineItem(',start);
   assert.ok(start>=0 && end>start);
   const item=server.slice(start,end);
-  assert.match(server,/SETUP_SERVICE_PRICE_CENTS\s*=\s*19900/);
+  assert.match(server,/SETUP_SERVICE_PRICE_CENTS\s*=\s*20000/);
   assert.match(item,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
   assert.doesNotMatch(item,/recurring\s*:/);
   assert.equal((server.match(/line_items:checkoutLineItems,/g)||[]).length,2);
