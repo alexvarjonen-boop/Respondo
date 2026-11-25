@@ -24,10 +24,14 @@ test('localized landing content and homepage cinematic hero are present without 
     assert.match(html, new RegExp('<html lang="' + lang + '"'), url);
     assert.match(html, /<div id="app"><div class="home-page apple-home-page">/);
     assert.match(html, /<main class="immersive-home apple-home">/);
-    assert.ok(html.includes('<h1 id="apple-home-title">' + heading), 'missing localized cinematic hero for ' + url);
+    assert.ok(html.includes('<h1 id="df-home-title">' + heading), 'missing localized cinematic hero for ' + url);
     assert.match(html, /class="rs-studio-orbit-art"/);
     assert.match(html, /intent=demo/);
-    assert.match(html, /class="rs-book-demo"/);
+    assert.match(html, /class="rs-book-demo df-primary"/);
+    assert.match(html, /class="df-phone"/);
+    assert.match(html, /class="df-benefits"/);
+    assert.ok(html.includes('/yhteystiedot?intent=demo&amp;lang=' + lang));
+    assert.ok(html.includes('/tilaus?plan=respondo_monthly&amp;lang=' + lang));
     assert.doesNotMatch(html, /class="respondo-search-overview"/);
     assert.match(response.headers.get('cache-control') || '', /no-store/);
     assert.equal(response.headers.get('x-respondo-homepage'), 'restore-orbit-20261125-v1');
