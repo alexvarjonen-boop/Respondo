@@ -762,7 +762,14 @@ export function extractBusinessDocument(html, url) {
       // its own fact instead of becoming e.g. "info@example.fiHallituskatu".
       if (tag === 'a' && !node.skip && (email.test(clean(decodeHtml(node.text))) || phone.test(clean(decodeHtml(node.text))))) flush();
       stack.splice(i);
-      if (tag === 'section' || tag === 'article' || tag === 'details') { heading = node.outerHeading || ''; suppressedHeading = Boolean(node.outerSuppressed); }
+      if (tag === 'section' || tag === 'article' || tag === 'details') {
+        // Restore context only inside an enclosing content section. A
+        // page-level marketing headline must not become the heading of
+        // unrelated footer contacts or subsequent sibling sections.
+        const nested=stack.some(x=>/^(?:section|article|details)$/.test(x.tag));
+        heading=nested?(node.outerHeading||''):'';
+        suppressedHeading=nested&&Boolean(node.outerSuppressed);
+      }
       continue;
     }
     const a = attrs(token), marker = norm([a.class,a.id,a.role,a.itemprop,a['aria-label']].filter(Boolean).join(' '));
