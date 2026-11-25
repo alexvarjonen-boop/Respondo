@@ -47,7 +47,7 @@ export function hybridCacheKey({tenantId,message,lang,history,pageContext,rows}=
   if(!safeScope(tenantId) || typeof message!=='string' || !message.trim() || message.length>300 ||
      !Array.isArray(rows) || !rows.length || rows.length>5000 ||
      (Array.isArray(history)&&history.length) || (pageContext&&Object.keys(pageContext).length))return '';
-  if(/@|https?:|\d|password|salasana|lösenord|tilaus|varaus|order|booking|refund|payment|hinta|maks|price|cost|pris/i.test(message))return '';
+  if(/@|https?:|\d|password|salasana|lösenord|tilaus|varaus|order|book|reserv|cancel|refund|payment|hinta|maks|price|cost|pris/i.test(message))return '';
   const publicRows=rows.filter(publicRow);
   if(!publicRows.length)return '';
   const hash=createHash('sha256');
@@ -72,7 +72,7 @@ export function writeHybridCache(key,result,rows,now=Date.now()){
   if(!key || result?.handoff || result?.qualityFlag || result?.intent!=='Keskusteleva AI' ||
      !Array.isArray(result.sourceIds) || !result.sourceIds.length || result.sourceIds.length>3)return false;
   const answer=String(result.answer||'').trim();
-  if(!answer || answer.length>600 || /@|https?:|\d|password|salasana|lösenord|tilaus|varaus|order|booking|refund|payment|hinta|maks|price|cost|pris/i.test(answer))return false;
+  if(!answer || answer.length>600 || /@|https?:|\d|password|salasana|lösenord|tilaus|varaus|order|book|reserv|cancel|refund|payment|hinta|maks|price|cost|pris/i.test(answer))return false;
   const sourceIds=result.sourceIds.map(String);
   if(!sourceIds.every(id=>rows.some(r=>publicRow(r)&&String(r.id)===id)))return false;
   while(cache.size>=MAX_CACHE)cache.delete(cache.keys().next().value);
