@@ -177,3 +177,10 @@ globalThis.fetch = async (input, init) => {
 };
 
 await import('./server.mjs');
+
+// Explicitly enabled synthetic-only quality diagnostic; no customer requests.
+if(process.env.RESPONDO_CLOUDFLARE_SYNTHETIC_CHECK==='1'){
+  const {runCloudflareSyntheticCheck}=await import('./cloudflare-synthetic-check.mjs');
+  await runCloudflareSyntheticCheck().catch(()=>console.warn('RESPONDO_CF_SYNTHETIC_CHECK_FAILED'));
+}
+
