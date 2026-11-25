@@ -56,6 +56,7 @@ import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
 import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
 import {tryGroundedAIResponse} from './grounded-ai-fallback.mjs';
 import {tryConversationalAIResponse,interpretConversationalQuestion,conversationalAIEnabled} from './conversational-ai.mjs';
+import {reserveHybridCalls,needsHybridReasoning,hybridCacheKey,readHybridCache,writeHybridCache} from './hybrid-ai-usage.mjs';
 import {classifyMainioSemanticIntent,mainioSemanticActions,interpretMainioLocalIntent} from './mainio-semantic-intent.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
@@ -8498,9 +8499,7 @@ async function generateGroundedAnswer(args={}) {
   const lexicalProtected=protectedTopics.has(queryTopic(originalQuestion));
   const mayUseModel=args.disableAIFallback!==true && !args.multiPart &&
     conversationalAIEnabled() && !lexicalProtected;
-  const plan=mayUseModel ? await interpretConversationalQuestion({
-    question:originalQuestion,history:args.history,lang:args.lang
-  }) : null;
+  // The local engine runs first. No external calls for ordinary verified replies.
   let rawResult=await generateRuleGroundedAnswer(args);
 
   // Final answer boundary: older, higher-priority service-price handlers may
@@ -8541,8 +8540,21 @@ async function generateGroundedAnswer(args={}) {
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
   const sensitiveIntent=/hinta|maksu|varaus|tilau|tarjous|toimitus|palaut|takuu|aukiolo|yhteys|saatavuus|stock|refund|order|booking|price/i;
-  if(mayUseModel && plan && plan.kind!=='protected' && !result?.qualityFlag &&
+  if(mayUseModel && needsHybridReasoning(result) &&
       !sensitiveIntent.test(String(result?.intent||''))) {
+    const key=hybridCacheKey({tenantId:args.tenantId,message,lang:args.lang,history:args.history,
+      pageContext:args.pageContext,rows:args.rows});
+    const cached=readHybridCache(key,args.rows);
+    if(cached){
+      const checked=guardCitedNumericFacts(verifyRetailAnswer(cached,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),args.rows);
+      if(checked && !checked.handoff && !checked.qualityFlag && checked.sourceIds?.length)return checked;
+    }
+    // Public demos without a resolved tenant ID cannot spend shared quota.
+    if(!await reserveHybridCalls(pool,String(args.tenantId||'')))return result;
+    const plan=await interpretConversationalQuestion({
+      question:originalQuestion,history:args.history,lang:args.lang
+    });
+    if(!plan || ['protected','clarify','social'].includes(plan.kind))return result;
     const semantic=await tryConversationalAIResponse({
       question:message,rows:Array.isArray(args.rows)?args.rows:[],
       history:args.history,lang:args.lang,plan
@@ -8552,13 +8564,16 @@ async function generateGroundedAnswer(args={}) {
         verifyRetailAnswer(semantic,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),
         args.rows
       );
-      if(checked && !checked.handoff && checked.answer &&
-         (checked.sourceIds?.length || checked.intent==='Yleistietoa'))return checked;
+      if(checked && !checked.handoff && !checked.qualityFlag && checked.answer &&
+         (checked.sourceIds?.length || checked.intent==='Yleistietoa')){
+        writeHybridCache(key,checked,args.rows);
+        return checked;
+      }
     }
   }
   // Do not spend another request or override protected/conflicting results
   // through the legacy optional fallback after semantic planning.
-  if(mayUseModel || lexicalProtected || plan?.kind==='protected')return result;
+  if(mayUseModel || lexicalProtected || process.env.RESPONDO_CLOUDFLARE_FREE_CONFIRMED==='1')return result;
   if(args.disableAIFallback===true || !result?.handoff || String(result.answer||'').trim() ||
     args.multiPart || !['Asiakaskysymys','Usein kysytyt'].includes(String(result.intent||'')))return result;
   const original=String(args.message||'').trim();
@@ -14978,7 +14993,7 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
   const history=reconstructedConversationHistory(hr.rows.reverse());
 
   const result = await generateGroundedAnswer({
-    companyName:tenant.name,rows:kr.rows,message,history,lang,pageContext:{},
+    tenantId:String(tenant.id),companyName:tenant.name,rows:kr.rows,message,history,lang,pageContext:{},
   });
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   let answer = sanitizeUserFacingText(result.answer);
@@ -16620,7 +16635,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           selected:[],
         }
       : await generateGroundedAnswer({
-          companyName: t.name,
+          tenantId:String(t.id),companyName: t.name,
           rows: safeKnowledgeRows,
           message,
           history,
