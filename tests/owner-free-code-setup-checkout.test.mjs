@@ -10,13 +10,13 @@ const method=server.slice(start,end);
 const factory=new Function('CURRENT_PRICE_CENTS','CURRENT_PRODUCT_NAMES',
   method+'; return ownerFreeSetupCheckoutLineItem;');
 const priceForPlan=factory(
-  {basic_monthly:4900,advanced_monthly:12900,business_monthly:14900,
+  {respondo_monthly:35000,basic_monthly:4900,advanced_monthly:12900,business_monthly:14900,
     basic_yearly:46800,advanced_yearly:142800,business_yearly:166800},
-  {basic_monthly:'Advanced',advanced_monthly:'Premium',business_monthly:'Enterprise',
+  {respondo_monthly:'Respondo AI',basic_monthly:'Advanced',advanced_monthly:'Premium',business_monthly:'Enterprise',
     basic_yearly:'Advanced (annual)',advanced_yearly:'Premium (annual)',business_yearly:'Enterprise (annual)'});
 
 test('owner free code creates an immutable €0 recurring line item, and an independently zero-priced setup line for founders',()=>{
-  for(const plan of ['basic_monthly','advanced_monthly','business_monthly',
+  for(const plan of ['respondo_monthly','basic_monthly','advanced_monthly','business_monthly',
    'basic_yearly','advanced_yearly','business_yearly']){
     const line=priceForPlan(plan);
     assert.equal(line.price_data.currency,'eur');
@@ -30,7 +30,7 @@ test('owner free code creates an immutable €0 recurring line item, and an inde
   assert.doesNotMatch(method,/stripe\.coupons|discounts:/);
   const normalSetup=server.slice(server.indexOf('function setupServiceCheckoutLineItem(ownerFree=false)'),start);
   assert.match(normalSetup,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
-  assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 19900/);
+  assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 20000/);
 });
 
 test('new customer: free promo setup waits for Checkout and costs zero',()=>{
