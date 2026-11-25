@@ -16,7 +16,7 @@ export async function reserveHybridCalls(pool,tenantId){
   try{
     let init=initialized.get(pool);
     if(!init){
-      init=pool.query("CREATE TABLE IF NOT EXISTS respondo_hybrid_daily_quota (day date PRIMARY KEY, used integer NOT NULL CHECK (used >= 0), tenants jsonb NOT NULL DEFAULT '{}'::jsonb)").then(()=>true);
+      init=pool.query("CREATE TABLE IF NOT EXISTS respondo_hybrid_daily_quota (day date PRIMARY KEY, used integer NOT NULL CHECK (used >= 0), tenants jsonb NOT NULL DEFAULT '{}'::jsonb); ALTER TABLE respondo_hybrid_daily_quota ENABLE ROW LEVEL SECURITY; REVOKE ALL ON respondo_hybrid_daily_quota FROM PUBLIC; DO $ DECLARE r text; BEGIN FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role'] LOOP IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname=r) THEN EXECUTE format('REVOKE ALL ON respondo_hybrid_daily_quota FROM %I',r); END IF; END LOOP; END $;").then(()=>true);
       initialized.set(pool,init);
       init.catch(()=>initialized.delete(pool));
     }
@@ -32,9 +32,9 @@ export function needsHybridReasoning(result){
   if(!result || result.qualityFlag)return false;
   // Clear small talk and audited, verified facts cost no external calls.
   if(!result.handoff && String(result.answer||'').trim() &&
-     (Number(result.confidence)>=0.8 || (result.sourceIds||[]).length>0))return false;
+     (Number(result.confidence)>=0.85 && (result.sourceIds||[]).length>0 || Number(result.confidence)>=0.95))return false;
   return !!result.handoff || !String(result.answer||'').trim() ||
-    Number(result.confidence||0)<0.8;
+    Number(result.confidence||0)<0.85;
 }
 
 function publicRow(row){
@@ -55,6 +55,7 @@ export function hybridCacheKey({tenantId,message,lang,history,pageContext,rows}=
   // Include the complete public corpus and its ordering; never include private
   // knowledge text or customer history. Exact content changes invalidate reuse.
   for(const r of publicRows)hash.update(JSON.stringify([String(r.id),r.title,r.answer,r.source_url||r.sourceUrl,r.updated_at]));
+  for(const r of rows.filter(r=>!publicRow(r)))hash.update(JSON.stringify([String(r?.id),r?.approved,r?.updated_at]));
   return hash.digest('hex');
 }
 export function readHybridCache(key,rows,now=Date.now()){
