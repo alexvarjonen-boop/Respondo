@@ -202,3 +202,35 @@ body.public-nav-active #app .apple-home-page .nav {
     gap:10px!important;
   }
 }
+
+/* Keep both intro actions inside the pinned desktop viewport, even on laptops. */
+@media(min-width:760px) and (prefers-reduced-motion:no-preference) {
+  #app .apple-home-page .apple-home .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-heading {
+    top:auto!important;
+    bottom:clamp(38px,6svh,64px)!important;
+  }
+  #app .apple-home-page .apple-home .rs-spiral-heading .rs-hero-description {
+    width:min(100%,630px)!important;
+    max-width:630px!important;
+    line-height:1.45!important;
+  }
+  #app .apple-home-page .apple-home .rs-spiral-heading .rs-hero-eyebrow {
+    margin-bottom:8px!important;
+  }
+  #app .apple-home-page .apple-home .rs-spiral-heading :is(.rs-first-order-link,.rs-book-demo) {
+    margin-top:10px!important;
+    min-height:44px!important;
+  }
+}
+@media(min-width:760px) and (max-height:720px) and (prefers-reduced-motion:no-preference) {
+  #app .apple-home-page .apple-home .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced:not(.rs-first-revealed) {
+    --rh-orbit-size:min(34svh,300px);
+    --rh-orbit-y:35%;
+  }
+  #app .apple-home-page .apple-home .rs-spiral-heading #apple-home-title {
+    font-size:clamp(26px,5svh,38px)!important;
+  }
+  #app .apple-home-page .apple-home .rs-spiral-heading .rs-hero-description {
+    font-size:clamp(12px,2.1svh,15px)!important;
+  }
+}

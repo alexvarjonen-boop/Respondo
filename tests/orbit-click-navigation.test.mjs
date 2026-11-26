@@ -13,9 +13,9 @@ function classList(){
     toggle:(name,force)=>{if(force===undefined)force=!set.has(name);
       if(force)set.add(name);else set.delete(name);return force;}};
 }
-function fakePage({mobile=false,reduced=false}={}){
+function fakePage({mobile=false,reduced=false,sectionStart=0}={}){
   const actions={},frames=[],listeners={},nodes={};
-  let scrollY=0;
+  let scrollY=0, now=0;
   const cards=Array.from({length:10},(_,i)=>({
     classList:classList(),style:{setProperty(){},removeProperty(){},zIndex:''},
     attrs:{},setAttribute(name,value){this.attrs[name]=value;},
@@ -37,7 +37,7 @@ function fakePage({mobile=false,reduced=false}={}){
     querySelectorAll(selector){return selector==='[data-rs-card]'?cards:selector==='[data-rs-icon]'?icons:[];},
     querySelector(selector){return nodes[selector]||null;},
     contains(node){return icons.includes(node);},
-    getBoundingClientRect(){return {top:-scrollY,bottom:10000-scrollY,height:10000};}
+    getBoundingClientRect(){return {top:sectionStart-scrollY,bottom:sectionStart+10000-scrollY,height:10000};}
   };
   const app={
     querySelector(selector){return selector==='.apple-home-page .rs-spiral-section'?section:null;},
@@ -51,7 +51,7 @@ function fakePage({mobile=false,reduced=false}={}){
     scrollTo({top}){scrollY=top;},
     requestAnimationFrame(fn){frames.push(fn);return frames.length;},
     cancelAnimationFrame(){},
-    performance:{now:()=>0},
+    performance:{now:()=>now},Element:class {},
     setTimeout(fn){return 1;},clearTimeout(){},
     MutationObserver:class {observe(){}},
     document:{readyState:'complete',getElementById(id){return id==='app'?app:null;}},
@@ -65,7 +65,7 @@ function fakePage({mobile=false,reduced=false}={}){
     target:icons[i],preventDefault(){prevented=true;}
   });flush();return prevented;};
   return {cards,icons,nodes,section,ctx,click,flush,listeners,
-    scrollTop:()=>scrollY,setScroll:y=>{scrollY=y;listeners.scroll();flush();}};
+    setNow:value=>{now=value;},scrollTop:()=>scrollY,setScroll:y=>{scrollY=y;listeners.scroll();flush();}};
 }
 test('all ten orbit glyphs are native labelled keyboard-accessible buttons in FI/SV/EN',()=>{
   for(const lang of ['fi','sv','en']){
@@ -136,4 +136,24 @@ test('click bindings are delegated and asset URLs are versioned',()=>{
   assert.match(index,/app\.js\?v=[^"]+-orbit-click-v1/);
   assert.match(app,/apple-home\.js\?v=20261125-demo-first-v1/);
   assert.match(apple,/demoFirstHero/);
+});
+
+test('desktop wheel reaches the complete intro before changing feature',()=>{
+  const page=fakePage({sectionStart:80});
+  const wheel=delta=>{
+    let prevented=false;
+    page.listeners.wheel({deltaY:delta,deltaMode:0,ctrlKey:false,target:{},preventDefault(){prevented=true;}});
+    page.flush();return prevented;
+  };
+  assert.equal(wheel(20),false);
+  assert.equal(wheel(100),true);
+  assert.equal(page.scrollTop(),80);
+  assert.equal(page.section.classList.contains('rs-first-revealed'),false);
+  page.setNow(30);
+  assert.equal(wheel(30),true);
+  assert.equal(page.section.classList.contains('rs-first-revealed'),false);
+  page.setNow(400);
+  assert.equal(wheel(100),true);
+  assert.equal(page.section.classList.contains('rs-first-revealed'),true);
+  assert.equal(page.nodes['[data-rs-step]'].textContent,'01');
 });

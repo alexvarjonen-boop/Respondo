@@ -255,6 +255,26 @@
     const viewport = innerHeight;
     // Do not hijack the normal page before entering or after leaving this story.
     if (rect.top > 100 || rect.bottom < viewport - 100) return;
+    // Let visitors reach the fully visible intro (including both CTAs) before
+    // interpreting a downward gesture as feature navigation. Stop the entry
+    // gesture at the sticky boundary and ignore its remaining momentum.
+    if (rect.top > 0) {
+      const entryDelta = event.deltaY *
+        (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport : 1);
+      if (entryDelta >= rect.top) {
+        event.preventDefault();
+        const now = performance.now();
+        wheelArmed = false;
+        wheelEnergy = 0;
+        wheelDirection = 1;
+        wheelLastEventAt = now;
+        wheelLastMagnitude = entryDelta;
+        wheelLockedUntil = now + 280;
+        scrollTo({top:Math.round(scrollY + rect.top),behavior:'instant'});
+        schedule();
+      }
+      return;
+    }
     const travel = Math.max(1, rect.height - viewport);
     const position = clamp(-rect.top / travel, 0, 1) * (cards.length - 1);
     const direction = Math.sign(event.deltaY);
