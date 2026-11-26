@@ -128,3 +128,26 @@ body.public-nav-active #app .apple-home-page .nav {
     padding-top:52svh!important;
   }
 }
+
+/* Single subscription: override the legacy three-column grid on public pricing. */
+#app .apple-home-page .pricing-section .pricing-wrap:has(> .price-card:only-child),
+#app .public-pricing-page .pricing-section .pricing-wrap:has(> .price-card:only-child),
+#app .pricing-page .pricing-section .pricing-wrap:has(> .price-card:only-child) {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  width:100%!important;
+  max-width:560px!important;
+  margin-inline:auto!important;
+  justify-content:center!important;
+  justify-items:center!important;
+}
+#app .apple-home-page .pricing-section .pricing-wrap > .price-card:only-child,
+#app .public-pricing-page .pricing-section .pricing-wrap > .price-card:only-child,
+#app .pricing-page .pricing-section .pricing-wrap > .price-card:only-child {
+  grid-column:1 / -1!important;
+  width:100%!important;
+  max-width:560px!important;
+  min-width:0!important;
+  margin-inline:auto!important;
+  justify-self:center!important;
+}
