@@ -151,3 +151,54 @@ body.public-nav-active #app .apple-home-page .nav {
   margin-inline:auto!important;
   justify-self:center!important;
 }
+
+/* Wide, compact single-plan card on desktop. Keep original mobile order. */
+@media(min-width:900px) {
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap:has(> .price-card:only-child) {
+    max-width:1080px!important;
+  }
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    grid-template-rows:repeat(8,auto)!important;
+    column-gap:clamp(28px,5vw,70px)!important;
+    row-gap:8px!important;
+    align-content:start!important;
+    align-items:start!important;
+    max-width:1080px!important;
+    padding:clamp(28px,3vw,44px)!important;
+    text-align:left!important;
+  }
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > * {
+    min-width:0!important;
+    margin:0!important;
+  }
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(1) {grid-area:1/1}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(2) {grid-area:2/1}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(3) {grid-area:3/1}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(4) {grid-area:4/1}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(5) {display:none!important}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > ul {
+    grid-area:1/2/6/3;
+    align-self:center!important;
+    display:grid!important;
+    gap:12px!important;
+    padding:0!important;
+    line-height:1.55!important;
+  }
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(7) {
+    grid-area:5/1;
+    width:100%!important;
+    height:1px!important;
+    margin:12px 0!important;
+  }
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(8) {grid-area:6/1}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(9) {grid-area:7/1}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > :nth-child(10) {grid-area:8/1}
+  #app :is(.apple-home-page,.public-pricing-page,.pricing-page) .pricing-section .pricing-wrap > .price-card:only-child > .price-actions {
+    grid-area:6/2/9/3;
+    align-self:end!important;
+    width:100%!important;
+    gap:10px!important;
+  }
+}
