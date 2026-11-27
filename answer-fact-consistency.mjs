@@ -2,7 +2,7 @@
 // rows. Matching numbers are evidence candidates, never proof of semantics.
 const COMPARABLE_TOPICS=new Set(['pricing','hours','delivery','returns','warranty','payment']);
 const fold=s=>String(s??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00a0/g,' ');
-const numberRe=/(?:\d{1,3}(?:[ .]\d{3})+|\d+)(?:[,.]\d+)?/g;
+const numberRe=/(?:\d{1,3}(?:[., ]\d{3})+|\d+)(?:[,.]\d+)?/g;
 const unitRe=/^\s*(€|eur(?:o(?:a|ja|s)?)?|\$|usd|£|gbp|kronor|kruunua|kr|sek|%|h|hours?|tunt\w*|timm\w*|days?|paiv\w*|dag\w*|weeks?|viik\w*|kk|kuukau\w*|months?|manad\w*|years?|vuos\w*|ar)(?![a-z])/i;
 const unit=(raw)=>{
   const s=fold(raw);
@@ -22,6 +22,7 @@ const canonicalNumber=value=>{
   let text=String(value).replace(/\s/g,'');
   // European grouped amounts such as 1.299,90 must match 1299.90.
   if(/^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(text))text=text.replace(/\./g,'');
+  else if(/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(text))text=text.replace(/,/g,'');
   text=text.replace(',','.');
   const n=Number(text);
   return Number.isFinite(n)?String(n):text;
@@ -53,7 +54,7 @@ function numericFacts(value,topic) {
   }
   // Price and duration ranges carry one unit after the high endpoint:
   // "49–79 €", "2–4 päivää". Both endpoints require source support.
-  for(const m of text.matchAll(/\b(\d+(?:[,.]\d+)?)\s*[-–—]\s*(\d+(?:[,.]\d+)?)\s*(€|eur(?:o(?:a|ja|s)?)?|\$|usd|kronor|kruunua|kr|sek|%|hours?|tunt\w*|timm\w*|days?|paiv\w*|dag\w*|weeks?|viik\w*|kk|kuukau\w*|months?|manad\w*|years?|vuos\w*|ar)(?![a-z])/gi)) {
+  for(const m of text.matchAll(/\b(\d+(?:[,.]\d+)?)\s*[-–—]\s*(\d+(?:[,.]\d+)?)\s*(€|eur(?:o(?:a|ja|s)?)?|\$|usd|£|gbp|kronor|kruunua|kr|sek|%|hours?|tunt\w*|timm\w*|days?|paiv\w*|dag\w*|weeks?|viik\w*|kk|kuukau\w*|months?|manad\w*|years?|vuos\w*|ar)(?![a-z])/gi)) {
     if(used.some(([a,b])=>m.index<b && m.index+m[0].length>a))continue;
     const kind=unit(m[3]);
     if(!kind)continue;
