@@ -36,7 +36,8 @@ const dayKey = raw => {
   return DAY_NAME.get(t)||'';
 };
 const validURL = (raw,base) => {
-  if(typeof raw!=='string'||!raw.trim()||/[<>{}"'\s]/.test(raw))return '';
+  if(typeof raw!=='string'||!raw.trim()||raw.startsWith('#')||/[<>{}"'\s]/.test(raw))return '';
+  if(/^[a-z][a-z0-9+.-]*:/i.test(raw)&&!/^https?:\/\//i.test(raw))return '';
   try{
     const u=new URL(raw.trim(),base);
     if(!['http:','https:'].includes(u.protocol)||u.username||u.password)return '';
@@ -77,6 +78,8 @@ function scheduleFromSpecification(spec) {
   const result=new Map();
   for(const item of (Array.isArray(spec)?spec:[spec]).slice(0,60)){
     if(!item||typeof item!=='object')continue;
+    // Date-limited opening hours do not establish an ordinary weekly schedule.
+    if(item.validFrom||item.validThrough)continue;
     const opens=time(item.opens),closes=time(item.closes);
     if(!opens||!closes||opens===closes)continue;
     const rawDays=Array.isArray(item.dayOfWeek)?item.dayOfWeek:[item.dayOfWeek];
@@ -189,7 +192,9 @@ export function structuredBusinessFacts(html,pageUrl){
         // Ignore third-party business nodes entirely. A retailer may embed
         // structured data describing a supplier, marketplace or partner.
         const official=validURL(node.url,pageUrl);
-        if(official && new URL(official).hostname.toLowerCase()!==pageHost)return;
+        const identity=typeof node['@id']==='string'&&/^https?:\/\//i.test(node['@id'])?validURL(node['@id'],pageUrl):'';
+        if((official&&new URL(official).hostname.toLowerCase()!==pageHost)||(identity&&new URL(identity).hostname.toLowerCase()!==pageHost))return;
+        if(typeof node.url==='string'&&node.url.trim()&&!official)return;
         const source=official||pageUrl;
         const branch=branchName(node,pageUrl);
         const schedule=scheduleFromSpecification(node.openingHoursSpecification)
