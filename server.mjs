@@ -3052,7 +3052,9 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|niita|niiden|it|its|that|this|those|them|det|den|detta|dess|dem)\b/.test(q);
   const detail=/\b(?:paljonko|maksaa|hinta|hintaa|saatavuus|saatavilla|varastossa|vareja|varit|vari|kokoja|koot|koko|materiaali|what.*price|how much|cost|price|stock|available|colors?|colours?|sizes?|materials?|vad kostar|hur mycket|pris|lager|farger|farg|storlekar|storlek|material)\b/.test(q);
   const terse=/^(?:(?:enta|mites|entapa|and|what about|how about|och|men)\s+)?(?:paljonko|mita maksaa|mika hinta|hinta|maksaa|varastossa|saatavilla|mita vareja|mita kokoja|varit|koot|materiaali|how much|price|in stock|available|what colors|what colours|what sizes|material|hur mycket|vad kostar|pris|i lager|vilka farger|vilka storlekar)$/;
-  const short=terse.test(q);
+  // Short requests for a product link inherit only an unambiguous product.
+  const linkRequest=/^(?:(?:enta|mites|and|och)\s+)?(?:(?:laita|laheta|anna|nayta|saisinko|saanko|voinko saada|send|give|show|share|get|skicka|ge|visa|fa|kan jag fa)(?:\s+(?:mulle|minulle|me|mig))?\s+)?(?:(?:suora|suoran|direct|the|a|en|direkt)\s+)?(?:linkki|linkin|linkkia|tuotelinkki|tuotelinkin|link|product link|url|lank|lanken|produktlank)(?:\s+(?:siihen|sille|tuohon|tuotteeseen|to it|to that|for it|for that|till den|till det|till produkten))?$/.test(q);
+  const short=terse.test(q)||linkRequest;
   if((!pronoun&&!short)||(!detail&&!short)) return null;
   // Shipping, refunds, payment and other store policies must not inherit a
   // product as their retrieval topic, even when the query contains a pronoun.
@@ -3078,6 +3080,12 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   // Restrict the product answering path to that single verified product. A
   // question about "it" cannot silently turn into a list of all putters.
   const product=mentioned[0];
+  if(linkRequest){
+    const answer=product.url
+      ? say('Tässä on suora linkki tuotteeseen '+product.name+'.','Här är direktlänken till '+product.name+'.','Here is the direct link to '+product.name+'.')
+      : say('En löydä vahvistettua linkkiä tuotteeseen '+product.name+'.','Jag hittar ingen bekräftad länk till '+product.name+'.','I can’t find a verified link to '+product.name+'.');
+    return {answer,handoff:false,confidence:product.url?0.98:0.8,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
+  }
   const priceQuestion=/\b(?:paljonko|maksaa|hinta|hintaa|how much|price|cost|vad kostar|hur mycket|pris)\b/.test(q);
   if(priceQuestion){
     const price=productPriceText(product,lang);
