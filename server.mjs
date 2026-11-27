@@ -3326,10 +3326,10 @@ async function readPinnedResponse(response, maxBytes = 64_000) {
   return Buffer.concat(chunks,total).toString('utf8');
 }
 
-async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
+async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, deadline = Date.now()+8000) {
   let url = await assertPublicHttpUrl(value);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), Math.max(1, Math.min(8000, deadline-Date.now())));
   try {
     for (let redirects = 0; redirects < 4; redirects++) {
       const resolved = await resolvePinnedPublicAddress(url);
@@ -3372,8 +3372,8 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
     throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
   } finally { clearTimeout(timer); }
 }
-async function fetchPublicHtml(value) {
-  const result=await fetchPublicResource(value,['text/html','application/xhtml+xml']);
+async function fetchPublicHtml(value, deadline = Date.now()+8000) {
+  const result=await fetchPublicResource(value,['text/html','application/xhtml+xml'],2_000_000,deadline);
   return {html:result.text,finalUrl:result.finalUrl};
 }
 
@@ -3443,36 +3443,56 @@ async function fetchPublicText(value, acceptedTypes = ['text/plain']) {
   try { return (await fetchPublicResource(value,acceptedTypes)).text; } catch { return ''; }
 }
 
-async function discoverSitemapUrls(baseUrl, limit = 120) {
-  const base = new URL(baseUrl);
-  const visited = new Set();
-  const deadline = Date.now()+12000;
-  const candidates = [new URL('/sitemap.xml',base).toString(), new URL('/sitemap_index.xml',base).toString()];
-  const robots = await fetchPublicText(new URL('/robots.txt',base).toString(), ['text/plain']);
-  for (const match of robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)) candidates.push(match[1]);
-  const found = new Set();
-  const sitemapQueue = [...new Set(candidates)].slice(0,8);
-  while (sitemapQueue.length && found.size < limit && visited.size < 5 && Date.now()<deadline) {
-    const mapUrl = sitemapQueue.shift();
-    if (visited.has(mapUrl)) continue;
-    visited.add(mapUrl);
-    const xml = await fetchPublicText(mapUrl,['xml','text/plain']);
-    if (!xml) continue;
-    for (const m of xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)) {
-      const raw = String(m[1]||'').replace(/&amp;/g,'&').trim();
-      try {
-        const u = new URL(raw,base);
-        if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
-        if (/\.xml(?:$|\?)/i.test(u.pathname)) {
-          if (sitemapQueue.length < 20) sitemapQueue.push(u.toString());
-          continue;
-        }
-        if (!/\.(pdf|jpg|jpeg|png|gif|svg|webp|zip|docx?|xlsx?)$/i.test(u.pathname)) found.add(u.toString());
-      } catch {}
-      if (found.size >= limit) break;
+// Remove only known marketing parameters; preserve meaningful pagination, variants and locale.
+function crawlUrlKey(value) {
+  const u=new URL(value);
+  u.hash='';
+  for(const key of [...u.searchParams.keys()]){
+    if(/^(?:utm_.+|gclid|dclid|fbclid|msclkid|mc_cid|mc_eid|_ga|_gl)$/i.test(key)) u.searchParams.delete(key);
+  }
+  u.searchParams.sort();
+  return u.origin+u.pathname.replace(/\/$/,'')+u.search;
+}
+
+async function discoverSitemapUrls(baseUrl, limit = 120, deadline = Date.now()+12000) {
+  const base=new URL(baseUrl), visited=new Set(), found=new Map(), queued=new Set();
+  const sitemapQueue=[];
+  const addMap=(raw)=>{
+    try{
+      const u=new URL(decodeHtml(raw),base);
+      if(!/^https?:$/.test(u.protocol)||u.hostname.toLowerCase()!==base.hostname.toLowerCase()||u.username||u.password) return;
+      const key=crawlUrlKey(u.href);
+      if(queued.has(key)||queued.size>=80) return;
+      queued.add(key); sitemapQueue.push(u.href);
+    }catch{}
+  };
+  const read=async(raw,types,maxBytes)=>{
+    if(Date.now()>=deadline) return '';
+    try{return (await fetchPublicResource(raw,types,maxBytes,deadline)).text;}catch{return '';}
+  };
+  addMap('/sitemap.xml'); addMap('/sitemap_index.xml');
+  const robots=await read(new URL('/robots.txt',base).href,['text/plain'],500000);
+  for(const m of robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)) addMap(m[1]);
+  while(sitemapQueue.length&&found.size<limit&&visited.size<60&&Date.now()<deadline){
+    const batch=sitemapQueue.splice(0,Math.min(4,60-visited.size));
+    const results=await Promise.all(batch.map(async url=>{
+      visited.add(crawlUrlKey(url));
+      return read(url,['xml','text/plain'],8_000_000);
+    }));
+    for(const xml of results){
+      const index=/<(?:[\w-]+:)?sitemapindex\b/i.test(xml);
+      for(const m of xml.matchAll(/<(?:[\w-]+:)?loc>\s*([^<]+?)\s*<\/(?:[\w-]+:)?loc>/gi)){
+        if(found.size>=limit) break;
+        try{
+          const u=new URL(decodeHtml(m[1].trim()),base);
+          if(!/^https?:$/.test(u.protocol)||u.hostname.toLowerCase()!==base.hostname.toLowerCase()||u.username||u.password) continue;
+          if(index||/\.xml(?:\.gz)?$/i.test(u.pathname)){addMap(u.href);continue;}
+          if(!/\.(?:pdf|jpg|jpeg|png|gif|svg|webp|zip|docx?|xlsx?)$/i.test(u.pathname)) found.set(crawlUrlKey(u.href),u.href);
+        }catch{}
+      }
     }
   }
-  return [...found];
+  return [...found.values()];
 }
 
 function extractSameSiteScriptUrls(html, baseUrl) {
@@ -3532,7 +3552,10 @@ function storeProductDescription(value) {
   return htmlToReadableText(String(value||'')).replace(/\s+/g,' ').trim().slice(0,700);
 }
 function numericStorePrice(value) {
-  const number=Number(String(value??'').replace(',','.').replace(/[^0-9.-]/g,''));
+  if(value==null || String(value).trim()==='') return null;
+  const raw=String(value).trim().replace(',','.');
+  if(!/^\d+(?:\.\d+)?$/.test(raw)) return null;
+  const number=Number(raw);
   return Number.isFinite(number) && number>=0 ? number : null;
 }
 async function fetchPublicJson(value,maxBytes=8_000_000) {
@@ -3729,23 +3752,26 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const sitemapLimit = Number.isFinite(Number(opts.sitemapLimit))
     ? Math.max(0,Math.min(10000,Number(opts.sitemapLimit)))
     : 10000;
-  const first = await fetchPublicHtml(value);
+  const deadline=crawlStartedAt+timeBudgetMs;
+  const first = await fetchPublicHtml(value,deadline);
   const base = new URL(first.finalUrl);
   const pages = [];
   const queued = new Set();
+  const pageKeys = new Set();
   const queue = [];
+  let attempted=1, failed=0;
   const usefulPath = url => {
     const pathname=new URL(url).pathname;
     const normalized=normalizeSearchText(pathname);
     const companyInfo=/about|about-us|meista|meistä|yritys|company|who-we-are|our-story/.test(normalized);
-    if (companyInfo) return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
-    return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|blog|uutis|news|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
+    if (/privacy|tietosuoja|cookie|arvostel|reviews|testimonial|(?:^|\/)(?:cart|checkout|login|register|wp-admin)(?:\/|$)|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname)) return false;
+    return companyInfo || !/(?:^|\/)(?:blog|news|uutiset)(?:\/|$)/i.test(pathname);
   };
   const priority = url => {
     const p=normalizeSearchText(url);
     if (/(?:\/contact(?:-us)?|\/contactus|\/kontakt|\/kontakta-oss|\/ota-yhteytta|\/yhteystiedot|\/yhteydenotto)(?:\/|[?#]|$)/.test(p)) return 175;
-    if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 140;
-    if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 120;
+    if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|terms|kayttoeh|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 150;
+    if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 110;
     return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
   };
 
@@ -3754,8 +3780,8 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       let u;
       try { u = new URL(link); } catch { continue; }
       if (u.hostname.toLowerCase() !== base.hostname.toLowerCase() || !usefulPath(u.href)) continue;
-      const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
-      if (queued.has(key) || pages.some((x) => x.key === key)) continue;
+      const key = crawlUrlKey(u.href);
+      if (queued.has(key) || pageKeys.has(key) || queued.size>=20000) continue;
       queued.add(key);
       const p = normalizeSearchText(u.pathname + ' ' + u.search);
       let score = priority(u.href);
@@ -3778,8 +3804,9 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     queue.sort((a,b) => b.score - a.score);
   };
 
-  queued.add(first.finalUrl);
-  pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), document:extractBusinessDocument(first.html,first.finalUrl) });
+  const firstKey=crawlUrlKey(first.finalUrl);
+  queued.add(firstKey); pageKeys.add(firstKey);
+  pages.push({ url:first.finalUrl, key:firstKey, document:extractBusinessDocument(first.html,first.finalUrl) });
   enqueue(first.html, first.finalUrl);
 
   // Contact pages must not disappear behind long catalog/sitemap scans. Start
@@ -3789,9 +3816,12 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     /\/(?:pages\/)?(?:contact(?:-us)?|contactus|kontakt|kontakta-oss|ota-yhteytta|yhteystiedot|yhteydenotto)(?:\/|[?#]|$)/i.test(item.url)
   );
   const preloadedContact=contactCandidate
-    ? fetchPublicHtml(contactCandidate.url).catch(()=>null)
+    ? fetchPublicHtml(contactCandidate.url,deadline).catch(()=>null)
     : Promise.resolve(null);
 
+  // Discover the catalog and sitemaps concurrently, leaving time for actual pages.
+  const discoveryDeadline=Math.min(deadline,Date.now()+Math.max(1000,Math.floor((deadline-Date.now())*0.4)));
+  const sitemapPromise=sitemapLimit>0 ? discoverSitemapUrls(first.finalUrl,sitemapLimit,Math.min(discoveryDeadline,Date.now()+25000)).catch(()=>[]) : Promise.resolve([]);
   let storefrontProducts=[];
   if (storefrontLimit > 0) {
     try {
@@ -3799,7 +3829,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
         first.html,
         first.finalUrl,
         storefrontLimit,
-        Date.now()+storefrontBudgetMs,
+        Math.min(discoveryDeadline,Date.now()+storefrontBudgetMs),
       );
     } catch (e) {
       console.warn('Storefront catalog discovery skipped',e?.message||e);
@@ -3807,16 +3837,13 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   }
 
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
-  let sitemapUrls = [];
-  if (sitemapLimit > 0) {
-    try { sitemapUrls = await discoverSitemapUrls(first.finalUrl, sitemapLimit); } catch (e) { console.warn('Sitemap discovery skipped', e?.message || e); }
-  }
+  const sitemapUrls=await sitemapPromise;
   for (const link of sitemapUrls) {
     let u;
     try { u = new URL(link); } catch { continue; }
     if (!usefulPath(u.href)) continue;
-    const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
-    if (queued.has(key) || pages.some((x) => x.key === key)) continue;
+    const key = crawlUrlKey(u.href);
+    if (queued.has(key) || pageKeys.has(key) || queued.size>=20000) continue;
     queued.add(key);
     const p = normalizeSearchText(u.pathname + ' ' + u.search);
     let score = 4 + priority(u.href);
@@ -3830,7 +3857,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   queue.sort((a,b)=>b.score-a.score);
   if (storefrontProducts.length) {
     const catalogUrls=new Set(storefrontProducts.map((product)=>{
-      try { const u=new URL(product.url); return u.origin+u.pathname.replace(/\/$/,'')+u.search; } catch { return ''; }
+      try { return crawlUrlKey(product.url); } catch { return ''; }
     }).filter(Boolean));
     // Catalog APIs already give us names, prices and variants, so crawling every
     // product page would waste the crawl budget. Keep a small representative
@@ -3840,7 +3867,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     const kept=queue.filter((item)=>{
       try {
         const u=new URL(item.url);
-        const key=u.origin+u.pathname.replace(/\/$/,'')+u.search;
+        const key=crawlUrlKey(u.href);
         return !catalogUrls.has(key) || representativeProductUrls.has(key);
       } catch { return true; }
     });
@@ -3851,8 +3878,9 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   if(contactPage && pages.length < maxPages){
     try {
       const parsed=new URL(contactPage.finalUrl);
-      const key=parsed.origin+parsed.pathname.replace(/\/$/,'')+parsed.search;
-      if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pages.some(page=>page.key===key)){
+      const key=crawlUrlKey(parsed.href);
+      if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pageKeys.has(key)){
+        pageKeys.add(key); queued.add(key); attempted++;
         pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
         enqueue(contactPage.html,contactPage.finalUrl);
       }
@@ -3862,20 +3890,35 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
-  while (queue.length && pages.length < maxPages) {
-    if (Date.now() - crawlStartedAt > timeBudgetMs) break;
-    const next = queue.shift();
-    if (!next || pages.some((x) => x.url === next.url)) continue;
-    try {
-      const page = await fetchPublicHtml(next.url);
-      const resolved = new URL(page.finalUrl);
-      if (resolved.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
-      const key = resolved.origin + resolved.pathname.replace(/\/$/, '') + resolved.search;
-      if (pages.some((x) => x.key === key)) continue;
-      pages.push({ url:page.finalUrl, key, document:extractBusinessDocument(page.html,page.finalUrl) });
-      enqueue(page.html, page.finalUrl);
-      if (onProgress) onProgress({scanned:pages.length,total:Math.max(totalTarget,Math.min(maxPages,pages.length+queue.length))});
-    } catch {}
+  // Bounded parallelism: preserve priority order, isolate failures and avoid
+  // sending an unbounded burst of requests to a customer's host.
+  const concurrency=timeBudgetMs<=15000?3:6;
+  while(queue.length && pages.length<maxPages && Date.now()<deadline){
+    const batch=[];
+    while(queue.length && batch.length<Math.min(concurrency,maxPages-pages.length)){
+      const next=queue.shift();
+      if(!next||pageKeys.has(crawlUrlKey(next.url))) continue;
+      batch.push(next);
+    }
+    if(!batch.length) break;
+    attempted+=batch.length;
+    const results=await Promise.all(batch.map(async next=>{
+      try{return await fetchPublicHtml(next.url,deadline);}catch{return null;}
+    }));
+    for(const page of results){
+      if(!page){failed++;continue;}
+      try{
+        const resolved=new URL(page.finalUrl);
+        if(resolved.hostname.toLowerCase()!==base.hostname.toLowerCase()){failed++;continue;}
+        const key=crawlUrlKey(resolved.href);
+        if(pageKeys.has(key)) continue;
+        const document=extractBusinessDocument(page.html,page.finalUrl);
+        pageKeys.add(key); queued.add(key);
+        pages.push({url:page.finalUrl,key,document});
+        enqueue(page.html,page.finalUrl);
+      }catch{failed++;}
+    }
+    if(onProgress) onProgress({scanned:pages.length,total:Math.max(totalTarget,Math.min(maxPages,pages.length+queue.length))});
   }
 
   const pageDocuments = pages.map((page) => ({
@@ -3898,6 +3941,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     finalUrl:first.finalUrl,
     text,
     products:storefrontProducts,
+    coverage:{discovered:queued.size,attempted,failed,remaining:queue.length,limited:queue.length>0,deadlineReached:Date.now()>=deadline},
     pageDocuments,
     pages:pageDocuments.map((x) => x.url),
     links:[...new Set(pageDocuments.flatMap(doc => doc.links.map(link => link.url)))].slice(0, 10000),
@@ -8514,7 +8558,7 @@ app.post('/api/app/import-website/start', auth, ownerOnly, subscribed, async (re
       });
       const candidates=websiteKnowledgeCandidates(bundle);
       const detectedProfile=extractFreeWebsiteProfile(bundle);
-      job.result={ok:true,jobId,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,readiness:auditImportedKnowledge(candidates),extraction:'local'};
+      job.result={ok:true,jobId,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,coverage:bundle.coverage,readiness:auditImportedKnowledge(candidates),extraction:'local'};
       job.scanned=bundle.pages.length; job.total=Math.max(job.total,job.scanned); job.percent=100; job.status='done'; job.updatedAt=Date.now();
     }catch(e){job.status='error';job.error=e?.message||'Verkkosivun tietojen tuonti epäonnistui.';job.updatedAt=Date.now();}
   })();
