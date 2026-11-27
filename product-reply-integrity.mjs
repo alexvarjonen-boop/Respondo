@@ -1,4 +1,4 @@
-import { productBudgetRequest } from './product-budget.mjs';
+import { productBudgetRequest, productMeetsVerifiedBudget } from './product-budget.mjs';
 
 // Last-mile contract for retail answers, before any source-grounded text or
 // product card can leave the bot. All trusted rows come from the current tenant.
@@ -55,9 +55,7 @@ export function verifyRetailAnswer(result,rows=[],message='',lang='fi',parseProd
     }
     if(family && typeof matchesFamily==='function' && !matchesFamily(product,family))return failure();
     if(request){
-      if(!Number.isFinite(product.price) || product.price<0)return failure();
-      if(request.currency && fold(product.currency).toUpperCase()!==request.currency)return failure();
-      if(request.inclusive ? product.price>request.amount : product.price>=request.amount)return failure();
+      if(!productMeetsVerifiedBudget(product,request))return failure();
     }
   }
   if(approvedImplicitSources.length){
