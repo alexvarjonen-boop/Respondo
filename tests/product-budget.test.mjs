@@ -91,3 +91,26 @@ test('preview CTA is readable in dark themes and localized using reply language'
   assert.match(app,/products\.length===1\?' product':' products'/);
   assert.doesNotMatch(app,/opener\.addEventListener\('click',showProducts\);\s*showProducts\(\)/);
 });
+
+test('budget recommendations preserve full variant price ranges and omit sold-out products',()=>{
+  const uncertain={...blade,maxPrice:349};
+  const verified={...blade,maxPrice:249};
+  assert.equal(groundedBudgetProductAnswer([uncertain],'puttereita alle 300€','fi').selected.length,0);
+  assert.equal(groundedBudgetProductAnswer([{...blade,maxPrice:300}],'puttereita alle 300€','fi').selected.length,0);
+  assert.equal(groundedBudgetProductAnswer([{...blade,maxPrice:300}],'puttereita enintään 300€','fi').selected.length,1);
+  assert.equal(groundedBudgetProductAnswer([{...blade,availability:'ei varastossa'}],'puttereita alle 300€','fi').selected.length,0);
+  assert.equal(groundedBudgetProductAnswer([{...blade,row:{...blade.row,approved:false}}],'puttereita alle 300€','fi').selected.length,0);
+  const answer=groundedBudgetProductAnswer([verified],'puttereita alle 300€','fi');
+  assert.match(answer.answer,/199/);
+  assert.match(answer.answer,/249/);
+});
+test('unapproved company knowledge cannot influence the general response engine',async()=>{
+  const rows=[
+    {id:'draft',approved:false,category:'Tuotteet',title:'Draft Putter',answer:'Tuote: Draft Putter. Hinta: 49 EUR.',source_url:'https://example.com/products/draft'},
+    {id:'public',approved:true,category:'Tuotteet',title:'Verified Putter',answer:'Tuote: Verified Putter. Hinta: 199 EUR.',source_url:'https://example.com/products/verified'}
+  ];
+  const result=await generateGroundedAnswer({rows,message:'Onko teillä puttereita alle 300 euroa?',lang:'fi',disableAIFallback:true});
+  assert.equal(result.handoff,false);
+  assert.deepEqual(result.selected.map(row=>row.id),['public']);
+  assert.doesNotMatch(result.answer,/Draft Putter/);
+});
