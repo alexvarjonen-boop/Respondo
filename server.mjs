@@ -2639,6 +2639,10 @@ function queryTopic(query) {
   const explicitContact=explicitContactQuestion(q);
   if(explicitContact) return 'contact';
   if(explicitBusinessLocationQuestion(q)) return 'stores';
+  // Recognize explicit delivery timing questions even without the noun
+  // "delivery" or "leverans". Do not classify arbitrary service verbs.
+  if(/^(?:when (?:do|will|can) you deliver|nar levererar ni|nar kan ni leverera|nar kommer leveransen)\b/.test(q))return 'delivery';
+  if(/^(?:kan jag betala|kan man betala)\b/.test(q))return 'payment';
   // A size question remains about sizes even if the customer also says
   // "available": availability must not override product dimensions.
   if(/\b(?:koko\w*|koissa|koossa|sizes?\b|sizing|storlek\w*)\b/.test(q)) return 'sizing';
@@ -6027,7 +6031,9 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, t
       }
       if (status < 200 || status >= 300) {
         response.resume();
-        throw new Error('Verkkosivua ei saatu luettua.');
+        const error=new Error('Verkkosivua ei saatu luettua.');
+        error.httpStatus=status;
+        throw error;
       }
       const type = String(response.headers['content-type'] || '').toLowerCase();
       const declaredLength = Number(response.headers['content-length'] || 0);
@@ -6060,8 +6066,17 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, t
   } finally { clearTimeout(timer); }
 }
 async function fetchPublicHtml(value, timeoutMs = 8000, maxBytes = 2_000_000) {
-  const result=await fetchPublicResource(value,['text/html','application/xhtml+xml'],maxBytes,timeoutMs);
-  return {html:result.text,finalUrl:result.finalUrl};
+  const deadline=Date.now()+Math.min(20000,Math.max(1000,Number(timeoutMs)||8000));
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const result=await fetchPublicResource(value,['text/html','application/xhtml+xml'],maxBytes,Math.max(1000,deadline-Date.now()));
+      return {html:result.text,finalUrl:result.finalUrl};
+    }catch(error){
+      const retryable=[502,503,504].includes(error?.httpStatus)||['ECONNRESET','EAI_AGAIN','ETIMEDOUT'].includes(error?.code);
+      if(attempt||!retryable||Date.now()+1500>=deadline)throw error;
+      await new Promise(resolve=>setTimeout(resolve,200));
+    }
+  }
 }
 
 function htmlToReadableText(html) {
