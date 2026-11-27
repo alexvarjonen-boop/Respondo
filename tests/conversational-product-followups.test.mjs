@@ -23,3 +23,23 @@ test('ambiguous short price follow-up asks rather than guessing',async()=>{
   assert.equal(result.selected.length,0);
   assert.match(result.answer,/\?/);
 });
+
+for(const [lang,message] of [['fi','Laita linkki'],['fi','Saanko suoran linkin?'],['fi','Linkki siihen'],['en','Send me the link'],['en','Product link'],['sv','Skicka länken'],['sv','Länk till den']]){
+  test('short link follow-up retains the single verified product: '+message,async()=>{
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history,lang});
+    assert.equal(result.handoff,false);
+    assert.deepEqual(result.selected.map(row=>row.id),['h']);
+    assert.match(result.answer,/JAG Headcover/);
+    const actions=chatActions(rows,message,false,lang,result.selected);
+    assert.ok(actions.some(action=>action.url===rows[0].source_url));
+    assert.ok(!actions.some(action=>action.url===rows[1].source_url));
+  });
+}
+test('ambiguous product link follow-up does not expose either product as the answer',async()=>{
+  const message='Laita linkki';
+  const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[{question:'Mitä myytte?',answer:'JAG Headcover ja JAG Putter'}],lang:'fi'});
+  assert.equal(result.handoff,false);
+  assert.deepEqual(result.selected,[]);
+  assert.match(result.answer,/\?/);
+  assert.ok(!chatActions(rows,message,false,'fi',result.selected).some(action=>action.type==='product'));
+});
