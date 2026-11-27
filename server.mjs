@@ -7851,7 +7851,7 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
 
 async function generateRuleGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {}, multiPart = false }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
-  rows = (rows || []).filter(usableWebsiteRow).filter(row=>{
+  rows = (rows || []).filter(row=>row&&row.approved!==false).filter(usableWebsiteRow).filter(row=>{
     // An imported FAQ without a traceable source must not be treated as an
     // approved merchant policy by the general search fallback either.
     // Handwritten owner Q&A (source_type=manual / absent) is unaffected.
@@ -8616,6 +8616,11 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
 // questions. Existing transaction, price and evidence checks remain the
 // authority for sensitive requests, regardless of what the model predicts.
 async function generateGroundedAnswer(args={}) {
+  // Enforce the approval boundary before *any* local or model-based routing,
+  // not just when constructing product cards or checking numeric claims.
+  // Legacy public demo rows have no approval field and remain eligible.
+  args={...args,rows:(Array.isArray(args.rows)?args.rows:[]).filter(row=>row&&row.approved!==false),
+    ...(Array.isArray(args.modelRows)?{modelRows:args.modelRows.filter(row=>row&&row.approved!==false)}:{})};
   const originalQuestion=String(args.message||'');
   const protectedTopics=new Set(['pricing','delivery','returns','stores','hours',
     'contact','booking','payment','warranty','products','quote','sizing']);
