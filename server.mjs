@@ -1943,9 +1943,12 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
   if(matched.length===1){
     const product=matched[0];
     const price=productPriceText(product,lang);
-    const answer=lang==='en'?'You can order it here. '+product.name+(price?' costs '+price:' is on our online store')+'.'
-      :lang==='sv'?'Du kan beställa den här. '+product.name+(price?' kostar '+price:' finns i vår webbutik')+'.'
-      :'Saat tilattua sen suoraan tästä. '+product.name+(price?' maksaa '+price:' löytyy verkkokaupastamme')+'.';
+    const state=normalizeSearchText(product.availability);
+    const answer=state==='ei varastossa'
+      ? (lang==='en'?product.name+' is currently listed as out of stock. You can check the product page here.':lang==='sv'?product.name+' är slut i lager enligt produktinformationen. Du kan se produktsidan här.':product.name+' on tuotetietojen mukaan loppu varastosta. Tästä pääset tuotesivulle.')
+      : (lang==='en'?'You can find '+product.name+' here'+(price?'. The price is '+price:'')+'.'
+        :lang==='sv'? 'Här hittar du '+product.name+(price?'. Priset är '+price:'')+'.'
+        :'Tästä pääset suoraan tilaamaan: '+product.name+(price?' ('+price+')':'')+'.');
     return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
   }
   if(matched.length>1){
@@ -2163,12 +2166,12 @@ function directProductAnswer(rows,message,lang='fi') {
       const storeType=broadProductStoreType(products,lang);
       let answer='';
       if(categories.length){
-        const bullets=categories.map((category)=>'• '+category).join('\n');
+        const joined=categories.join(', ');
         answer=lang==='en'
-          ? 'We sell '+storeType+', including:\n'+bullets+'\nAmong other products.'
+          ? 'We sell '+storeType+'. You’ll find products in categories such as '+joined+'.'
           : lang==='sv'
-            ? 'Vi säljer '+storeType+', bland annat:\n'+bullets+'\nOch andra produkter.'
-            : 'Myymme '+storeType+', esimerkiksi:\n'+bullets+'\nSekä muita tuotteita.';
+            ? 'Vi säljer '+storeType+'. I sortimentet finns bland annat '+joined+'.'
+            : 'Valikoimaamme kuuluu '+storeType+'. Tuoteryhmiämme ovat esimerkiksi '+joined+'.';
       } else {
         const names=[];
         for(const product of list){
@@ -2237,7 +2240,13 @@ function directProductAnswer(rows,message,lang='fi') {
     return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
   }
   if(stockAsk && exactCue && best.availability){
-    const inStock=normalizeSearchText(best.availability)==='varastossa';
+    const state=normalizeSearchText(best.availability);
+    if(state==='ennakkotilaus'){
+      const answer=lang==='en'?best.name+' is listed for pre-order.':lang==='sv'?best.name+' går att förbeställa.':best.name+' on ennakkotilattavissa.';
+      return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
+    }
+    const inStock=state==='varastossa';
+    if(!inStock&&state!=='ei varastossa') return null;
     const answer=lang==='en'?(inStock?best.name+' is in stock.':best.name+' is currently not in stock.')
       :lang==='sv'?(inStock?best.name+' finns i lager.':best.name+' finns inte i lager just nu.')
       :(inStock?best.name+' on varastossa.':best.name+' ei ole tällä hetkellä varastossa.');
@@ -3042,7 +3051,9 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   const q=normalizeCustomerQuery(message);
   const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|niita|niiden|it|its|that|this|those|them|det|den|detta|dess|dem)\b/.test(q);
   const detail=/\b(?:paljonko|maksaa|hinta|hintaa|saatavuus|saatavilla|varastossa|vareja|varit|vari|kokoja|koot|koko|materiaali|what.*price|how much|cost|price|stock|available|colors?|colours?|sizes?|materials?|vad kostar|hur mycket|pris|lager|farger|farg|storlekar|storlek|material)\b/.test(q);
-  if(!pronoun || !detail) return null;
+  const terse=/^(?:(?:enta|mites|entapa|and|what about|how about|och|men)\s+)?(?:paljonko|mita maksaa|mika hinta|hinta|maksaa|varastossa|saatavilla|mita vareja|mita kokoja|varit|koot|materiaali|how much|price|in stock|available|what colors|what colours|what sizes|material|hur mycket|vad kostar|pris|i lager|vilka farger|vilka storlekar)$/;
+  const short=terse.test(q);
+  if((!pronoun&&!short)||(!detail&&!short)) return null;
   // Shipping, refunds, payment and other store policies must not inherit a
   // product as their retrieval topic, even when the query contains a pronoun.
   if(['delivery','returns','payment','warranty','booking','contact','hours','stores','quote'].includes(queryTopic(q))) return null;
@@ -3053,11 +3064,12 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   const turn=meaningfulConversationTurn(history);
   const say=(fi,sv,en)=>lang==='en'?en:lang==='sv'?sv:fi;
   if(!turn) {
+    if(short) return null;
     return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
       handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
   }
   const previous=normalizeSearchText(turn.question+' '+turn.answer);
-  const mentioned=products.filter(p=>normalizeSearchText(p.name).length>=5 && previous.includes(normalizeSearchText(p.name)));
+  const mentioned=products.filter(p=>normalizeSearchText(p.name).length>=5 && (' '+previous+' ').includes(' '+normalizeSearchText(p.name)+' '));
   if(mentioned.length===0 && conversationTopic(turn.question)!=='products') return null;
   if(mentioned.length!==1){
     return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
@@ -3065,7 +3077,15 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   }
   // Restrict the product answering path to that single verified product. A
   // question about "it" cannot silently turn into a list of all putters.
-  const result=directProductAnswer([mentioned[0].row],mentioned[0].name+' '+message,lang);
+  const product=mentioned[0];
+  const priceQuestion=/\b(?:paljonko|maksaa|hinta|hintaa|how much|price|cost|vad kostar|hur mycket|pris)\b/.test(q);
+  if(priceQuestion){
+    const price=productPriceText(product,lang);
+    const answer=price?say(product.name+' maksaa '+price+'.',product.name+' kostar '+price+'.',product.name+' costs '+price+'.')
+      :say('En löydä '+product.name+' -tuotteelle vahvistettua hintaa. Voit tarkistaa sen tuotesivulta.','Jag hittar inget bekräftat pris för '+product.name+'. Du kan kontrollera det på produktsidan.','I can’t find a confirmed price for '+product.name+'. You can check its product page.');
+    if(price||product.url) return {answer,handoff:false,confidence:price?0.98:0.8,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
+  }
+  const result=directProductAnswer([product.row],product.name+' '+message,lang);
   return result || {answer:'',handoff:true,confidence:0.2,intent:'Tuotteet',sourceIds:[],selected:[]};
 }
 
@@ -4850,7 +4870,10 @@ function conciseKnowledgeAnswer(row, query) {
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   rows = (rows || []).filter(usableWebsiteRow);
-  const cleanMessage = String(message || '').trim();
+  const originalMessage=String(message||'').trim();
+  // Keep the original customer message for social replies; remove polite
+  // wrappers only when a substantive question remains.
+  const cleanMessage=conversationPhraseType(originalMessage)?originalMessage:(stripConversationalQueryNoise(originalMessage)||originalMessage);
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
 
   await resolveIntentForMessage(cleanMessage,responseLang);
