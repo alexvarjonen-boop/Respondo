@@ -8573,11 +8573,22 @@ async function generateGroundedAnswer(args={}) {
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
   const sensitiveIntent=/hinta|maksu|varaus|tilau|tarjous|toimitus|palaut|takuu|aukiolo|yhteys|saatavuus|stock|refund|order|booking|price/i;
-  if(mayUseModel && needsHybridReasoning(result) &&
+  // On the explicitly approved Cloudflare route, use grounded composition
+  // for difficult questions and substantial conversational replies.
+  // Never rewrite transactional/protected facts or override quality guards.
+  const cloudflare=process.env.RESPONDO_CLOUDFLARE_AI_ENABLED==='1';
+  const conversationKind=conversationPhraseType(originalQuestion);
+  const contextualQuestion=/\b(?:enta|mites|mitenkas|tarkoitin|eikun|what about|how about|i mean|och da|jag menar)\b/.test(normalized);
+  const flexibleReply=cloudflare && !conversationKind && !result?.qualityFlag &&
+    !/tarkennus|clarification|keskustelu|conversation|samtal/i.test(String(result?.intent||'')) &&
+    (contextualQuestion||originalQuestion.trim().split(/\s+/).length>=6) &&
+    Array.isArray(result?.sourceIds) && result.sourceIds.length>0;
+  if(mayUseModel && (needsHybridReasoning(result)||flexibleReply) &&
       !sensitiveIntent.test(String(result?.intent||''))) {
+    const modelRows=Array.isArray(args.modelRows)?args.modelRows:args.rows;
     const key=hybridCacheKey({tenantId:args.tenantId,message,lang:args.lang,history:args.history,
-      pageContext:args.pageContext,rows:args.rows});
-    const cached=readHybridCache(key,args.rows);
+      pageContext:args.pageContext,rows:modelRows});
+    const cached=readHybridCache(key,modelRows);
     if(cached){
       const checked=guardCitedNumericFacts(verifyRetailAnswer(cached,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),args.rows);
       if(checked && !checked.handoff && !checked.qualityFlag && checked.sourceIds?.length)return checked;
@@ -8589,7 +8600,7 @@ async function generateGroundedAnswer(args={}) {
     });
     if(!plan || ['protected','clarify','social'].includes(plan.kind))return result;
     const semantic=await tryConversationalAIResponse({
-      question:message,rows:Array.isArray(args.rows)?args.rows:[],
+      question:message,rows:Array.isArray(modelRows)?modelRows:[],
       history:args.history,lang:args.lang,plan
     });
     if(semantic){
@@ -8599,7 +8610,7 @@ async function generateGroundedAnswer(args={}) {
       );
       if(checked && !checked.handoff && !checked.qualityFlag && checked.answer &&
          (checked.sourceIds?.length || checked.intent==='Yleistietoa')){
-        writeHybridCache(key,checked,args.rows);
+        writeHybridCache(key,checked,modelRows);
         return checked;
       }
     }
@@ -15569,6 +15580,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // this into an anonymous demo and hide the tenant's approved knowledge.
     let previewIsFirstPartyRespondo = false;
     let previewMainioTenant = false;
+    let previewModelTenantId='';
+    let previewModelRows=[];
     if (body.dashboardPreview === true && (isPublicDemo || demoImportId)) {
       return res.status(400).json({error:'Virheellinen esikatselupyyntö.'});
     }
@@ -15595,6 +15608,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
               [tr.rows[0].id],
             );
             rows = [...kr.rows, ...rows].slice(0, 1100);
+            // Only a server-resolved owner's workspace may spend model quota.
+            // Browser-submitted preview/profile facts are never sent externally.
+            if(body.dashboardPreview===true){previewModelTenantId=String(tr.rows[0].id);previewModelRows=kr.rows.map(row=>({...row,approved:true}));}
           }
         }
       } catch (error) {
@@ -15693,6 +15709,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
          sourceIds:[previewFaq.id],selected:[]}
       : await generateGroundedAnswer({
           companyName: String(profile.companyName || 'yrityksen').slice(0, 120),
+          tenantId:previewModelTenantId,
+          modelRows:previewModelRows,
           rows,
           message,
           history,
