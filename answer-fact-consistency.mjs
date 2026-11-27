@@ -3,11 +3,12 @@
 const COMPARABLE_TOPICS=new Set(['pricing','hours','delivery','returns','warranty','payment']);
 const fold=s=>String(s??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00a0/g,' ');
 const numberRe=/(?:\d{1,3}(?:[ .]\d{3})+|\d+)(?:[,.]\d+)?/g;
-const unitRe=/^\s*(€|eur(?:o(?:a|ja|s)?)?|\$|usd|kronor|kruunua|kr|sek|%|h|hours?|tunt\w*|timm\w*|days?|paiv\w*|dag\w*|weeks?|viik\w*|kk|kuukau\w*|months?|manad\w*|years?|vuos\w*|ar)(?![a-z])/i;
+const unitRe=/^\s*(€|eur(?:o(?:a|ja|s)?)?|\$|usd|£|gbp|kronor|kruunua|kr|sek|%|h|hours?|tunt\w*|timm\w*|days?|paiv\w*|dag\w*|weeks?|viik\w*|kk|kuukau\w*|months?|manad\w*|years?|vuos\w*|ar)(?![a-z])/i;
 const unit=(raw)=>{
   const s=fold(raw);
   if(/^(?:€|eur|euro|euroa|euroja|euros)$/.test(s))return 'eur';
   if(/^(?:\$|usd)$/.test(s))return 'usd';
+  if(/^(?:£|gbp)$/.test(s))return 'gbp';
   if(/^(?:kr|sek|kronor|kruunua)$/.test(s))return 'sek';
   if(s==='%')return 'percent';
   if(/^(?:h|hour|tunt|timm)/.test(s))return 'hour';
@@ -18,13 +19,17 @@ const unit=(raw)=>{
   return '';
 };
 const canonicalNumber=value=>{
-  const text=String(value).replace(/\s/g,'').replace(',','.');
+  let text=String(value).replace(/\s/g,'');
+  // European grouped amounts such as 1.299,90 must match 1299.90.
+  if(/^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(text))text=text.replace(/\./g,'');
+  text=text.replace(',','.');
   const n=Number(text);
   return Number.isFinite(n)?String(n):text;
 };
 const canonicalClock=(hour,minutes='00')=>String(Number(hour))+':'+minutes;
 function numericFacts(value,topic) {
-  const text=fold(value);
+  // Ignore links: numeric URL paths are not customer-facing claims.
+  const text=fold(value).replace(/https?:\/\/[^\s<>]+/g,' ');
   const facts=[];
   const used=[];
   const remember=(start,end,entry)=>{used.push([start,end]);facts.push(entry);};
@@ -65,7 +70,7 @@ function numericFacts(value,topic) {
     if(/[a-z0-9@/+#]/.test(text[start-1]||''))continue;
     if(/^[.:/\-]/.test(after))continue;
     let kind=unit(after.match(unitRe)?.[1]||'');
-    if(!kind && /[€$]\s*$/.test(before))kind=before.includes('€')?'eur':'usd';
+    if(!kind && /[€$£]\s*$/.test(before))kind=before.includes('€')?'eur':before.includes('£')?'gbp':'usd';
     if(!kind)continue;
     facts.push({unit:kind,value:canonicalNumber(m[0])});
   }
