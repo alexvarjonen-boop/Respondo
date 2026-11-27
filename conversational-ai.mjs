@@ -149,6 +149,36 @@ function nearToken(a,b){
   }
   return previous[b.length]<=2;
 }
+// Keep a contiguous source excerpt, including preceding qualifications.
+ // If a fact is deep in a long description, the first 950 characters are
+ // not necessarily the most useful evidence for a specific question.
+export function relevantConversationalExcerpt(answer,queryGroups,limit=950){
+  const value=String(answer||'');
+  if(value.length<=limit)return value;
+  const groups=(Array.isArray(queryGroups)?queryGroups:[]).filter(g=>Array.isArray(g)&&g.length);
+  const score=part=>{
+    const words=norm(part).split(' ').filter(Boolean);
+    return Math.max(0,...groups.map((terms,index)=>terms.reduce((total,term)=>{
+      const exact=words.includes(term);
+      const stem=!exact&&term.length>=6&&words.some(w=>w.length>=6&&w.slice(0,5)===term.slice(0,5));
+      return total+(exact?4:stem?2:0);
+    },0)*(index===0?1:0.85)));
+  };
+  let best=value.slice(0,limit),bestScore=score(best);
+  // Only begin a later window at a complete sentence boundary. Retain the
+  // whole preceding sentence where possible; avoid chopping a negation.
+  const boundaries=[0,...[...value.matchAll(/[.!?]\s+(?=[\p{L}\d])/gu)].map(m=>m.index+m[0].length)];
+  for(let i=1;i<boundaries.length;i++){
+    const start=boundaries[Math.max(0,i-1)];
+    if(start===0||start+100>=value.length)continue;
+    const end=Math.min(value.length,start+limit);
+    const completeEnd=boundaries.filter(p=>p>start+Math.floor(limit/2)&&p<=end).at(-1);
+    const candidate=value.slice(start,end===value.length?end:(completeEnd||end)).trim();
+    const points=score(candidate);
+    if(points>bestScore){best=candidate;bestScore=points;}
+  }
+  return best;
+}
 export function conversationalFacts(rows,question,env=process.env,searchQueries=[]){
   const primary=questionTokens(question);
   const queryGroups=[primary,...(Array.isArray(searchQueries)?searchQueries.slice(0,4):[]).map(q=>questionTokens(q).slice(0,10))].filter(a=>a.length);
@@ -180,7 +210,7 @@ export function conversationalFacts(rows,question,env=process.env,searchQueries=
   for(const item of candidates){
     const key=norm(item.title+' '+item.answer);
     if(distinct.has(key))continue;
-    const shortened=item.answer.slice(0,950);
+    const shortened=relevantConversationalExcerpt(item.answer,queryGroups);
     const rendered='Title: '+item.title+'\nAnswer: '+shortened;
     if(chars+rendered.length>contextLimit)continue;
     distinct.add(key);
