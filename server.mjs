@@ -5640,7 +5640,9 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   const q=normalizeSearchText(message);
   const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|niita|niiden|it|its|that|this|those|them|det|den|detta|dess|dem)\b/.test(q);
   const detail=/\b(?:paljonko|maksaa|hinta|hintaa|saatavuus|saatavilla|varastossa|vareja|varit|vari|kokoja|koot|koko|materiaali|what.*price|how much|cost|price|stock|available|colors?|colours?|sizes?|materials?|vad kostar|hur mycket|pris|lager|farger|farg|storlekar|storlek|material)\b/.test(q);
-  if(!pronoun || !detail) return null;
+  const terse=/^(?:(?:enta|mites|entapa|and|what about|how about|och|men)\s+)?(?:paljonko|mita maksaa|mika hinta|hinta|maksaa|varastossa|saatavilla|mita vareja|mita kokoja|varit|koot|materiaali|how much|price|in stock|available|what colors|what colours|what sizes|material|hur mycket|vad kostar|pris|i lager|vilka farger|vilka storlekar)$/;
+  const short=terse.test(q);
+  if((!pronoun&&!short)||(!detail&&!short)) return null;
   // Shipping, refunds, payment and other store policies must not inherit a
   // product as their retrieval topic, even when the query contains a pronoun.
   if(['delivery','returns','payment','warranty','booking','contact','hours','stores','quote'].includes(queryTopic(q))) return null;
@@ -5663,11 +5665,12 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   const turn=meaningfulConversationTurn(history);
   const say=(fi,sv,en)=>lang==='en'?en:lang==='sv'?sv:fi;
   if(!turn) {
+    if(short)return null;
     return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
       handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
   }
   const previous=normalizeSearchText(turn.question+' '+turn.answer);
-  const mentioned=products.filter(p=>normalizeSearchText(p.name).length>=5 && previous.includes(normalizeSearchText(p.name)));
+  const mentioned=products.filter(p=>normalizeSearchText(p.name).length>=5 && (' '+previous+' ').includes(' '+normalizeSearchText(p.name)+' '));
   if(mentioned.length===0 && conversationTopic(turn.question)!=='products') return null;
   if(mentioned.length!==1){
     return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
@@ -5675,7 +5678,13 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   }
   // Restrict the product answering path to that single verified product. A
   // question about "it" cannot silently turn into a list of all putters.
-  const result=directProductAnswer([mentioned[0].row],mentioned[0].name+' '+message,lang);
+  const product=mentioned[0];
+  const priceQuestion=/\b(?:paljonko|maksaa|hinta|hintaa|how much|price|cost|vad kostar|hur mycket|pris)\b/.test(q);
+  if(priceQuestion&&short){
+    const price=productPriceText(product,lang);
+    if(price)return {answer:say(product.name+' maksaa '+price+'.',product.name+' kostar '+price+'.',product.name+' costs '+price+'.'),handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
+  }
+  const result=directProductAnswer([product.row],product.name+' '+message,lang);
   return result || {answer:'',handoff:true,confidence:0.2,intent:'Tuotteet',sourceIds:[],selected:[]};
 }
 
@@ -5717,6 +5726,16 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   const catalogUrl=(!isOrderTrackingQuestion(message)&&(broadProductQuestion(message)||ecommerceOrderQuestion(message)))?productCatalogDestination(rows):'';
   const actions = [];
   const push = (action) => {
+    if(action?.url){
+      const raw=String(action.url);
+      if(/[\r\n]/.test(raw))return;
+      try{
+        const target=new URL(raw);
+        if(!['http:','https:','mailto:','tel:'].includes(target.protocol)||target.username||target.password)return;
+        if(target.protocol==='tel:'&&!/^\+?[\d ().-]{5,30}$/.test(target.pathname))return;
+        if(target.protocol==='mailto:'&&(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target.pathname)||target.search||target.hash))return;
+      }catch{return;}
+    }
     const key = action?.url || (action?.mode ? action.mode + ':' + action.type : '');
     if (!key || actions.some((x) => (x.url || (x.mode ? x.mode + ':' + x.type : '')) === key)) return;
     actions.push(action);
@@ -5726,7 +5745,10 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   // in response to an unrelated order tracking question.
   if (!handoff && !isOrderTrackingQuestion(message) && !broadProductQuestion(message)) {
     for (const row of Array.isArray(selected) ? selected : []) {
-      const product=parseProductKnowledgeRow(row);
+      if(!row||row.approved===false)continue;
+      const canonical=(rows||[]).find(candidate=>candidate?.approved!==false&&(candidate===row||(candidate.id!=null&&String(candidate.id)===String(row.id)&&candidate.title===row.title&&candidate.answer===row.answer)));
+      if(!canonical)continue;
+      const product=parseProductKnowledgeRow(canonical);
       if(!product?.url) continue;
       push({
         type:'product',
@@ -6292,10 +6314,10 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
       return {name:String(option?.name||'').trim(),values};
     }).filter((option)=>option.name&&option.values.length);
     const handle=String(raw?.handle||'').trim();
-    if(!handle||!/^[a-z0-9][a-z0-9-]{0,249}$/i.test(handle))return;
+    if(!handle||!/^[\p{L}\p{N}][\p{L}\p{N}_-]{0,249}$/u.test(handle))return;
     const product=normalizeCatalogProduct({
       name:raw?.title,
-      url:new URL('/products/'+handle,base).toString(),
+      url:new URL('/products/'+encodeURIComponent(handle),base).toString(),
       imageUrl:raw?.image?.src || raw?.images?.[0]?.src || '',
       price:prices.length?Math.min(...prices):null,
       maxPrice:prices.length?Math.max(...prices):null,
@@ -8653,7 +8675,11 @@ async function generateGroundedAnswer(args={}) {
     Array.isArray(result?.sourceIds) && result.sourceIds.length>0;
   if(mayUseModel && (needsHybridReasoning(result)||flexibleReply) &&
       !sensitiveIntent.test(String(result?.intent||''))) {
-    const modelRows=Array.isArray(args.modelRows)?args.modelRows:args.rows;
+    const availableModelRows=Array.isArray(args.modelRows)?args.modelRows:args.rows;
+    const rewriteOnly=flexibleReply&&!needsHybridReasoning(result);
+    const allowedSources=new Set((result.sourceIds||[]).map(String));
+    const modelRows=rewriteOnly?(availableModelRows||[]).filter(row=>allowedSources.has(String(row.id))):availableModelRows;
+    if(rewriteOnly&&!modelRows.length)return result;
     const key=hybridCacheKey({tenantId:args.tenantId,message,lang:args.lang,history:args.history,
       pageContext:args.pageContext,rows:modelRows});
     const cached=readHybridCache(key,modelRows);
@@ -15791,7 +15817,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // installation requirements, etc.). Never synthesize facts and never
     // read another tenant's account knowledge. Paid dashboards retain their
     // approval workflow rather than silently approving new web content.
-    if (isPublicDemo && result.handoff && !requestedProductFamilyAvailability(message)){
+    const orderRecovery=result.intent==='Tarkennus'&&!result.qualityFlag&&
+      /^(?:(?:miten|kuinka|mista)\s+(?:(?:voin|voi|pystyn|saan)\s+)?(?:tilata|ostaa)|(?:how|where)\s+(?:can|do|could)\s+i\s+(?:order|buy)|(?:hur|var)\s+(?:kan\s+jag\s+)?(?:bestalla|kopa))\b/.test(stripConversationalQueryNoise(message));
+    if (isPublicDemo && (result.handoff||orderRecovery) && !requestedProductFamilyAvailability(message)){
       const enteredWebsite=normalizeWebUrl(profile.website,false);
       const storedImport=demoImportId ? demoWebsiteImports.get(demoImportId) : null;
       const storedWebsite=normalizeWebUrl(storedImport?.website,false);
@@ -15800,7 +15828,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
          allowDemoRecovery(target,message)){
         try {
           const recoveredBundle=await fetchWebsiteBundle(target,24,11000,null,{
-            storefrontLimit:0,sitemapLimit:450,question:message
+            storefrontLimit:orderRecovery?250:0,storefrontBudgetMs:3500,sitemapLimit:450,question:message
           });
           const recovered=websiteKnowledgeCandidates(recoveredBundle).slice(0,500);
           const newRows=recovered.map((item,index)=>({
@@ -15819,7 +15847,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
                 companyName:String(profile.companyName||'yrityksen').slice(0,120),
                 rows,message,history,lang:detectedLang
               });
-              if(!attempted.handoff && attempted.answer) result=attempted;
+              if(!attempted.handoff && attempted.answer && !attempted.qualityFlag && (!orderRecovery||attempted.sourceIds?.length)) result=attempted;
               if(storedImport && normalizeHost(storedWebsite)===normalizeHost(target)){
                 const distinct=new Map();
                 for(const fact of [...recovered,...storedImport.candidates]){
