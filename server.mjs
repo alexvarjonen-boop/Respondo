@@ -7716,10 +7716,26 @@ function splitIndependentCustomerQuestions(message) {
   // Split only two or three COMPLETE questions. Each answer traverses the
   // same tenant-scoped engine independently and incomplete parts cannot
   // borrow another part's source evidence.
-  const splits=[
-    raw.split(/\s+(?:ja|and|och)\s+(?=(?:paljonko|mit[äa]|mik[äa]|mitk[äa]|miten|milloin|monelta|mihin|miss[äa]|kuinka|kauanko|onko|voiko|voinko|saako|saanko|miksi|what|when|where|how|which|who|can|could|do|does|is|are|why|will|vad|hur|n[äa]r|var|vilken|vilka|kan|har|finns|[äa]r|varf[öo]r)\b)/iu),
-    raw.split(/\?\s*(?=[\p{L}])/u).map(part=>part.replace(/^\s*(?:ja|and|och)\s+/iu,''))
-  ];
+  // Determine clause starts after normalization, so Finnish/Swedish
+  // accented final letters do not interact with ASCII regex word boundaries.
+  const chunks=raw.split(/\?\s*(?=[\p{L}])|\s+(?:ja|and|och)\s+/iu);
+  const merged=[];
+  for(const chunk of chunks){
+    const part=chunk.replace(/^\s*(?:ja|and|och)\s+/iu,'').trim();
+    if(!part)continue;
+    if(!merged.length||questionStart.test(normalizeSearchText(stripConversationalQueryNoise(part)))){
+      merged.push(part);
+    }else{
+      // Non-question conjunctions belong to the previous clause. Preserve
+      // the original connector and wording using the exact source span.
+      const prior=merged.at(-1);
+      const start=raw.indexOf(prior);
+      const end=raw.indexOf(part,start+prior.length);
+      if(start<0||end<0)return null;
+      merged[merged.length-1]=raw.slice(start,end+part.length);
+    }
+  }
+  const splits=[merged];
   for(const candidate of splits){
     if(candidate.length<2 || candidate.length>3) continue;
     const parts=candidate.map(x=>x.replace(/^[\s?.!,;]+|[\s?.!,;]+$/g,'').trim());
@@ -7729,7 +7745,9 @@ function splitIndependentCustomerQuestions(message) {
     // "What does it cost?" after "Do you sell this?" is dependent.
     // Apply the pronoun guard to EACH later question, not just the second.
     if(cleaned.slice(1).some(x=>dependent.test(x))) continue;
-    const topics=parts.map(queryTopic);
+    const topics=parts.map(part=>queryTopic(part)||
+      (/^(?:when do you deliver|when will you deliver|nar levererar ni|nar levererar du)\b/.test(normalizeSearchText(part))?'delivery':
+      /^(?:kan jag betala|kan man betala)\b/.test(normalizeSearchText(part))?'payment':''));
     if(topics.every(topic=>topic && topic!=='faq') &&
        new Set(topics).size===topics.length) return parts;
   }
