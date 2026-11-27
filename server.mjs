@@ -4873,7 +4873,8 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const originalMessage=String(message||'').trim();
   // Keep the original customer message for social replies; remove polite
   // wrappers only when a substantive question remains.
-  const cleanMessage=conversationPhraseType(originalMessage)?originalMessage:(stripConversationalQueryNoise(originalMessage)||originalMessage);
+  const stripped=stripConversationalQueryNoise(originalMessage);
+  const cleanMessage=!conversationPhraseType(originalMessage)&&stripped&&stripped!==normalizeSearchText(originalMessage)?stripped:originalMessage;
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
 
   await resolveIntentForMessage(cleanMessage,responseLang);
@@ -4946,7 +4947,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
           ? (isPhone?'No verified phone number is available. You can contact the company through its website using the button below.':'No verified email address is available. You can contact the company through its website using the button below.')
           : responseLang==='sv'
             ? (isPhone?'Inget bekräftat telefonnummer finns. Du kan kontakta företaget via webbplatsen med knappen nedan.':'Ingen bekräftad e-postadress finns. Du kan kontakta företaget via webbplatsen med knappen nedan.')
-            : (isPhone?'Yrityksen puhelinnumeroa ei löytynyt. Voit kuitenkin ottaa yhteyttä yrityksen verkkosivujen kautta alla olevasta painikkeesta.':'Yrityksen sähköpostiosoitetta ei löytynyt. Voit kuitenkin ottaa yhteyttä yrityksen verkkosivujen kautta alla olevasta painikkeesta.')
+            : (isPhone?'En löytänyt puhelinnumeroamme, mutta saat meihin yhteyden tästä.':'En löytänyt sähköpostiosoitettamme, mutta voit lähettää meille viestin tästä.')
       : responseLang==='en'
         ? (isPhone?'There is no verified phone number in the company information. Leave your contact details so the company can get back to you.':'There is no verified email address in the company information. Leave your contact details so the company can get back to you.')
         : responseLang==='sv'
@@ -4966,7 +4967,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
         ? (page.form?'You can contact the company using the contact form on its website. Open it below.':'You can contact the company through its website contact page. Open it below.')
         : responseLang==='sv'
           ? (page.form?'Du kan kontakta företaget via kontaktformuläret på webbplatsen. Öppna det nedan.':'Du kan kontakta företaget via kontaktsidan på webbplatsen. Öppna den nedan.')
-          : (page.form?'Voit ottaa yhteyttä yritykseen sen verkkosivujen yhteydenottolomakkeella. Avaa lomake alta.':'Voit ottaa yhteyttä yritykseen sen verkkosivujen yhteydenottosivun kautta. Avaa sivu alta.');
+          : (page.form?'Saat meihin yhteyden tällä lomakkeella.':'Tästä löydät yhteystietomme.');
       return {answer,handoff:false,confidence:0.98,intent:'Yhteystiedot',
         sourceIds:[page.row.id].filter(Boolean),selected:[page.row]};
     }
@@ -4993,14 +4994,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   if (queryTopic(cleanMessage) === 'quote') {
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
-    if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
+    if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Tästä pääset pyytämään tarjouksen.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
     // Contact pages are a valid way to ask for a quote, but never label them
     // as verified quote-specific forms unless the actual link says so.
     const page=verifiedContactPage(rows);
     if(page) return {
       answer:responseLang==='en'?'You can ask the company for a quote through its contact page using the button below.'
         :responseLang==='sv'?'Du kan be företaget om en offert via kontaktsidan med knappen nedan.'
-        :'Voit pyytää tarjousta yrityksen yhteydenottosivun kautta alla olevasta painikkeesta.',
+        :'Voit pyytää tarjouksen ottamalla meihin yhteyttä tästä.',
       handoff:false,confidence:0.9,intent:'Tarjouspyyntö',
       sourceIds:[page.row.id].filter(Boolean),selected:[page.row],
     };
@@ -9495,10 +9496,10 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
   let handoff = result.handoff;
   if (handoff) {
     answer = responseLang === 'en'
-      ? 'I do not have a verified answer yet. A person from the company needs to handle this.'
+      ? 'I don’t have a confirmed answer to that. Our team can help you with this.'
       : responseLang === 'sv'
-        ? 'Jag har ännu inget verifierat svar. Någon från företaget behöver hantera detta.'
-        : 'Tähän ei löytynyt vielä varmennettua vastausta. Yrityksen henkilön pitää käsitellä tämä.';
+        ? 'Jag har inget säkert svar på det. Vårt team kan hjälpa dig.'
+        : 'En osaa sanoa tuohon varmasti. Asiakaspalvelumme voi auttaa sinua.';
   }
 
   await appendChatMessage({
@@ -9906,10 +9907,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     });
 
     const noAnswer = detectedLang === 'en'
-      ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
+      ? 'I don’t have a confirmed answer to that. Leave your contact details and our team can help you.'
       : detectedLang === 'sv'
-        ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
-        : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
+        ? 'Jag har inget säkert svar på det. Lämna gärna dina kontaktuppgifter så kan vårt team hjälpa dig.'
+        : 'En osaa sanoa tuohon varmasti. Jätä yhteystietosi, niin asiakaspalvelumme voi auttaa.';
     const translationUnavailable = detectedLang === 'en'
       ? 'I found the relevant company information, but could not translate the answer reliably right now. Please try again in a moment.'
       : detectedLang === 'sv'
@@ -10450,10 +10451,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
     const responseLang = detectedLang;
     const noAnswer = responseLang === 'en'
-      ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
+      ? 'I don’t have a confirmed answer to that. Leave your contact details and our team can help you.'
       : responseLang === 'sv'
-        ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
-        : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
+        ? 'Jag har inget säkert svar på det. Lämna gärna dina kontaktuppgifter så kan vårt team hjälpa dig.'
+        : 'En osaa sanoa tuohon varmasti. Jätä yhteystietosi, niin asiakaspalvelumme voi auttaa.';
     const translationUnavailable = responseLang === 'en'
       ? 'I found the relevant company information, but could not translate the answer reliably right now. Leave your contact details below or try again in a moment.'
       : lang === 'sv'
