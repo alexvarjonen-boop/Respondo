@@ -507,10 +507,11 @@ export function extractBusinessDocument(html, url) {
   }
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
+  const sectionHeadings=[];
   const headingTag=tag=>/^(?:h[1-6]|summary|dt)$/.test(tag);
   const flush = () => {
     const text = clean(decodeHtml(buffer)); buffer = '';
-    if (text && !suppressedHeading) blocks.push({text, heading});
+    if (text && !suppressedHeading) blocks.push({text, heading, sectionHeading:sectionHeadings.map(item=>item.text).join(' / ')});
   };
   // Strip raw-text elements first, so code containing '<' cannot corrupt parsing.
   const source = String(html || '').replace(/<!--[^]*?-->/g,'').replace(/<(script|style|noscript|svg|template)\b[^>]*>[^]*?<\/\1\s*>/gi,'');
@@ -539,6 +540,11 @@ export function extractBusinessDocument(html, url) {
       const node = stack[i];
       if (headingTag(tag) && !node.skip) {
         heading = clean(decodeHtml(node.text));
+        const level=/^h[1-6]$/.test(tag)?Number(tag[1]):0;
+        if(level){
+          while(sectionHeadings.length&&sectionHeadings.at(-1).level>=level) sectionHeadings.pop();
+          sectionHeadings.push({level,text:heading});
+        }
         const policyHeading=/^(?:terms(?: of (?:service|sale|use))?|terms and conditions|käyttöehdot|kayttoehdot|toimitusehdot|köpvillkor|kopvillkor|allmänna villkor|allmanna villkor)$/i.test(heading);
         suppressedHeading = review.test(norm(heading)) || (junk.test(norm(heading))&&!policyHeading);
       }
@@ -552,7 +558,7 @@ export function extractBusinessDocument(html, url) {
       }
       if (tag === 'a' && !node.skip && node.href) links.push({url:node.href, label:clean(decodeHtml(node.text)), context:heading});
       stack.splice(i);
-      if (tag === 'section' || tag === 'article' || tag === 'details' || tag === 'dl') { heading = ''; suppressedHeading = false; }
+      if (tag === 'section' || tag === 'article' || tag === 'details' || tag === 'dl') { heading = ''; suppressedHeading = false; if(tag==='section'||tag==='article') sectionHeadings.length=0; }
       continue;
     }
     const a = attrs(token), marker = norm([a.class,a.id,a.role,a.itemprop,a['aria-label']].filter(Boolean).join(' '));
@@ -684,14 +690,24 @@ export function essentialWebsiteCandidates(bundle) {
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     for (const block of blocks) {
-      const kind = businessFactKind(block.text,block.heading);
+      const blockText=clean(block.text);
+      const concreteHeading=clean(block.heading);
+      const sectionContext=norm(block.sectionHeading||'');
+      const priceSection=/(?:^|\/)\s*(?:hinnat|hinnasto|hinnoittelu|pricing|price list|prices|priser|prislista)(?:\s*\/|$)/.test(sectionContext);
+      // A standalone amount needs a specific service/plan heading; a generic
+      // "Pricing" heading cannot tell the bot what the number applies to.
+      const amountOnly=/^(?:(?:alkaen|from|starting at|fran|från)\s+)?(?:[€$£]\s*)?\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))(?:\s*(?:\/|per\s+)(?:kk|h|kpl|vuosi|month|year|hour|mån|år|timme|st))?(?:\s*(?:sis\.?\s*alv|inkl\.?\s*moms|incl\.?\s*vat|alv\s*\d+[,.]?\d*\s*%))?$/i.test(blockText);
+      const namedHeading=concreteHeading.length>=2&&concreteHeading.length<=80&&!/^(?:hinnat|hinnasto|hinnoittelu|pricing|prices|price list|priser|prislista|palvelut|services|tjanster|home|etusivu|tarjous|offer|contact|yhteystiedot)$/i.test(norm(concreteHeading))&&!price.test(concreteHeading)&&!customerQuestion.test(norm(concreteHeading));
+      const boundAmount=amountOnly&&namedHeading&&(priceSection||isConcreteServiceLabel(concreteHeading));
+      const kind = businessFactKind(blockText,block.heading);
+      if(kind==='pricing'&&amountOnly&&!boundAmount) continue;
       if (!kind) continue;
       if(policyDoc&&!['returns','delivery','warranty','payment','faq'].includes(kind)) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
       const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text));
-      if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice) continue;
+      if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice && !boundAmount) continue;
       let title = labels[kind];
       if (kind === 'delivery') {
         // Classify the individual fact by its own sentence, not merely by a
@@ -718,16 +734,15 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'contact' && email.test(block.text)) {
         for(const match of block.text.matchAll(new RegExp(email.source,'gi'))) add(kind,'Sähköposti',match[0],doc.url);
       }
-      if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
+      if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) { for(const match of block.text.matchAll(new RegExp(phone.source,'g'))) add(kind,'Puhelinnumero',match[0],doc.url); }
       if (kind !== 'contact') {
-        const concreteHeading = clean(block.heading);
         const hasServiceContext = concreteHeading && concreteHeading.length < 65 && service.test(norm(concreteHeading)) && !/^(?:palvelut?|services?|tjanster|hinnat|hinnasto)$/i.test(norm(concreteHeading)) && !norm(block.text).includes(norm(concreteHeading));
         const productContext = docProducts.length===1 && ['materials','quality','care','sizing'].includes(kind)
           ? clean(docProducts[0].name)
           : '';
         const contextualAnswer = productContext && !norm(block.text).includes(norm(productContext))
           ? productContext+': '+block.text
-          : hasServiceContext && ['services','pricing'].includes(kind)
+          : (hasServiceContext && ['services','pricing'].includes(kind)) || (kind==='pricing'&&boundAmount)
             ? concreteHeading+': '+block.text
             : block.text;
         const contextualTitle = productContext ? productContext+' – '+title : title;
