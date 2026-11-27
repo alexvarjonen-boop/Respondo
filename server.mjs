@@ -1915,9 +1915,12 @@ function ecommerceOrderQuestion(value, lang='') {
 }
 
 function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
-  if(isOrderTrackingQuestion(message)||!ecommerceOrderQuestion(message,lang)) return null;
+  const orderQuery=stripConversationalQueryNoise(message);
+  if(isOrderTrackingQuestion(message)||!ecommerceOrderQuestion(orderQuery,lang)) return null;
   const products=productCatalog(rows).filter(product=>product?.url&&String(product.row?.title||'')!=='Tuotekatalogi');
-  const q=normalizeSearchText(message);
+  const catalogUrl=productCatalogDestination(rows);
+  if(!catalogUrl&&!products.length) return null;
+  const q=normalizeSearchText(orderQuery);
   const words=value=>normalizeSearchText(value).split(/[\s-]+/).filter(Boolean);
   const stop=/^(?:miten|kuinka|mista|voin|voi|voiko|voinko|pystyn|saan|haluan|haluaisin|tilata|tilaan|ostaa|ostan|hankkia|tuotteen|tuotteita|tuote|tuotteet|teilta|teidan|verkkokaupasta|sen|se|sita|taman|tama|tuon|tuota|niita|how|where|can|could|do|i|to|would|like|want|order|buy|purchase|the|a|an|product|products|item|items|it|this|that|one|your|from|online|store|hur|var|kan|ska|jag|vill|bestalla|kopa|produkt|produkter|produkten|vara|varor|den|det|denna|er|ni|webbutiken)$/;
   const targets=words(q).filter(word=>word.length>=2&&!stop.test(word));
@@ -1939,23 +1942,21 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
   }
   if(matched.length===1){
     const product=matched[0];
-    const answer=lang==='en'?'You can order '+product.name+' directly from its product page below.'
-      :lang==='sv'?'Du kan beställa '+product.name+' direkt via produktsidan nedan.'
-      :'Voit tilata tuotteen '+product.name+' suoraan alla olevasta tuotepainikkeesta.';
+    const price=productPriceText(product,lang);
+    const answer=lang==='en'?'You can order it here. '+product.name+(price?' costs '+price:' is on our online store')+'.'
+      :lang==='sv'?'Du kan beställa den här. '+product.name+(price?' kostar '+price:' finns i vår webbutik')+'.'
+      :'Saat tilattua sen suoraan tästä. '+product.name+(price?' maksaa '+price:' löytyy verkkokaupastamme')+'.';
     return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
   }
   if(matched.length>1){
     const choices=matched.slice(0,4);
-    const answer=lang==='en'?'Which of these products do you mean?':lang==='sv'?'Vilken av dessa produkter menar du?':'Mitä näistä tuotteista tarkoitat?';
+    const answer=lang==='en'?'Which of these did you have in mind?':lang==='sv'?'Vilken av de här tänkte du på?':'Mitä näistä tuotteista olit ajatellut?';
     return {answer,handoff:false,confidence:0.8,intent:'Tuotteet',sourceIds:choices.map(p=>p.row?.id).filter(Boolean),selected:choices.map(p=>p.row).filter(Boolean)};
   }
   if(targets.length||/\b(?:se|sen|sita|tama|taman|tuon|tuota|it|this|that|den|det|denna)\b/.test(q)){
     const answer=lang==='en'?'Which product would you like to order?':lang==='sv'?'Vilken produkt vill du beställa?':'Minkä tuotteen haluaisit tilata?';
     return {answer,handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
   }
-  const catalogUrl=productCatalogDestination(rows);
-  if(!catalogUrl && !products.length) return null;
-
   const catalogRow=rows.find((row)=>
     String(row?.title||'')==='Tuotekatalogi' &&
     /^https?:\/\//i.test(String(row?.answer||''))
@@ -1964,10 +1965,10 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
   const sourceIds=[catalogRow?.id,...evidenceRows.map((row)=>row?.id)].filter(Boolean);
   const selected=catalogUrl ? [] : evidenceRows;
   const answer=lang==='en'
-    ? 'You can order products directly from the online store. Open the product selection below and choose the product you want.'
+    ? 'You can order directly from our online store. What are you looking for?'
     : lang==='sv'
-      ? 'Du kan beställa produkter direkt från webbutiken. Öppna produktsortimentet nedan och välj den produkt du vill ha.'
-      : 'Voit tilata tuotteet suoraan verkkokaupasta. Avaa tuotevalikoima alta ja valitse haluamasi tuote.';
+      ? 'Du kan beställa direkt från vår webbutik. Vad letar du efter?'
+      : 'Voit tilata suoraan verkkokaupastamme. Mitä tuotetta etsit?';
 
   return {
     answer,
@@ -2849,7 +2850,7 @@ function conversationalResponse(value, lang='fi', history=[]) {
       acknowledgement:'Selvä!',
       farewell:'Kiitos yhteydenotosta! Mukavaa päivänjatkoa!',
       wellbeing:'Hyvin, kiitos! Miten voin auttaa?',
-      identity:'Olen tämän yrityksen verkkosivujen asiakaspalvelubotti. Vastaan yrityksen omien tietojen perusteella ja pidän keskustelun kontekstin mukana jatkokysymyksissä.',
+      identity:'Olen yrityksen virtuaalinen asiakaspalvelija. Autan mielelläni esimerkiksi tuotteisiin, palveluihin ja tilauksiin liittyvissä kysymyksissä.',
       help:'Totta kai. Kerro vain omin sanoin, missä asiassa tarvitset apua.',
       capabilities:'Voit kysyä omin sanoin esimerkiksi palveluista, tuotteista, hinnoista, aukioloajoista, toimituksista, palautuksista, ajanvarauksesta tai yhteystiedoista. Jos kysyt jatkokysymyksen, yhdistän sen aiempaan keskusteluun.',
       confusion:'Voin selittää asian toisella tavalla. Kerro, mikä kohta jäi epäselväksi.',
@@ -2864,7 +2865,7 @@ function conversationalResponse(value, lang='fi', history=[]) {
       acknowledgement:'Okej!',
       farewell:'Tack för att du kontaktade oss! Ha en bra dag!',
       wellbeing:'Bra, tack! Hur kan jag hjälpa?',
-      identity:'Jag är kundservicebotten på det här företagets webbplats. Jag svarar utifrån företagets egna uppgifter och behåller sammanhanget i följdfrågor.',
+      identity:'Jag är företagets virtuella kundtjänstassistent. Jag hjälper gärna till med frågor om produkter, tjänster och beställningar.',
       help:'Självklart. Berätta med egna ord vad du behöver hjälp med.',
       capabilities:'Du kan fråga med egna ord om till exempel tjänster, produkter, priser, öppettider, leveranser, returer, bokning eller kontaktuppgifter. Jag kopplar också följdfrågor till den tidigare diskussionen.',
       confusion:'Jag kan förklara det på ett annat sätt. Berätta vilken del som var oklar.',
@@ -2879,7 +2880,7 @@ function conversationalResponse(value, lang='fi', history=[]) {
       acknowledgement:'Got it!',
       farewell:'Thanks for getting in touch! Have a great day!',
       wellbeing:'I’m good, thanks! How can I help?',
-      identity:'I’m the customer-service bot on this company’s website. I answer from the company’s own information and keep conversational context for follow-up questions.',
+      identity:'I’m the company’s virtual customer service assistant. I can help with questions about products, services and orders.',
       help:'Of course. Tell me in your own words what you need help with.',
       capabilities:'You can ask naturally about things such as services, products, pricing, opening hours, delivery, returns, booking, or contact details. I also connect follow-up questions to the earlier conversation.',
       confusion:'I can explain it another way. Tell me which part was unclear.',
@@ -3143,7 +3144,8 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   const email = verifiedContactValue(rows, 'Sähköposti')?.value || '';
   const contactPage=verifiedContactPage(rows);
   const requestedContact=explicitContactQuestion(message);
-  const catalogUrl=(!isOrderTrackingQuestion(message)&&(broadProductQuestion(message)||ecommerceOrderQuestion(message)))?productCatalogDestination(rows):'';
+  const ordering=ecommerceOrderQuestion(stripConversationalQueryNoise(message),actionLang)&&!isOrderTrackingQuestion(message);
+  const catalogUrl=(!isOrderTrackingQuestion(message)&&(broadProductQuestion(message)||ordering))?productCatalogDestination(rows):'';
   const actions = [];
   const push = (action) => {
     const key = action?.url || (action?.mode ? action.mode + ':' + action.type : '');
@@ -3159,7 +3161,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
       if(!product?.url) continue;
       push({
         type:'product',
-        label:actionLang==='en'?'View '+product.name:actionLang==='sv'?'Visa '+product.name:'Katso '+product.name,
+        label:ordering?(actionLang==='en'?'Order '+product.name:actionLang==='sv'?'Beställ '+product.name:'Tilaa '+product.name):(actionLang==='en'?'View '+product.name:actionLang==='sv'?'Visa '+product.name:'Katso '+product.name),
         url:product.url,
       });
     }
