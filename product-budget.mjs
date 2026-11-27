@@ -37,6 +37,19 @@ export function productBudgetRequest(message='') {
   return {amount,currency,inclusive,family,...(color?{color}:{}),...(sizeMatch?.[1]?{size:sizeMatch[1]}:{})};
 }
 
+// A price range is not a verified variant price. Only recommend products
+// whose entire documented range meets the ceiling; a different size/color
+// may otherwise cost more than the customer has specified.
+export function productMeetsVerifiedBudget(product,request){
+  if(!product||!request||product.row?.approved===false)return false;
+  if(!Number.isFinite(product.price)||product.price<0)return false;
+  if(request.currency&&String(product.currency||'').toUpperCase()!==request.currency)return false;
+  const max=product.maxPrice==null?product.price:product.maxPrice;
+  if(!Number.isFinite(max)||max<product.price)return false;
+  const availability=String(product.availability||'').toLowerCase().trim();
+  if(/^(?:ei varastossa|out of stock|sold out|unavailable|slut i lager)$/.test(availability))return false;
+  return request.inclusive?max<=request.amount:max<request.amount;
+}
 export function groundedBudgetProductAnswer(products,message,lang='fi') {
   const request=productBudgetRequest(message);
   if(!request)return null;
@@ -66,9 +79,7 @@ export function groundedBudgetProductAnswer(products,message,lang='fi') {
       const sizes=[product.name,...(product.sizes||[])].join(' ');
       if(!new RegExp('\\b'+request.size.replace('.','\\.')+'\\b').test(sizes))return false;
     }
-    if(!Number.isFinite(product.price)||product.price<0)return false;
-    if(request.currency && String(product.currency||'').toUpperCase()!==request.currency)return false;
-    return request.inclusive ? product.price<=request.amount : product.price<request.amount;
+    return productMeetsVerifiedBudget(product,request);
   }).sort((a,b)=>a.price-b.price || String(a.name).localeCompare(String(b.name)));
   const locale=lang==='sv'?'sv-SE':lang==='en'?'en-US':'fi-FI';
   const fmt=(value,code)=>{
@@ -89,14 +100,18 @@ export function groundedBudgetProductAnswer(products,message,lang='fi') {
     return {answer,handoff:false,confidence:0.35,intent:'Tuotteet',sourceIds:[],selected:[]};
   }
   const chosen=pool.slice(0,4);
-  const details=chosen.map(product=>product.name+' ('+fmt(product.price,product.currency||'')+')').join(', ');
+  const details=chosen.map(product=>{
+    const low=fmt(product.price,product.currency||'');
+    const high=Number.isFinite(product.maxPrice)&&product.maxPrice>product.price?fmt(product.maxPrice,product.currency||''):'';
+    return product.name+' ('+low+(high?'–'+high:'')+')';
+  }).join(', ');
   // The visitor's spending limit is not a product-source fact. Refer to it
   // implicitly so the numeric contradiction guard only validates sourced prices.
   const answer=lang==='en'
-    ? 'Yes. These '+familyWord+' in the approved catalog match your price limit: '+details+'.'
+    ? 'Yes. These '+familyWord+' fit your budget: '+details+'.'
     :lang==='sv'
-      ? 'Ja. Följande '+familyWord+' i de godkända produktuppgifterna passar din prisgräns: '+details+'.'
-      : 'Kyllä. Nämä hyväksyttyjen tuotetietojen '+familyWord+' sopivat hintarajaasi: '+details+'.';
+      ? 'Ja, de här alternativen passar din budget: '+details+'.'
+      : 'Kyllä, esimerkiksi nämä sopivat budjettiisi: '+details+'.';
   return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',
     sourceIds:chosen.map(product=>product.row?.id).filter(Boolean),
     selected:chosen.map(product=>product.row).filter(Boolean)};
