@@ -3083,7 +3083,9 @@ function ecommerceOrderQuestion(value, lang='') {
 }
 
 function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
-  const q=stripConversationalQueryNoise(message);
+  const q=stripConversationalQueryNoise(message)
+    .replace(/^(?:haluaisin viela kysya|haluaisin kysya|i would like to ask|jag skulle vilja fraga)\s+/,'')
+    .replace(/\s+(?:kiitos paljon|kiitos|thank you very much|thank you|tack sa mycket|tack)$/,'');
   const specificOrder=/^(?:(?:miten|kuinka|mista)\s+(?:(?:voin|voi|pystyn|saan)\s+)?(?:tilata|ostaa|hankkia|tilaan|ostan)|(?:voinko|voiko|haluan|haluaisin)\s+(?:tilata|ostaa)|(?:how|where)\s+(?:(?:can|do|could)\s+i\s+)?(?:order|buy|purchase)|(?:can i|i want to|i would like to)\s+(?:order|buy|purchase)|(?:hur|var)\s+(?:(?:kan|ska)\s+jag\s+)?(?:bestalla|kopa)|(?:kan jag|jag vill)\s+(?:bestalla|kopa))\b/.test(q);
   if(isOrderTrackingQuestion(message)||broadProductQuestion(message)||(!specificOrder&&!ecommerceOrderQuestion(q,lang))) return null;
   const products=productCatalog(rows).filter(product=>product?.url&&String(product.row?.title||'')!=='Tuotekatalogi');
@@ -3091,7 +3093,8 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
   if(!catalogUrl&&!products.length) return null;
   const words=value=>normalizeSearchText(value).split(/[\s-]+/).filter(Boolean);
   const stop=/^(?:miten|kuinka|mista|voin|voi|voiko|voinko|pystyn|saan|haluan|haluaisin|tilata|tilaan|ostaa|ostan|hankkia|tuotteen|tuotteita|tuote|tuotteet|teilta|teidan|verkkokaupasta|sen|se|sita|taman|tama|tuon|tuota|niita|how|where|can|could|do|i|to|would|like|want|order|buy|purchase|the|a|an|product|products|item|items|it|this|that|one|your|from|online|store|hur|var|kan|ska|jag|vill|bestalla|kopa|produkt|produkter|produkten|vara|varor|den|det|denna|er|ni|webbutiken)$/;
-  const targets=words(q).filter(word=>word.length>=2&&!stop.test(word));
+  const processWords=/^(?:tilaus|tilaaminen|tapahtuu|tehdaan|toimii|tilattua|ordering|work|works|bestallningen|bestallning|fungerar|har|hjalp|viela|kysya|ask|fraga|kiitos|paljon|thank|very|much|tack|sa|mycket)$/;
+  const targets=words(q).filter(word=>word.length>=2&&!stop.test(word)&&!processWords.test(word));
   const equal=(query,name)=>query===name||(name.length>=4&&query.startsWith(name)&&/^(?:n|in|a|ta|ia|it|t|en|et|er|na|ssa|sta|lla|lle)$/.test(query.slice(name.length)));
   let matched=[];
   if(targets.length){
@@ -3105,16 +3108,19 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
   }
   if(matched.length===1){
     const product=matched[0];
-    const answer=lang==='en'?'Here’s the product page for '+product.name+'.':lang==='sv'?'Här hittar du produktsidan för '+product.name+'.':'Tästä pääset suoraan tuotteen '+product.name+' sivulle.';
+    const answer=lang==='en'?'Here’s the product page for '+product.name+'.':lang==='sv'?'Här hittar du produktsidan för '+product.name+'.':'Tässä on suora linkki tuotteeseen '+product.name+'.';
     return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
   }
   if(matched.length>1){
     const choices=matched.slice(0,4);
     return {answer:lang==='en'?'Which of these did you have in mind?':lang==='sv'?'Vilken av de här tänkte du på?':'Mitä näistä tuotteista olit ajatellut?',handoff:false,confidence:0.8,intent:'Tuotteet',sourceIds:choices.map(p=>p.row?.id).filter(Boolean),selected:choices.map(p=>p.row).filter(Boolean)};
   }
-  if(targets.length||/\b(?:se|sen|sita|tama|taman|tuon|tuota|it|this|that|den|det|denna)\b/.test(q)){
-    return {answer:lang==='en'?'Which product would you like to order?':lang==='sv'?'Vilken produkt vill du beställa?':'Minkä tuotteen haluaisit tilata?',handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
+  if(targets.length){
+    const answer=lang==='en'?'I couldn’t identify that product. What is its name?':lang==='sv'?'Jag hittar inte den produkten. Vad heter den?':'En tunnistanut tuotetta. Mikä sen nimi on?';
+    return {answer,handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
   }
+  // Without a uniquely established referent, explain the store ordering process.
+  // The catalog button is safe; never silently choose an unrelated product.
 
   const catalogRow=rows.find((row)=>
     String(row?.title||'')==='Tuotekatalogi' &&
