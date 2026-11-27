@@ -90,3 +90,19 @@ test('checks both endpoints of euro price and delivery duration ranges',()=>{
     topic:'delivery',answer:'3–4 päivää',sourceRows:[row('d','Toimitus','2–4 päivää')],
   }).status,'review');
 });
+
+test('validates sterling prices and both range endpoints',()=>{
+  const check=(answer,original)=>checkCitedNumericalClaims({topic:'pricing',answer,sourceRows:[row('p','Hinnat',original)]}).status;
+  assert.equal(check('£49','49 GBP'),'no_numeric_conflict_found');
+  assert.equal(check('£59','49 GBP'),'review');
+  assert.equal(check('59–79 GBP','49–79 GBP'),'review');
+  assert.equal(check('49–79 £','49–69 GBP'),'review');
+});
+test('international grouped prices preserve numeric values without accepting changed amounts',()=>{
+  const check=(answer,original)=>checkCitedNumericalClaims({topic:'pricing',answer,sourceRows:[row('p','Hinnat',original)]}).status;
+  assert.equal(check('$1,299.90','1299.90 USD'),'no_numeric_conflict_found');
+  assert.equal(check('$1,399.90','1299.90 USD'),'review');
+  assert.equal(check('1.299,90 €','1299.90 EUR'),'no_numeric_conflict_found');
+  assert.equal(check('49,90 €','49.90 EUR'),'no_numeric_conflict_found');
+  assert.equal(check('https://example.com/49-eur','19 EUR'),'not_checked');
+});
