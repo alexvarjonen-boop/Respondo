@@ -117,6 +117,8 @@ import dns from 'dns/promises';
 import net from 'net';
 import http from 'http';
 import https from 'https';
+import { gunzip, inflate, brotliDecompress } from 'node:zlib';
+import { promisify } from 'node:util';
 import { GLOBAL_GUIDE_PATHS, globalGuideData, globalResourcesMarkup } from './public/global-resources.mjs';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './public/vertical-landing.mjs';
 import { CUSTOMER_SERVICE_SEO_PATH, customerServiceLandingMarkup, customerServiceQuestions } from './public/customer-service-landing.mjs';
@@ -5953,6 +5955,26 @@ async function readPinnedResponse(response, maxBytes = 64_000) {
   return Buffer.concat(chunks,total).toString('utf8');
 }
 
+// Use the runtime's built-in decoders. Expanded data is bounded as strictly
+// as downloaded data so compressed sites cannot exhaust server memory.
+async function decodeImportedResponse(bytes,{encoding='',type='',gzipSitemap=false,maxBytes,binary=false}={}){
+  const decoders={gzip:gunzip,'x-gzip':gunzip,deflate:inflate,br:brotliDecompress};
+  let body=bytes;
+  const enc=String(encoding||'').trim().toLowerCase();
+  if(enc&&enc!=='identity'){
+    if(!Object.hasOwn(decoders,enc))throw new Error('Unsupported website encoding.');
+    body=await promisify(decoders[enc])(body,{maxOutputLength:maxBytes});
+  }
+  if(gzipSitemap&&body[0]===0x1f&&body[1]===0x8b)body=await promisify(gunzip)(body,{maxOutputLength:maxBytes});
+  if(body.length>maxBytes)throw new Error('Website response too large.');
+  if(binary)return body;
+  const prefix=body.subarray(0,4096).toString('latin1');
+  const charset=String(type).match(/charset\s*=\s*["']?([\w-]+)/i)?.[1]||
+    prefix.match(/<meta\b[^>]*\bcharset\s*=\s*["']?([\w-]+)/i)?.[1]||
+    prefix.match(/<\?xml\b[^>]*\bencoding\s*=\s*["']([\w-]+)/i)?.[1]||'utf-8';
+  const bom=body[0]===0xff&&body[1]===0xfe?'utf-16le':body[0]===0xfe&&body[1]===0xff?'utf-16be':body[0]===0xef&&body[1]===0xbb&&body[2]===0xbf?'utf-8':'';
+  try{return new TextDecoder(bom||charset).decode(body);}catch{return body.toString('utf8');}
+}
 async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, timeoutMs = 8000, binary = false) {
   let url = await assertPublicHttpUrl(value);
   const controller = new AbortController();
@@ -5964,7 +5986,8 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, t
         method:'GET',
         headers:{
           'User-Agent':'RESPONDO-Website-Importer/2.0',
-          'Accept':'text/html,application/xhtml+xml,application/json,text/plain;q=0.8,*/*;q=0.1',
+          'Accept-Encoding':'gzip, deflate, br',
+          'Accept':'text/html,application/xhtml+xml,application/json,application/xml,text/xml,text/plain;q=0.8,*/*;q=0.1',
         },
       });
       const status = Number(response.statusCode || 0);
@@ -5985,7 +6008,9 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, t
       }
       const type = String(response.headers['content-type'] || '').toLowerCase();
       const declaredLength = Number(response.headers['content-length'] || 0);
-      if (!acceptedTypes.some(x=>type.includes(x)) || (declaredLength > 0 && declaredLength > maxBytes)) {
+      const gzipSitemap=acceptedTypes.includes('xml')&&/\.xml\.gz$/i.test(url.pathname);
+      const accepted=acceptedTypes.some(x=>type.includes(x))||(gzipSitemap&&/^(?:application\/(?:gzip|x-gzip|octet-stream))(?:;|$)/i.test(type));
+      if (!accepted || (declaredLength > 0 && declaredLength > maxBytes)) {
         response.resume();
         throw new Error('Verkkosivun sisältöä ei voitu lukea.');
       }
@@ -5999,7 +6024,9 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, t
         chunks.push(Buffer.from(chunk));
       }
       const bytes=Buffer.concat(chunks,total);
-      return binary ? {bytes,finalUrl:url.href,contentType:type} : {text:bytes.toString('utf8'),finalUrl:url.href};
+      const decoded=await decodeImportedResponse(bytes,{encoding:response.headers['content-encoding'],type,gzipSitemap,maxBytes,binary});
+      if(controller.signal.aborted)throw new Error('Website request timed out.');
+      return binary ? {bytes:decoded,finalUrl:url.href,contentType:type} : {text:decoded,finalUrl:url.href};
     }
     throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
   } catch (error) {
@@ -6097,17 +6124,17 @@ async function discoverSitemapUrls(baseUrl, limit = 120, budgetMs = 12000) {
   const candidates=[...robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)].map(m=>m[1]);
   candidates.push(new URL('/sitemap.xml',base).href,new URL('/sitemap_index.xml',base).href);
   const queue=[...new Set(candidates.map(u=>normalizedCrawlUrl(u,baseUrl,{sitemap:true})).filter(Boolean))];
-  while(queue.length && visited.size<16 && Date.now()<deadline && entries.length<40000){
+  while(queue.length && visited.size<40 && Date.now()<deadline && entries.length<40000){
     queue.sort((a,b)=>customerPageScore(b)-customerPageScore(a));
     const batch=[];
-    while(queue.length&&batch.length<3&&visited.size<16){
+    while(queue.length&&batch.length<3&&visited.size<40){
       const url=queue.shift();if(visited.has(url))continue;
       visited.add(url);batch.push(url);
     }
     const maps=await Promise.all(batch.map(fetchMap));
     for(const xml of maps){
       for(const entry of sitemapEntries(xml,baseUrl)){
-        if(entry.index){if(!visited.has(entry.url)&&queue.length<40)queue.push(entry.url);}
+        if(entry.index){if(!visited.has(entry.url)&&!queue.includes(entry.url)&&queue.length<80)queue.push(entry.url);}
         else if(entries.length<40000)entries.push(entry);
       }
     }
@@ -6178,8 +6205,9 @@ function numericStorePrice(value) {
   const number=Number(raw);
   return Number.isFinite(number) && number>=0 ? number : null;
 }
-async function fetchPublicJson(value,maxBytes=8_000_000) {
-  const result=await fetchPublicResource(value,['application/json','text/json'],maxBytes);
+async function fetchPublicJson(value,maxBytes=8_000_000,deadline=Date.now()+8000) {
+  if(Date.now()>=deadline)throw new Error('Catalog request budget exhausted.');
+  const result=await fetchPublicResource(value,['application/json','text/json'],maxBytes,Math.min(8000,Math.max(1000,deadline-Date.now())));
   return JSON.parse(result.text);
 }
 function cleanCatalogValues(value,limit=30) {
@@ -6264,6 +6292,7 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
       return {name:String(option?.name||'').trim(),values};
     }).filter((option)=>option.name&&option.values.length);
     const handle=String(raw?.handle||'').trim();
+    if(!handle||!/^[a-z0-9][a-z0-9-]{0,249}$/i.test(handle))return;
     const product=normalizeCatalogProduct({
       name:raw?.title,
       url:new URL('/products/'+handle,base).toString(),
@@ -6300,7 +6329,7 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
       try{
         const payload=await fetchPublicJson(
           new URL(feed+'?limit=250&page='+page,base).toString(),
-          10_000_000,
+          10_000_000,deadline,
         );
         return {feed,products:Array.isArray(payload?.products)?payload.products:[],failed:false};
       }catch{
@@ -6422,7 +6451,7 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
   for(let page=1;out.length<limit && Date.now()<deadline;page++){
     let products;
     try {
-      const payload=await fetchPublicJson(new URL('/wp-json/wc/store/v1/products?per_page=100&page='+page,base).toString(),10_000_000);
+      const payload=await fetchPublicJson(new URL('/wp-json/wc/store/v1/products?per_page=100&page='+page,base).toString(),10_000_000,deadline);
       products=Array.isArray(payload)?payload:[];
     } catch {
       if(page===1) return [];
@@ -6629,6 +6658,9 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     ? fetchPublicHtml(contactCandidate.url,Math.min(8000,Math.max(1000,remainingTime()))).catch(()=>null)
     : Promise.resolve(null);
 
+  const sitemapPromise=sitemapLimit>0&&remainingTime()>3000
+    ? discoverSitemapUrls(first.finalUrl,sitemapLimit,Math.min(18000,Math.max(1000,Math.floor(remainingTime()*0.3)))).catch(()=>[])
+    : Promise.resolve([]);
   let storefrontProducts=[];
   if (storefrontLimit > 0 && remainingTime()>5000) {
     try {
@@ -6644,10 +6676,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   }
 
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
-  let sitemapUrls = [];
-  if (sitemapLimit > 0 && remainingTime()>3000) {
-    try { sitemapUrls = await discoverSitemapUrls(first.finalUrl, sitemapLimit,Math.min(18000,Math.max(1000,Math.floor(remainingTime()*0.3)))); } catch (e) { console.warn('Sitemap discovery skipped', e?.message || e); }
-  }
+  const sitemapUrls=await sitemapPromise;
   for (const link of sitemapUrls) {
     let u;
     try { u = new URL(link); } catch { continue; }
@@ -6691,6 +6720,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       const key=crawlUrlKey(parsed.href,base.href);
       if(key && parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && usefulPath(parsed.href) && !pages.some(page=>page.key===key)){
         fetchedKeys.add(key);
+        if(contactCandidate)fetchedKeys.add(crawlUrlKey(contactCandidate.url,base.href));
         pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
         collectMedia(contactPage.html,contactPage.finalUrl);
         enqueue(contactPage.html,contactPage.finalUrl);
@@ -6825,7 +6855,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const pageDocuments = pages.map((page) => ({
     url:page.url,
     ...page.document,
-  })).filter((page) => page.text.length > 0 || page.links.length > 0 || page.structuredFacts?.length > 0 || page.products?.length > 0);
+  })).filter((page) => page.text.length > 0 || page.links.length > 0 || page.structuredFacts?.length > 0 || page.products?.length > 0 || page.contactForm);
 
   // SPA/client-rendered sites often keep their visible copy in same-origin JS bundles.
   // Read strings from those bundles without executing them so prices, trial terms and
