@@ -7709,15 +7709,15 @@ function conciseKnowledgeAnswer(row, query) {
 // context from another clause in the same message.
 function splitIndependentCustomerQuestions(message) {
   const raw=String(message||'').trim();
-  if(raw.length<20 || raw.length>500) return null;
+  if(raw.length<20 || raw.length>500 || /https?:\/\/|[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(raw)) return null;
   const questionStart=/^(?:paljonko|mita|mika|mitka|miten|milloin|monelta|mihin aikaan|miss[aa]|kuinka|kauanko|onko|voiko|voinko|saako|saanko|miksi|missapa|kerro|enta|entapa|what|when|where|how|which|who|can|could|do|does|is|are|why|will|what about|vad|hur|nar|var|vilken|vilka|kan|har|finns|ar|varfor)\b/;
   const dependent=/\b(?:se|sen|sita|siita|sille|tama|tuo|toi|niita|it|its|that|this|them|those|they|det|den|detta|dem|samma)\b/;
   // Split only two or three COMPLETE questions. Each answer traverses the
   // same tenant-scoped engine independently and incomplete parts cannot
   // borrow another part's source evidence.
   const splits=[
-    raw.split(/\s+(?:ja|and|och)\s+/iu),
-    raw.split(/\?\s+(?=\S)/u)
+    raw.split(/\s+(?:ja|and|och)\s+(?=(?:paljonko|mit[äa]|mik[äa]|mitk[äa]|miten|milloin|monelta|mihin|miss[äa]|kuinka|kauanko|onko|voiko|voinko|saako|saanko|miksi|what|when|where|how|which|who|can|could|do|does|is|are|why|will|vad|hur|n[äa]r|var|vilken|vilka|kan|har|finns|[äa]r|varf[öo]r)\b)/iu),
+    raw.split(/\?\s*(?=[\p{L}])/u).map(part=>part.replace(/^\s*(?:ja|and|och)\s+/iu,''))
   ];
   for(const candidate of splits){
     if(candidate.length<2 || candidate.length>3) continue;
