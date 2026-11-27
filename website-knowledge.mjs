@@ -256,7 +256,8 @@ function productFromStructuredNode(node, pageUrl) {
   const currency=offers.find((offer)=>offer.currency)?.currency || clean(node.priceCurrency || '');
   const availabilityStates=[...new Set(offers.map(offer=>offer.availability).filter(Boolean))];
   const availability=availabilityStates.length===1?availabilityStates[0]:availabilityStates.length>1?'':productAvailability(node.availability);
-  const url=httpUrl(node.url || offers.find((offer)=>offer.url)?.url || pageUrl,pageUrl) || pageUrl;
+  const explicitUrl=httpUrl(node.url || offers.find((offer)=>offer.url)?.url || '',pageUrl);
+  const url=explicitUrl || pageUrl;
   const description=stripProductHtml(node.description || '').slice(0,700);
   const imageUrl=productImageUrl(node.image || variants.find((variant)=>variant.image)?.image, pageUrl);
   const category=clean(node.category || node.productCategory || node.additionalType || '').slice(0,120);
@@ -270,7 +271,7 @@ function productFromStructuredNode(node, pageUrl) {
   if(sizes.length && !options.some((option)=>/koko|size|storlek/.test(norm(option.name)))) options.push({name:'Koko',values:sizes});
   if(materialsList.length && !options.some((option)=>/materia|material/.test(norm(option.name)))) options.push({name:'Materiaali',values:materialsList});
   const specs=structuredProductSpecs(node);
-  return {name,url,imageUrl,price,maxPrice,currency,availability,description,category,brand,sku,colors,sizes,materials:materialsList,options:options.slice(0,12),specs};
+  return {name,url,imageUrl,price,maxPrice,currency,availability,description,category,brand,sku,colors,sizes,materials:materialsList,options:options.slice(0,12),specs,explicitProductUrl:!!explicitUrl};
 }
 function structuredProductNodes(html) {
   const nodes=[];
@@ -439,6 +440,17 @@ export function extractProducts(html, pageUrl) {
   for (const node of structuredProductNodes(html)) {
     const product=productFromStructuredNode(node,pageUrl);
     if (product) products.push(product);
+  }
+  // A listing may contain multiple Product nodes without a URL for each
+  // item. Never turn its shared listing URL into fake direct product links.
+  if(products.length>1){
+    const samePage=products.filter(p=>p.url===pageUrl);
+    const distinct=new Set(samePage.map(p=>norm(p.name)));
+    if(distinct.size>1){
+      for(let i=products.length-1;i>=0;i--){
+        if(products[i].url===pageUrl&&!products[i].explicitProductUrl)products.splice(i,1);
+      }
+    }
   }
   // A valid Product JSON-LD node may omit its image even when this
   // specific product page exposes an og:image/twitter:image thumbnail.
@@ -1028,7 +1040,7 @@ export function essentialWebsiteCandidates(bundle) {
   const catalogLooksLikeTemplate=rawCatalogProducts.length>=3 && templateProductCount>=2 && templateProductCount>=usableCatalogProducts.length;
   const hasCatalogProducts=usableCatalogProducts.length>0;
   const add = (kind,title,answer,sourceUrl) => {
-    const text = clean(answer), key = kind+':'+norm(text);
+    const text = clean(answer), key = kind+':'+(kind==='faq'?norm(title)+':':'')+norm(text);
     if (!text || seen.has(key) || containsKnowledgeInstructionAttack(text)) return;
     seen.add(key);
     const uniqueTitle = ['services','pricing'].includes(kind) ? title + ': ' + text.slice(0,110) : title;
