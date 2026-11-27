@@ -122,8 +122,10 @@ function stripProductHtml(value) {
     .replace(/<[^>]+>/g,' ')));
 }
 function productNumber(value) {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  const raw=String(value ?? '').trim().replace(/\s/g,'').replace(',', '.').replace(/[^0-9.-]/g,'');
+  if (typeof value === 'number') return Number.isFinite(value) && value>=0 ? value : null;
+  if(value==null) return null;
+  const raw=String(value).trim().replace(/^(?:EUR|USD|GBP|SEK|€|\$|£)\s*/i,'').replace(/\s*(?:EUR|USD|GBP|SEK|€|\$|£|kr)$/i,'').replace(',', '.');
+  if(!/^\d+(?:\.\d+)?$/.test(raw)) return null;
   const number=Number(raw);
   return Number.isFinite(number) && number >= 0 ? number : null;
 }
@@ -195,9 +197,9 @@ function structuredProductSpecs(node) {
 }
 function productAvailability(value) {
   const n=norm(String(value || '').split('/').pop());
-  if (/instock|in stock|varastossa|available/.test(n)) return 'varastossa';
-  if (/outofstock|out of stock|soldout|sold out|ei varastossa|unavailable/.test(n)) return 'ei varastossa';
-  if (/preorder|pre-order|ennakkotila/.test(n)) return 'ennakkotilaus';
+  if (/outofstock|out of stock|soldout|sold out|ei varastossa|unavailable|discontinued/.test(n)) return 'ei varastossa';
+  if (/preorder|pre-order|presale|ennakkotila|backorder/.test(n)) return 'ennakkotilaus';
+  if (/^(?:instock|in stock|varastossa|available|limitedavailability)$/.test(n)) return 'varastossa';
   return '';
 }
 function productOffers(value) {
@@ -227,7 +229,8 @@ function productFromStructuredNode(node, pageUrl) {
   const price=prices.length?Math.min(...prices):null;
   const maxPrice=prices.length?Math.max(...prices):price;
   const currency=offers.find((offer)=>offer.currency)?.currency || clean(node.priceCurrency || '');
-  const availability=offers.find((offer)=>offer.availability)?.availability || productAvailability(node.availability);
+  const states=[...new Set(offers.map(offer=>offer.availability).filter(Boolean))];
+  const availability=states.length===1 ? states[0] : states.length>1 ? '' : productAvailability(node.availability);
   const url=httpUrl(node.url || offers.find((offer)=>offer.url)?.url || pageUrl,pageUrl) || pageUrl;
   const description=stripProductHtml(node.description || '').slice(0,700);
   const imageUrl=productImageUrl(node.image || variants.find((variant)=>variant.image)?.image, pageUrl);
@@ -427,6 +430,18 @@ function isContactPageLink(link) {
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
   const blocks = [], links = [];
+  // FAQPage is explicit published content. Use only its own question/answer
+  // pairs, not unrelated JSON, reviews, scripts or manufacturer information.
+  for(const node of structuredProductNodes(html)){
+    if(!productTypeIs(node,'FAQPage')) continue;
+    const questions=Array.isArray(node.mainEntity)?node.mainEntity:[node.mainEntity];
+    for(const q of questions.slice(0,100)){
+      if(!productTypeIs(q,'Question')) continue;
+      const heading=stripProductHtml(q.name || '');
+      const answer=stripProductHtml(q.acceptedAnswer?.text || '');
+      if(heading.length>=4&&heading.length<=180&&answer.length>=10&&answer.length<=1600) blocks.push({heading,text:answer});
+    }
+  }
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
   const flush = () => {
@@ -460,7 +475,8 @@ export function extractBusinessDocument(html, url) {
       const node = stack[i];
       if (/^h[1-6]$/.test(tag) && !node.skip) {
         heading = clean(decodeHtml(node.text));
-        suppressedHeading = review.test(norm(heading)) || junk.test(norm(heading));
+        const policyHeading=/^(?:terms(?: of (?:service|sale|use))?|terms and conditions|käyttöehdot|kayttoehdot|toimitusehdot|köpvillkor|kopvillkor|allmänna villkor|allmanna villkor)$/i.test(heading);
+        suppressedHeading = review.test(norm(heading)) || (junk.test(norm(heading))&&!policyHeading);
       }
       if ((tag === 'td' || tag === 'th') && !node.skip) {
         const row = stack.findLast(x => x.tag === 'tr');
@@ -587,7 +603,8 @@ export function essentialWebsiteCandidates(bundle) {
   for (const doc of bundle?.pageDocuments || []) {
     const docPath=norm(new URL(doc.url).pathname);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
-    if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
+    if (/privacy|tietosuoja|integritet|arvostel|reviews|testimonial/.test(docPath)) continue;
+    const policyDoc=/terms|kayttoeh|toimitusehd|kopvillkor|villkor|shipping-policy|refund-policy|return-policy/.test(docPath);
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
     if (doc.contactForm && httpUrl(doc.url)) {
       contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
@@ -598,6 +615,7 @@ export function essentialWebsiteCandidates(bundle) {
     for (const block of blocks) {
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
+      if(policyDoc&&!['returns','delivery','warranty','payment','faq'].includes(kind)) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
@@ -677,7 +695,10 @@ export function essentialWebsiteCandidates(bundle) {
   }
   catalogLinks.sort((a,b)=>b.score-a.score);
   if (catalogLinks.length) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
-  return out.slice(0,10000);
+  // A full catalog must never crowd out the company's basic facts.
+  const business=out.filter(row=>row.category!=='Tuotteet');
+  const products=out.filter(row=>row.category==='Tuotteet');
+  return [...business,...products].slice(0,10000);
 }
 export function essentialWebsiteProfile(bundle) {
   const facts = essentialWebsiteCandidates(bundle);
