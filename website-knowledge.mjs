@@ -430,6 +430,66 @@ function isContactPageLink(link) {
   } catch { return false; }
 }
 
+// Read only explicitly first-party business metadata. Never use product brand,
+// manufacturer, author, reviewer or an unrelated organization's contact details.
+function structuredBusinessFacts(html,pageUrl) {
+  const page=new URL(pageUrl);
+  const ownHost=raw=>{
+    if(typeof raw!=='string'||!raw.trim()) return false;
+    try{const u=new URL(raw,pageUrl);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password&&u.hostname.toLowerCase()===page.hostname.toLowerCase()&&(!raw.startsWith('#'));}catch{return false;}
+  };
+  const supported=['Organization','Corporation','LocalBusiness','ProfessionalService','Store','Restaurant','FoodEstablishment','HealthAndBeautyBusiness','HairSalon','BeautySalon','AutoRepair','Dentist','MedicalBusiness','LegalService','HomeAndConstructionBusiness','MovingCompany','Plumber','Electrician','RealEstateAgent','LodgingBusiness','Hotel','TravelAgency','FinancialService','InsuranceAgency'];
+  const dayNames={Monday:'Ma',Tuesday:'Ti',Wednesday:'Ke',Thursday:'To',Friday:'Pe',Saturday:'La',Sunday:'Su',Mo:'Ma',Tu:'Ti',We:'Ke',Th:'To',Fr:'Pe',Sa:'La',Su:'Su'};
+  const day=value=>dayNames[String(value||'').split(/[\/#]/).pop()]||'';
+  const time=value=>typeof value==='string'&&/^(?:[01]\d|2[0-3]):[0-5]\d(?::00)?$/.test(value)?value.slice(0,5):'';
+  const facts=[];
+  const add=(kind,title,answer)=>{
+    const value=clean(answer);
+    if(value&&value.length<=500&&!junk.test(norm(value))&&!review.test(norm(value))) facts.push({kind,title,answer:value});
+  };
+  for(const node of structuredProductNodes(html)){
+    if(!supported.some(type=>productTypeIs(node,type))) continue;
+    if(!ownHost(node.url)&&!(typeof node['@id']==='string'&&/^https?:\/\//i.test(node['@id'])&&ownHost(node['@id']))) continue;
+    if(node.url&&!ownHost(node.url)) continue;
+    const types=Array.isArray(node['@type'])?node['@type']:[node['@type']];
+    if(types.some(type=>/Product|Person|Brand|Review/i.test(String(type)))) continue;
+    if(typeof node.email==='string'){
+      const value=clean(node.email.replace(/^mailto:/i,''));
+      if(new RegExp('^'+email.source+'$','i').test(value)) add('contact','Sähköposti',value);
+    }
+    if(typeof node.telephone==='string'){
+      const value=clean(node.telephone.replace(/^tel:/i,''));
+      if(/^\+?[\d ().-]{7,30}$/.test(value)&&value.replace(/\D/g,'').length>=7&&value.replace(/\D/g,'').length<=15) add('contact','Puhelinnumero',value);
+    }
+    if(node.address&&typeof node.address==='object'&&!Array.isArray(node.address)){
+      const a=node.address;
+      const street=typeof a.streetAddress==='string'?clean(a.streetAddress):'';
+      const zip=typeof a.postalCode==='string'?clean(a.postalCode):'';
+      const city=typeof a.addressLocality==='string'?clean(a.addressLocality):'';
+      if(street&&city) add('location','Osoite',[street,[zip,city].filter(Boolean).join(' ')].join(', '));
+    }
+    const periods=[];
+    for(const spec of (Array.isArray(node.openingHoursSpecification)?node.openingHoursSpecification:[node.openingHoursSpecification]).slice(0,50)){
+      if(!spec||typeof spec!=='object'||spec.validFrom||spec.validThrough) continue;
+      const days=(Array.isArray(spec.dayOfWeek)?spec.dayOfWeek:[spec.dayOfWeek]).map(day).filter(Boolean);
+      const opens=time(spec.opens),closes=time(spec.closes);
+      // Identical open/close times can mean either closed or open all day.
+      if(days.length&&opens&&closes&&opens!==closes) periods.push(days.join(', ')+' '+opens+'–'+closes);
+    }
+    if(!periods.length){
+      for(const value of (Array.isArray(node.openingHours)?node.openingHours:[node.openingHours]).slice(0,30)){
+        if(typeof value!=='string') continue;
+        const m=value.trim().match(/^((?:Mo|Tu|We|Th|Fr|Sa|Su)(?:[-,](?:Mo|Tu|We|Th|Fr|Sa|Su))*)\s+(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+        if(m&&time(m[2])&&time(m[3])&&m[2]!==m[3]) periods.push(m[1].replace(/Mo|Tu|We|Th|Fr|Sa|Su/g,part=>day(part))+' '+m[2]+'–'+m[3]);
+      }
+    }
+    if(periods.length) add('hours','Aukioloajat',[...new Set(periods)].join('; '));
+    const areas=(Array.isArray(node.areaServed)?node.areaServed:[node.areaServed]).map(value=>typeof value==='string'?clean(value):value&&typeof value.name==='string'?clean(value.name):'').filter(Boolean);
+    if(areas.length) add('area','Toimialue',[...new Set(areas)].join(', '));
+  }
+  return facts;
+}
+
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
   const blocks = [], links = [];
@@ -511,7 +571,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, structuredFacts:structuredBusinessFacts(html,url), contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -580,7 +640,7 @@ export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
   const hasCatalogProducts=Array.isArray(bundle?.products) && bundle.products.length>0;
   const add = (kind,title,answer,sourceUrl) => {
-    const text = clean(answer), key = kind+':'+norm(text);
+    const text = clean(answer), key = kind+':'+(kind==='faq'?norm(title)+':':'')+norm(text);
     if (!text || seen.has(key)) return;
     seen.add(key);
     const uniqueTitle = ['services','pricing'].includes(kind) ? title + ': ' + text.slice(0,110) : title;
@@ -609,6 +669,7 @@ export function essentialWebsiteCandidates(bundle) {
   const catalogLinks = [];
   const serviceLinks = [];
   const bookingLinks = [];
+  const structuredFallbacks=[];
   for (const doc of bundle?.pageDocuments || []) {
     const docPath=norm(new URL(doc.url).pathname);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
@@ -619,6 +680,7 @@ export function essentialWebsiteCandidates(bundle) {
       contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     }
     const docProducts=Array.isArray(doc.products)?doc.products:[];
+    if(!policyDoc&&!docProducts.length) for(const fact of doc.structuredFacts||[]) structuredFallbacks.push({...fact,sourceUrl:doc.url});
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     for (const block of blocks) {
@@ -700,6 +762,16 @@ export function essentialWebsiteCandidates(bundle) {
       }
     }
   }
+  // Visible customer-facing text wins. Metadata is only a fallback for
+  // missing fields, and conflicting branch addresses/hours are not guessed.
+  for(const title of ['Sähköposti','Puhelinnumero','Osoite','Aukioloajat','Toimialue']){
+    if(out.some(row=>row.title===title)) continue;
+    const candidates=structuredFallbacks.filter(fact=>fact.title===title);
+    const unique=new Map(candidates.map(fact=>[norm(fact.answer),fact]));
+    if(unique.size!==1) continue;
+    const fact=[...unique.values()][0];
+    add(fact.kind,title,fact.answer,fact.sourceUrl);
+  }
   bookingLinks.sort((a,b)=>b.score-a.score);
   if(bookingLinks.length) add('booking','Ajanvarauslinkki',bookingLinks[0].url,bookingLinks[0].sourceUrl);
   serviceLinks.sort((a,b)=>b.score-a.score);
@@ -761,5 +833,7 @@ export function usableWebsiteRow(row) {
     return !!product?.name;
   }
   if(row.title==='Toimialue' && norm(row.category)==='toimialue') return businessFactKind(row.answer,'Toimialue')==='area';
+  if(row.title==='Puhelinnumero'&&norm(row.category)==='yhteystiedot') return /^\+?[\d ().-]{7,30}$/.test(row.answer)&&String(row.answer).replace(/\D/g,'').length>=7&&String(row.answer).replace(/\D/g,'').length<=15;
+  if(row.title==='Osoite'&&norm(row.category)==='sijainti ja myymalat') return !!businessFactKind(row.answer,'Osoite')||/^[^,]{3,150}\d[^,]*,\s*[^,]{2,100}$/.test(row.answer);
   return !!businessFactKind(row.answer, String(row.category||'')+' '+String(row.title||''));
 }
