@@ -1,5 +1,6 @@
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
+import { decodeWebsiteResponse } from './website-response.mjs';
 import { matchVerifiedSpecialistService } from './service-semantics.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
@@ -3337,7 +3338,8 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, d
         method:'GET',
         headers:{
           'User-Agent':'RESPONDO-Website-Importer/2.0',
-          'Accept':'text/html,application/xhtml+xml,application/json,text/plain;q=0.8,*/*;q=0.1',
+          'Accept-Encoding':'gzip, deflate, br',
+          'Accept':'text/html,application/xhtml+xml,application/json,application/xml,text/xml,text/plain;q=0.8,*/*;q=0.1',
         },
       });
       const status = Number(response.statusCode || 0);
@@ -3353,8 +3355,10 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, d
         throw new Error('Verkkosivua ei saatu luettua.');
       }
       const type = String(response.headers['content-type'] || '').toLowerCase();
+      const gzipFile=acceptedTypes.includes('xml')&&/\.xml\.gz$/i.test(url.pathname);
+      const accepted=acceptedTypes.some(x=>type.includes(x))||(gzipFile&&/^(?:application\/(?:gzip|x-gzip|octet-stream))(?:;|$)/i.test(type));
       const declaredLength = Number(response.headers['content-length'] || 0);
-      if (!acceptedTypes.some(x=>type.includes(x)) || (declaredLength > 0 && declaredLength > maxBytes)) {
+      if (!accepted || (declaredLength > 0 && declaredLength > maxBytes)) {
         response.resume();
         throw new Error('Verkkosivun sisältöä ei voitu lukea.');
       }
@@ -3367,7 +3371,9 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, d
         }
         chunks.push(Buffer.from(chunk));
       }
-      return {text:Buffer.concat(chunks,total).toString('utf8'),finalUrl:url.href};
+      const text=await decodeWebsiteResponse(Buffer.concat(chunks,total),{contentType:type,contentEncoding:response.headers['content-encoding'],gzipFile,maxBytes});
+      if(controller.signal.aborted) throw new Error('Verkkosivua ei saatu luettua.');
+      return {text,finalUrl:url.href};
     }
     throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
   } finally { clearTimeout(timer); }
@@ -3473,6 +3479,7 @@ async function discoverSitemapUrls(baseUrl, limit = 120, deadline = Date.now()+1
     try{return (await fetchPublicResource(raw,types,maxBytes,deadline)).text;}catch{return '';}
   };
   addMap('/sitemap.xml'); addMap('/sitemap_index.xml');
+  // robots.txt and sitemap indexes can also point to .xml.gz files.
   const robots=await read(new URL('/robots.txt',base).href,['text/plain'],500000);
   for(const m of robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)) addMap(m[1]);
   while(sitemapQueue.length&&found.size<limit&&visited.size<60&&Date.now()<deadline){
