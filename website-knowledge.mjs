@@ -51,7 +51,7 @@ const labels = {
   services:'Palvelut', pricing:'Hinnat', hours:'Aukioloajat', contact:'Yhteystiedot', quote:'Tarjouspyyntö',
   delivery:'Toimitus ja seuranta', returns:'Palautukset ja vaihdot', warranty:'Takuu', payment:'Maksaminen',
   materials:'Materiaalit', quality:'Laatu ja valmistus', care:'Hoito-ohjeet', sizing:'Koot ja mitat',
-  location:'Sijainti ja myymälät', faq:'Usein kysytyt', catalog:'Verkkokauppa'
+  location:'Sijainti ja myymälät', area:'Toimialue', booking:'Ajanvaraus', faq:'Usein kysytyt', catalog:'Verkkokauppa'
 };
 const keywords = {
   services:['palvelut','teette','services','tjänster'],
@@ -68,6 +68,8 @@ const keywords = {
   care:['hoito-ohje','huolto-ohje','care','maintenance','washing'],
   sizing:['koko','koot','mitat','size','sizes','dimensions'],
   location:['sijainti','myymälä','osoite','location','store','butik'],
+  area:['toimialue','palvelualue','service area','coverage area','verksamhetsområde'],
+  booking:['ajanvaraus','varaa aika','booking','appointment','boka tid'],
   faq:['usein kysytyt','faq','help','ohje'],
   catalog:['tuotteet','verkkokauppa','shop','products','catalog','collection']
 };
@@ -91,6 +93,7 @@ function attrs(tag) {
   return a;
 }
 function httpUrl(raw, base) {
+  if(typeof raw!=='string'||!raw.trim()||raw.trim().startsWith('#')) return '';
   try { const u = new URL(raw, base); return /^https?:$/.test(u.protocol) && !u.username && !u.password ? u.href : ''; } catch { return ''; }
 }
 
@@ -132,7 +135,7 @@ function productNumber(value) {
 function productTypeIs(node, wanted) {
   const type=node?.['@type'];
   const values=Array.isArray(type)?type:[type];
-  return values.some((value)=>norm(value)===norm(wanted));
+  return values.some((value)=>norm(String(value||'').split(/[\/#]/).pop())===norm(wanted));
 }
 function productBrand(value) {
   if (!value) return '';
@@ -444,6 +447,7 @@ export function extractBusinessDocument(html, url) {
   }
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
+  const headingTag=tag=>/^(?:h[1-6]|summary|dt)$/.test(tag);
   const flush = () => {
     const text = clean(decodeHtml(buffer)); buffer = '';
     if (text && !suppressedHeading) blocks.push({text, heading});
@@ -453,7 +457,7 @@ export function extractBusinessDocument(html, url) {
   for (const token of source.match(/<[^>]*>|[^<]+/g) || []) {
     if (token[0] !== '<') {
       if (stack.some(x => x.skip)) continue;
-      const h = stack.findLast(x => /^h[1-6]$/.test(x.tag));
+      const h = stack.findLast(x => headingTag(x.tag));
       const a = stack.findLast(x => x.tag === 'a');
       if (a) a.text += token;
       if (h) h.text += token;
@@ -467,13 +471,13 @@ export function extractBusinessDocument(html, url) {
     const match = token.match(/^<\s*(\/?)\s*([a-z0-9]+)/i);
     if (!match) continue;
     const closing = !!match[1], tag = match[2].toLowerCase();
-    const boundary = /^(?:p|div|section|article|li|tr|address|h[1-6]|nav|header|footer|aside|blockquote)$/.test(tag);
+    const boundary = /^(?:p|div|section|article|li|tr|address|h[1-6]|nav|header|footer|aside|blockquote|summary|details|dt|dd|dl)$/.test(tag);
     if (boundary) flush();
     if (closing) {
       const i = stack.findLastIndex(x => x.tag === tag);
       if (i < 0) continue;
       const node = stack[i];
-      if (/^h[1-6]$/.test(tag) && !node.skip) {
+      if (headingTag(tag) && !node.skip) {
         heading = clean(decodeHtml(node.text));
         const policyHeading=/^(?:terms(?: of (?:service|sale|use))?|terms and conditions|käyttöehdot|kayttoehdot|toimitusehdot|köpvillkor|kopvillkor|allmänna villkor|allmanna villkor)$/i.test(heading);
         suppressedHeading = review.test(norm(heading)) || (junk.test(norm(heading))&&!policyHeading);
@@ -488,7 +492,7 @@ export function extractBusinessDocument(html, url) {
       }
       if (tag === 'a' && !node.skip && node.href) links.push({url:node.href, label:clean(decodeHtml(node.text)), context:heading});
       stack.splice(i);
-      if (tag === 'section' || tag === 'article') { heading = ''; suppressedHeading = false; }
+      if (tag === 'section' || tag === 'article' || tag === 'details' || tag === 'dl') { heading = ''; suppressedHeading = false; }
       continue;
     }
     const a = attrs(token), marker = norm([a.class,a.id,a.role,a.itemprop,a['aria-label']].filter(Boolean).join(' '));
@@ -496,10 +500,10 @@ export function extractBusinessDocument(html, url) {
     const parentSkip = stack.some(x => x.skip);
     const skip = parentSkip || /^(head|title|button|select|option|blockquote|iframe)$/.test(tag) || review.test(marker) || junk.test(marker) || a['aria-hidden'] === 'true' || /display\s*:\s*none|visibility\s*:\s*hidden/i.test(a.style || '') || /\bhidden\b/i.test(token.replace(/"[^"]*"|'[^']*'/g,''));
     const href = tag === 'a' ? httpUrl(a.href, url) : '';
-    if (tag === 'a' && a.href && !parentSkip && /^(?:mailto:|tel:)/i.test(a.href)) {
+    if (tag === 'a' && a.href && !skip && /^(?:mailto:|tel:)/i.test(a.href)) {
       blocks.push({text:decodeHtml(a.href.replace(/^(mailto:|tel:)/i,'').split('?')[0]), heading:'Yhteystiedot'});
     }
-    if (tag === 'br') {
+    if (tag === 'br' && !skip) {
       const cell = stack.findLast(x => x.tag === 'td' || x.tag === 'th');
       if (cell) cell.text += ' ';
       else buffer += ' ';
@@ -516,6 +520,10 @@ export function businessFactKind(text, context = '') {
   if (/^(?:palvelut?|services?|tjanster|hinnat|hinnasto|pricing|prices|yhteystiedot|contact|aukioloajat|opening hours|pyyda tarjous|ota yhteytta|lue lisaa|read more|las mer|etusivu|home)$/i.test(n)) return '';
   const commerce=n+' '+c;
   const commerceFact=t.length>=10 && t.split(/\s+/).length>=2;
+  const areaHeading=/^(?:toimialue(?:emme|et)?|palvelualue(?:emme|et)?|service areas?|areas we serve|coverage areas?|verksamhetsomrade(?:n)?|omraden vi betjanar)$/;
+  const areaStatement=/\b(?:toimialueemme on|palvelualueemme on|our service area is|vart verksamhetsomrade ar)\b/;
+  const areaCTA=/^(?:varaa|ota yhteytta|lue|katso|book|contact|read|boka|kontakta)\b/;
+  if((areaHeading.test(c)&&/[a-zåäö]/i.test(t)&&!price.test(t)&&!email.test(t)&&!phone.test(t)&&!areaCTA.test(n)&&t.length<=350)|| (commerceFact&&areaStatement.test(n)&&t.length<=350)) return 'area';
   // Explicit section headings win over incidental words inside the sentence.
   // Example: "CNC-koneistetaan ja tarkastetaan ennen toimitusta" belongs to
   // quality/manufacturing, not shipping merely because it mentions delivery.
@@ -600,6 +608,7 @@ export function essentialWebsiteCandidates(bundle) {
   const contactLinks = [];
   const catalogLinks = [];
   const serviceLinks = [];
+  const bookingLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
     const docPath=norm(new URL(doc.url).pathname);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
@@ -643,7 +652,10 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'location') title = /\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/i.test(block.text) ? 'Osoite' : 'Sijainti ja myymälät';
       if (kind === 'faq') title = clean(block.heading).slice(0,180) || 'Usein kysytyt';
       if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
-      if (kind === 'contact' && email.test(block.text)) add(kind,'Sähköposti',block.text.match(email)[0],doc.url);
+      if (kind === 'area') title = 'Toimialue';
+      if (kind === 'contact' && email.test(block.text)) {
+        for(const match of block.text.matchAll(new RegExp(email.source,'gi'))) add(kind,'Sähköposti',match[0],doc.url);
+      }
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
@@ -664,6 +676,10 @@ export function essentialWebsiteCandidates(bundle) {
       const parsed=new URL(link.url);
       const path=norm(parsed.pathname);
       const n = norm(link.label + ' ' + parsed.pathname);
+      const bookingLabel=norm(clean(link.label)).replace(/[!?›»→]+$/,'').trim();
+      const explicitBooking=/^(?:varaa (?:aika|aikasi|vastaanottoaika|palvelu)|ajanvaraus|book (?:now|an appointment|appointment|a time)|schedule (?:an appointment|appointment)|boka (?:tid|nu)|tidsbokning)$/i.test(bookingLabel);
+      const bookingPath=/\/(?:ajanvaraus|tidsbokning|booking|appointments?|book-appointment)(?:\/|$)/i.test(parsed.pathname);
+      if(!policyDoc && parsed.protocol==='https:' && (explicitBooking || (bookingPath&&parsed.hostname===new URL(doc.url).hostname))) bookingLinks.push({...link,sourceUrl:doc.url,score:explicitBooking?30:10});
       const explicit = /tarjous|quote|estimate|offert|prisforslag/.test(n);
       if (explicit) quoteLinks.push({...link,sourceUrl:doc.url,score:10});
       if (isContactPageLink(link)) {
@@ -684,6 +700,8 @@ export function essentialWebsiteCandidates(bundle) {
       }
     }
   }
+  bookingLinks.sort((a,b)=>b.score-a.score);
+  if(bookingLinks.length) add('booking','Ajanvarauslinkki',bookingLinks[0].url,bookingLinks[0].sourceUrl);
   serviceLinks.sort((a,b)=>b.score-a.score);
   for (const link of serviceLinks) add('services','Palvelut',clean(link.label),link.sourceUrl || link.url);
   quoteLinks.sort((a,b)=>b.score-a.score);
@@ -718,8 +736,8 @@ export function essentialWebsiteProfile(bundle) {
     address:byTitle('Osoite'),
     quoteRequestUrl:byTitle('Tarjouspyyntölomake'),
     contactUrl:byTitle('Yhteydenottolomake') || byTitle('Yhteydenottosivu'),
-    bookingUrl:'',
-    serviceArea:'',
+    bookingUrl:byTitle('Ajanvarauslinkki'),
+    serviceArea:byKind('area'),
     notes:''
   };
 }
@@ -728,7 +746,7 @@ export function usableWebsiteRow(row) {
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
   const sourceType=String(row.source_type || row.sourceType || '');
   if (!['website','demo_import'].includes(sourceType)) return true;
-  if (['Tarjouspyyntölomake','Tuotekatalogi','Yhteydenottolomake','Yhteydenottosivu'].includes(row.title)) return !!httpUrl(row.answer);
+  if (['Tarjouspyyntölomake','Tuotekatalogi','Yhteydenottolomake','Yhteydenottosivu','Ajanvarauslinkki'].includes(row.title)) return !!httpUrl(row.answer);
   const serviceTitle=String(row.title||'').match(/^Palvelut\s*:\s*(.+)$/i);
   if (
     serviceTitle &&
@@ -742,5 +760,6 @@ export function usableWebsiteRow(row) {
     // product URL is missing; the catalog CTA is handled separately.
     return !!product?.name;
   }
+  if(row.title==='Toimialue' && norm(row.category)==='toimialue') return businessFactKind(row.answer,'Toimialue')==='area';
   return !!businessFactKind(row.answer, String(row.category||'')+' '+String(row.title||''));
 }
