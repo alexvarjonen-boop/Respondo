@@ -100,6 +100,7 @@ function attrs(tag) {
   return a;
 }
 function httpUrl(raw, base) {
+  if(typeof raw!=='string'||!raw.trim()||raw.trim().startsWith('#'))return '';
   try { const u = new URL(raw, base); return /^https?:$/.test(u.protocol) && !u.username && !u.password ? u.href : ''; } catch { return ''; }
 }
 
@@ -146,15 +147,17 @@ function stripProductHtml(value) {
     .replace(/<[^>]+>/g,' ')));
 }
 function productNumber(value) {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  const raw=String(value ?? '').trim().replace(/\s/g,'').replace(',', '.').replace(/[^0-9.-]/g,'');
+  if (typeof value === 'number') return Number.isFinite(value)&&value>=0 ? value : null;
+  if(value==null)return null;
+  const raw=String(value).trim().replace(/^(?:EUR|USD|GBP|SEK|€|\$|£)\s*/i,'').replace(/\s*(?:EUR|USD|GBP|SEK|€|\$|£|kr)$/i,'').replace(',','.');
+  if(!/^\d+(?:\.\d+)?$/.test(raw))return null;
   const number=Number(raw);
   return Number.isFinite(number) && number >= 0 ? number : null;
 }
 function productTypeIs(node, wanted) {
   const type=node?.['@type'];
   const values=Array.isArray(type)?type:[type];
-  return values.some((value)=>norm(value)===norm(wanted));
+  return values.some((value)=>norm(String(value||'').split(/[\/#]/).pop())===norm(wanted));
 }
 function productBrand(value) {
   if (!value) return '';
@@ -219,9 +222,9 @@ function structuredProductSpecs(node) {
 }
 function productAvailability(value) {
   const n=norm(String(value || '').split('/').pop());
-  if (/instock|in stock|varastossa|available/.test(n)) return 'varastossa';
-  if (/outofstock|out of stock|soldout|sold out|ei varastossa|unavailable/.test(n)) return 'ei varastossa';
-  if (/preorder|pre-order|ennakkotila/.test(n)) return 'ennakkotilaus';
+  if (/outofstock|out of stock|soldout|sold out|ei varastossa|unavailable|discontinued/.test(n)) return 'ei varastossa';
+  if (/preorder|pre-order|presale|ennakkotila|backorder/.test(n)) return 'ennakkotilaus';
+  if (/^(?:instock|in stock|varastossa|available|limitedavailability)$/.test(n)) return 'varastossa';
   return '';
 }
 function productOffers(value) {
@@ -251,7 +254,8 @@ function productFromStructuredNode(node, pageUrl) {
   const price=prices.length?Math.min(...prices):null;
   const maxPrice=prices.length?Math.max(...prices):price;
   const currency=offers.find((offer)=>offer.currency)?.currency || clean(node.priceCurrency || '');
-  const availability=offers.find((offer)=>offer.availability)?.availability || productAvailability(node.availability);
+  const availabilityStates=[...new Set(offers.map(offer=>offer.availability).filter(Boolean))];
+  const availability=availabilityStates.length===1?availabilityStates[0]:availabilityStates.length>1?'':productAvailability(node.availability);
   const url=httpUrl(node.url || offers.find((offer)=>offer.url)?.url || pageUrl,pageUrl) || pageUrl;
   const description=stripProductHtml(node.description || '').slice(0,700);
   const imageUrl=productImageUrl(node.image || variants.find((variant)=>variant.image)?.image, pageUrl);
