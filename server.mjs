@@ -15819,7 +15819,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // approval workflow rather than silently approving new web content.
     const orderRecovery=result.intent==='Tarkennus'&&!result.qualityFlag&&
       /^(?:(?:miten|kuinka|mista)\s+(?:(?:voin|voi|pystyn|saan)\s+)?(?:tilata|ostaa)|(?:how|where)\s+(?:can|do|could)\s+i\s+(?:order|buy)|(?:hur|var)\s+(?:kan\s+jag\s+)?(?:bestalla|kopa))\b/.test(stripConversationalQueryNoise(message));
-    if (isPublicDemo && (result.handoff||orderRecovery) && !requestedProductFamilyAvailability(message)){
+    const generalRecovery=isPublicDemo && result.handoff;
+    if ((generalRecovery||(isPublicDemo&&orderRecovery)) && !requestedProductFamilyAvailability(message)){
       const enteredWebsite=normalizeWebUrl(profile.website,false);
       const storedImport=demoImportId ? demoWebsiteImports.get(demoImportId) : null;
       const storedWebsite=normalizeWebUrl(storedImport?.website,false);
@@ -15827,9 +15828,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       if(target && (!storedWebsite || normalizeHost(target)===normalizeHost(storedWebsite)) &&
          allowDemoRecovery(target,message)){
         try {
-          const recoveredBundle=await fetchWebsiteBundle(target,24,11000,null,{
-            storefrontLimit:orderRecovery?250:0,storefrontBudgetMs:3500,sitemapLimit:450,question:message
-          });
+          const recoveryOptions=orderRecovery
+            ? {storefrontLimit:250,storefrontBudgetMs:3500,sitemapLimit:450,question:message}
+            : {storefrontLimit:0,sitemapLimit:450,question:message};
+          const recoveredBundle=await fetchWebsiteBundle(target,24,11000,null,recoveryOptions);
           const recovered=websiteKnowledgeCandidates(recoveredBundle).slice(0,500);
           const newRows=recovered.map((item,index)=>({
             id:'demo-question-'+index,category:String(item?.category||'Yrityksen tiedot').slice(0,80),
