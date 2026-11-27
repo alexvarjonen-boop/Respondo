@@ -3219,6 +3219,8 @@ function isPrivateAddress(ip) {
   }
   if (version === 6) {
     const value = ip.toLowerCase();
+    // Allow only global-unicast IPv6; block transition, documentation and special ranges.
+    if (!/^[23][0-9a-f]{3}:/i.test(value) || /^2001:(?:0*:|db8:|[0-9a-f]{1,2}:)|^2002:/i.test(value)) return true;
     return (
       value === '::1' ||
       value === '::' ||
@@ -3254,8 +3256,8 @@ async function assertPublicHttpUrl(value) {
   const normalized = normalizeWebUrl(value, false);
   if (!normalized) throw new Error('Tarkista verkkosivun osoite ja yritä uudelleen.');
   const url = new URL(normalized);
-  const host = url.hostname.toLowerCase();
-  if (host === 'localhost' || host.endsWith('.local')) throw new Error('Verkkosivua ei voi hakea.');
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g,'');
+  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.localhost') || host.endsWith('.internal')) throw new Error('Verkkosivua ei voi hakea.');
   if (net.isIP(host)) {
     if (isPrivateAddress(host)) throw new Error('Verkkosivua ei voi hakea.');
   } else {
@@ -3266,7 +3268,7 @@ async function assertPublicHttpUrl(value) {
 }
 
 async function resolvePinnedPublicAddress(url) {
-  const host = String(url.hostname || '').toLowerCase();
+  const host = String(url.hostname || '').toLowerCase().replace(/^\[|\]$/g,'');
   if (net.isIP(host)) {
     if (isPrivateAddress(host)) throw new Error('Verkkosivua ei voi hakea.');
     return { address:host, family:net.isIP(host) };
@@ -3352,7 +3354,9 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, d
       }
       if (status < 200 || status >= 300) {
         response.resume();
-        throw new Error('Verkkosivua ei saatu luettua.');
+        const error=new Error('Verkkosivua ei saatu luettua.');
+        error.httpStatus=status;
+        throw error;
       }
       const type = String(response.headers['content-type'] || '').toLowerCase();
       const gzipFile=acceptedTypes.includes('xml')&&/\.xml\.gz$/i.test(url.pathname);
@@ -3379,8 +3383,18 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, d
   } finally { clearTimeout(timer); }
 }
 async function fetchPublicHtml(value, deadline = Date.now()+8000) {
-  const result=await fetchPublicResource(value,['text/html','application/xhtml+xml'],2_000_000,deadline);
-  return {html:result.text,finalUrl:result.finalUrl};
+  // Retry at most once for transient upstream failures, never for 429 or
+  // permanent errors. All requests retain the same public-IP checks.
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const result=await fetchPublicResource(value,['text/html','application/xhtml+xml'],2_000_000,deadline);
+      return {html:result.text,finalUrl:result.finalUrl};
+    }catch(error){
+      const retryable=[502,503,504].includes(error.httpStatus)||['ECONNRESET','EAI_AGAIN','ETIMEDOUT'].includes(error.code);
+      if(attempt||!retryable||Date.now()+1500>=deadline) throw error;
+      await new Promise(resolve=>setTimeout(resolve,300+Math.floor(Math.random()*250)));
+    }
+  }
 }
 
 function htmlToReadableText(html) {
@@ -3896,7 +3910,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       const parsed=new URL(contactPage.finalUrl);
       const key=crawlUrlKey(parsed.href);
       if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pageKeys.has(key)){
-        pageKeys.add(key); queued.add(key); attempted++;
+        pageKeys.add(key); pageKeys.add(crawlUrlKey(contactCandidate.url)); queued.add(key); attempted++;
         pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
         enqueue(contactPage.html,contactPage.finalUrl);
       }
@@ -3921,12 +3935,15 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     const results=await Promise.all(batch.map(async next=>{
       try{return await fetchPublicHtml(next.url,deadline);}catch{return null;}
     }));
-    for(const page of results){
+    for(let i=0;i<results.length;i++){
+      const page=results[i];
       if(!page){failed++;continue;}
       try{
         const resolved=new URL(page.finalUrl);
         if(resolved.hostname.toLowerCase()!==base.hostname.toLowerCase()){failed++;continue;}
         const key=crawlUrlKey(resolved.href);
+        const originalKey=crawlUrlKey(batch[i].url);
+        if(originalKey!==key) pageKeys.add(originalKey);
         if(pageKeys.has(key)) continue;
         const document=extractBusinessDocument(page.html,page.finalUrl);
         pageKeys.add(key); queued.add(key);
@@ -3940,7 +3957,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const pageDocuments = pages.map((page) => ({
     url:page.url,
     ...page.document,
-  })).filter((page) => page.text.length > 0 || page.links.length > 0);
+  })).filter((page) => page.text.length > 0 || page.links.length > 0 || page.products?.length > 0 || page.structuredFacts?.length > 0 || page.contactForm);
 
   // SPA/client-rendered sites often keep their visible copy in same-origin JS bundles.
   // Read strings from those bundles without executing them so prices, trial terms and
