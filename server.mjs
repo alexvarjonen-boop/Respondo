@@ -5713,6 +5713,7 @@ function respondoSitePageActions(message, lang='fi', faqId='') {
 }
 
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
+  rows=(Array.isArray(rows)?rows:[]).filter(row=>row&&row.approved!==false);
   const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
   const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
@@ -5746,7 +5747,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   if (!handoff && !isOrderTrackingQuestion(message) && !broadProductQuestion(message)) {
     for (const row of Array.isArray(selected) ? selected : []) {
       if(!row||row.approved===false)continue;
-      const canonical=(rows||[]).find(candidate=>candidate?.approved!==false&&(candidate===row||(candidate.id!=null&&String(candidate.id)===String(row.id)&&candidate.title===row.title&&candidate.answer===row.answer)));
+      const canonical=(rows||[]).find(candidate=>candidate?.approved!==false&&(candidate===row||(candidate.id!=null&&String(candidate.id)===String(row.id)&&candidate.title===row.title&&candidate.answer===row.answer&&String(candidate.source_url||candidate.sourceUrl||'')===String(row.source_url||row.sourceUrl||''))));
       if(!canonical)continue;
       const product=parseProductKnowledgeRow(canonical);
       if(!product?.url) continue;
