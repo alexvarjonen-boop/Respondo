@@ -1910,12 +1910,49 @@ function ecommerceOrderQuestion(value, lang='') {
   const q=normalizeSearchText(value);
   if(!q) return false;
   if(intentForMessage(q,lang)==='order') return true;
+  if(/^(?:(?:miten|kuinka|mista)\s+(?:(?:voin|voi|pystyn|saan)\s+)?(?:tilata|ostaa|hankkia|tilaan|ostan)|(?:voinko|voiko|haluan|haluaisin)\s+(?:tilata|ostaa)|(?:how|where)\s+(?:(?:can|do|could)\s+i\s+)?(?:order|buy|purchase)|(?:can i|i want to|i would like to)\s+(?:order|buy|purchase)|(?:hur|var)\s+(?:(?:kan|ska)\s+jag\s+)?(?:bestalla|kopa)|(?:kan jag|jag vill)\s+(?:bestalla|kopa))\b/.test(q)) return true;
   return /^(?:(?:miten|kuinka)\s+(?:voin\s+)?(?:tilata|ostaa|hankkia)(?:\s+(?:tuotteita?|tuotteen|teilta|taman|sen|niita))?|(?:miten|kuinka)\s+(?:tilaan|ostan)(?:\s+(?:tuotteita?|tuotteen|sen|taman))?|(?:miten|kuinka)\s+(?:sen|taman|tuotteen)\s+(?:voi|voin)\s+(?:tilata|ostaa)|mista\s+(?:voin\s+)?(?:tilata|ostaa|hankkia)(?:\s+(?:tuotteita?|tuotteen))?|(?:voinko|voiko)\s+(?:teilta\s+)?(?:tilata|ostaa)(?:\s+(?:tuotteita?|tuotteen|sen|taman))?|(?:haluan|haluaisin)\s+(?:tilata|ostaa)(?:\s+(?:tuotteita?|tuotteen))?|how\s+(?:do|can)\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?|it|this|one))?|where\s+can\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?))?|can\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?|it|this|one))?|i\s+(?:want|would like)\s+to\s+(?:order|buy|purchase)(?:\s+(?:products?|items?))?|hur\s+(?:kan\s+jag\s+)?(?:bestalla|kopa)(?:\s+(?:produkter|varor|den|det))?|var\s+kan\s+jag\s+(?:bestalla|kopa)(?:\s+(?:produkter|varor))?|kan\s+jag\s+(?:bestalla|kopa)(?:\s+(?:produkter|varor|den|det))?)$/.test(q);
 }
 
-function directEcommerceOrderingAnswer(rows,message,lang='fi') {
-  if(!ecommerceOrderQuestion(message,lang)) return null;
-  const products=productCatalog(rows).filter((product)=>product?.url);
+function directEcommerceOrderingAnswer(rows,message,lang='fi',history=[]) {
+  if(isOrderTrackingQuestion(message)||!ecommerceOrderQuestion(message,lang)) return null;
+  const products=productCatalog(rows).filter(product=>product?.url&&String(product.row?.title||'')!=='Tuotekatalogi');
+  const q=normalizeSearchText(message);
+  const words=value=>normalizeSearchText(value).split(/[\s-]+/).filter(Boolean);
+  const stop=/^(?:miten|kuinka|mista|voin|voi|voiko|voinko|pystyn|saan|haluan|haluaisin|tilata|tilaan|ostaa|ostan|hankkia|tuotteen|tuotteita|tuote|tuotteet|teilta|teidan|verkkokaupasta|sen|se|sita|taman|tama|tuon|tuota|niita|how|where|can|could|do|i|to|would|like|want|order|buy|purchase|the|a|an|product|products|item|items|it|this|that|one|your|from|online|store|hur|var|kan|ska|jag|vill|bestalla|kopa|produkt|produkter|produkten|vara|varor|den|det|denna|er|ni|webbutiken)$/;
+  const targets=words(q).filter(word=>word.length>=2&&!stop.test(word));
+  // Match only the product name (not descriptions, brands or arbitrary
+  // catalog order). Finnish object endings e.g. headcoverin are allowed.
+  const equal=(query,name)=>query===name||(name.length>=4&&query.startsWith(name)&&/^(?:n|in|a|ta|ia|it|t|en|et|er|na|ssa|sta|lla|lle)$/.test(query.slice(name.length)));
+  let matched=[];
+  if(targets.length){
+    matched=products.filter(product=>{
+      const name=words(product.name);
+      return targets.every(token=>name.some(part=>equal(token,part)));
+    });
+    const exact=matched.filter(product=>words(product.name).join(' ')===targets.join(' '));
+    if(exact.length) matched=exact;
+  } else if(/\b(?:se|sen|sita|tama|taman|tuon|tuota|it|this|that|den|det|denna)\b/.test(q)){
+    const turn=meaningfulConversationTurn(history);
+    const previous=normalizeSearchText(turn?turn.question+' '+turn.answer:'');
+    matched=products.filter(product=>normalizeSearchText(product.name).length>=4&&previous.includes(normalizeSearchText(product.name)));
+  }
+  if(matched.length===1){
+    const product=matched[0];
+    const answer=lang==='en'?'You can order '+product.name+' directly from its product page below.'
+      :lang==='sv'?'Du kan beställa '+product.name+' direkt via produktsidan nedan.'
+      :'Voit tilata tuotteen '+product.name+' suoraan alla olevasta tuotepainikkeesta.';
+    return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
+  }
+  if(matched.length>1){
+    const choices=matched.slice(0,4);
+    const answer=lang==='en'?'Which of these products do you mean?':lang==='sv'?'Vilken av dessa produkter menar du?':'Mitä näistä tuotteista tarkoitat?';
+    return {answer,handoff:false,confidence:0.8,intent:'Tuotteet',sourceIds:choices.map(p=>p.row?.id).filter(Boolean),selected:choices.map(p=>p.row).filter(Boolean)};
+  }
+  if(targets.length||/\b(?:se|sen|sita|tama|taman|tuon|tuota|it|this|that|den|det|denna)\b/.test(q)){
+    const answer=lang==='en'?'Which product would you like to order?':lang==='sv'?'Vilken produkt vill du beställa?':'Minkä tuotteen haluaisit tilata?';
+    return {answer,handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
+  }
   const catalogUrl=productCatalogDestination(rows);
   if(!catalogUrl && !products.length) return null;
 
@@ -3128,7 +3165,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
     }
   }
 
-  if(catalogUrl){
+  if(catalogUrl && !actions.some(action=>action.type==='product')){
     push({
       type:'catalog',
       label:actionLang==='en'?'View all products':actionLang==='sv'?'Se alla produkter':'Katso kaikki tuotteet',
@@ -4974,7 +5011,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
 
-  const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
+  const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang,history);
   if(ecommerceOrderResult) return ecommerceOrderResult;
 
   // A cross-language specialist question is answered only from an approved,
