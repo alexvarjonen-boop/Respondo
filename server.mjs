@@ -3404,20 +3404,22 @@ function extractSameSiteLinks(html, baseUrl) {
   let base;
   try { base = new URL(baseUrl); } catch { return out; }
   const seen = new Set();
-  const re = /href\s*=\s*["']([^"'#]+)["']/gi;
+  // Only actual navigation links, not arbitrary href-like text inside scripts.
+  const source=String(html||'').replace(/<!--[\s\S]*?-->/g,'').replace(/<(script|style|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,'');
+  const re=/<(?:a|area)\b[^>]*?\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi;
   let match;
-
-  while ((match = re.exec(String(html || '')))) {
-    const raw = String(match[1] || '').replace(/&amp;/gi, '&').trim();
+  while ((match = re.exec(source))) {
+    const raw = decodeHtml(match[1]??match[2]??match[3]??'').trim();
+    if(raw.startsWith('#')) continue;
     if (!raw || /^(mailto:|tel:|javascript:|data:)/i.test(raw)) continue;
 
     try {
       const u = new URL(raw, base);
-      if (!/^https?:$/.test(u.protocol)) continue;
+      if (!/^https?:$/.test(u.protocol) || u.username || u.password) continue;
       if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
       u.hash = '';
       if (/\.(pdf|jpg|jpeg|png|gif|svg|webp|zip|docx?|xlsx?)$/i.test(u.pathname)) continue;
-      const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
+      const key = crawlUrlKey(u.href);
       if (seen.has(key)) continue;
       seen.add(key);
 
@@ -3481,7 +3483,11 @@ async function discoverSitemapUrls(baseUrl, limit = 120, deadline = Date.now()+1
     }));
     for(const xml of results){
       const index=/<(?:[\w-]+:)?sitemapindex\b/i.test(xml);
-      for(const m of xml.matchAll(/<(?:[\w-]+:)?loc>\s*([^<]+?)\s*<\/(?:[\w-]+:)?loc>/gi)){
+      // Read loc only from direct sitemap/url records, not image/video/news extensions.
+      const records=index?/<(?:[\w-]+:)?sitemap\b[^>]*>([\s\S]*?)<\/(?:[\w-]+:)?sitemap\s*>/gi:/<(?:[\w-]+:)?url\b[^>]*>([\s\S]*?)<\/(?:[\w-]+:)?url\s*>/gi;
+      for(const record of xml.matchAll(records)){
+        const m=record[1].match(/^\s*<(?:[\w-]+:)?loc>\s*([^<]+?)\s*<\/(?:[\w-]+:)?loc>/i);
+        if(!m) continue;
         if(found.size>=limit) break;
         try{
           const u=new URL(decodeHtml(m[1].trim()),base);
@@ -3558,8 +3564,8 @@ function numericStorePrice(value) {
   const number=Number(raw);
   return Number.isFinite(number) && number>=0 ? number : null;
 }
-async function fetchPublicJson(value,maxBytes=8_000_000) {
-  const result=await fetchPublicResource(value,['application/json','text/json'],maxBytes);
+async function fetchPublicJson(value,maxBytes=8_000_000,deadline=Date.now()+8000) {
+  const result=await fetchPublicResource(value,['application/json','text/json'],maxBytes,deadline);
   return JSON.parse(result.text);
 }
 function cleanCatalogValues(value,limit=30) {
@@ -3629,7 +3635,7 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
   for(let page=1;out.length<limit && Date.now()<deadline;page++){
     let payload;
     try {
-      payload=await fetchPublicJson(new URL('/products.json?limit=250&page='+page,base).toString(),10_000_000);
+      payload=await fetchPublicJson(new URL('/products.json?limit=250&page='+page,base).toString(),10_000_000,deadline);
     } catch {
       if(page===1) return [];
       break;
@@ -3682,7 +3688,7 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
   for(let page=1;out.length<limit && Date.now()<deadline;page++){
     let products;
     try {
-      const payload=await fetchPublicJson(new URL('/wp-json/wc/store/v1/products?per_page=100&page='+page,base).toString(),10_000_000);
+      const payload=await fetchPublicJson(new URL('/wp-json/wc/store/v1/products?per_page=100&page='+page,base).toString(),10_000_000,deadline);
       products=Array.isArray(payload)?payload:[];
     } catch {
       if(page===1) return [];
@@ -3691,9 +3697,12 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
     if(!products.length) break;
     for(const raw of products){
       const p=raw?.prices||{};
-      const minor=Math.pow(10,Number(p.currency_minor_unit||2));
+      const rawMinor=Number(p.currency_minor_unit??2);
+      const minor=Math.pow(10,Number.isInteger(rawMinor)&&rawMinor>=0&&rawMinor<=6?rawMinor:2);
       const low=numericStorePrice(p.price);
-      const regular=numericStorePrice(p.regular_price);
+      const rangeLow=numericStorePrice(p.price_range?.min_amount);
+      const rangeHigh=numericStorePrice(p.price_range?.max_amount);
+      const actualLow=rangeLow??low;
       const optionDefs=(Array.isArray(raw?.attributes)?raw.attributes:[]).map((attribute)=>({
         name:String(attribute?.name||attribute?.label||'').trim(),
         values:cleanCatalogValues(attribute?.terms?.length?attribute.terms:attribute?.values,30),
@@ -3713,8 +3722,8 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
         name:raw?.name,
         url:raw?.permalink,
         imageUrl:raw?.images?.[0]?.src || raw?.images?.[0]?.thumbnail || '',
-        price:low===null?null:low/minor,
-        maxPrice:regular===null?(low===null?null:low/minor):Math.max(low===null?0:low/minor,regular/minor),
+        price:actualLow===null?null:actualLow/minor,
+        maxPrice:actualLow===null?null:Math.max(actualLow,rangeHigh??actualLow)/minor,
         currency:p.currency_code,
         availability:raw?.is_in_stock===true?'varastossa':raw?.is_in_stock===false?'ei varastossa':'',
         description:storeProductDescription(raw?.short_description || raw?.description),
@@ -3770,7 +3779,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const priority = url => {
     const p=normalizeSearchText(url);
     if (/(?:\/contact(?:-us)?|\/contactus|\/kontakt|\/kontakta-oss|\/ota-yhteytta|\/yhteystiedot|\/yhteydenotto)(?:\/|[?#]|$)/.test(p)) return 175;
-    if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|terms|kayttoeh|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 150;
+    if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|terms|kayttoeh|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti|ajanvaraus|appointment|booking|tidsbokning|toimialue|palvelualue|service-area/.test(p)) return 150;
     if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 110;
     return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
   };
