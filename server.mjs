@@ -6172,7 +6172,10 @@ function storeProductDescription(value) {
   return htmlToReadableText(String(value||'')).replace(/\s+/g,' ').trim().slice(0,700);
 }
 function numericStorePrice(value) {
-  const number=Number(String(value??'').replace(',','.').replace(/[^0-9.-]/g,''));
+  if(value==null||String(value).trim()==='')return null;
+  const raw=String(value).trim().replace(',','.');
+  if(!/^\d+(?:\.\d+)?$/.test(raw))return null;
+  const number=Number(raw);
   return Number.isFinite(number) && number>=0 ? number : null;
 }
 async function fetchPublicJson(value,maxBytes=8_000_000) {
@@ -6428,9 +6431,10 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
     if(!products.length) break;
     for(const raw of products){
       const p=raw?.prices||{};
-      const minor=Math.pow(10,Number(p.currency_minor_unit||2));
-      const low=numericStorePrice(p.price);
-      const regular=numericStorePrice(p.regular_price);
+      const units=Number(p.currency_minor_unit??2);
+      const minor=Math.pow(10,Number.isInteger(units)&&units>=0&&units<=6?units:2);
+      const low=numericStorePrice(p.price_range?.min_amount)??numericStorePrice(p.price);
+      const high=numericStorePrice(p.price_range?.max_amount);
       const optionDefs=(Array.isArray(raw?.attributes)?raw.attributes:[]).map((attribute)=>({
         name:String(attribute?.name||attribute?.label||'').trim(),
         values:cleanCatalogValues(attribute?.terms?.length?attribute.terms:attribute?.values,30),
@@ -6451,9 +6455,9 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
         url:raw?.permalink,
         imageUrl:raw?.images?.[0]?.src || raw?.images?.[0]?.thumbnail || '',
         price:low===null?null:low/minor,
-        maxPrice:regular===null?(low===null?null:low/minor):Math.max(low===null?0:low/minor,regular/minor),
+        maxPrice:low===null?null:Math.max(low,high??low)/minor,
         currency:p.currency_code,
-        availability:raw?.is_in_stock===true?'varastossa':raw?.is_in_stock===false?'ei varastossa':'',
+        availability:raw?.is_on_backorder===true?'ennakkotilaus':raw?.is_in_stock===true?'varastossa':raw?.is_in_stock===false?'ei varastossa':'',
         description:storeProductDescription(raw?.short_description || raw?.description),
         category:Array.isArray(raw?.categories)?raw.categories.map((item)=>item?.name).filter(Boolean).join(', '):'',
         brand:Array.isArray(raw?.brands)?raw.brands.map((item)=>item?.name).filter(Boolean).join(', '):'',
