@@ -10,10 +10,13 @@ function decode(s){
 }
 export function normalizedCrawlUrl(raw,baseUrl,{sitemap=false}={}){
   try{
+    const candidate=decode(raw).trim();
+    if(!candidate||candidate.startsWith('#'))return '';
     const base=new URL(baseUrl);
-    const u=new URL(decode(raw).trim(),base);
+    const u=new URL(candidate,base);
     if(!/^https?:$/.test(u.protocol)||u.username||u.password||u.hostname.toLowerCase()!==base.hostname.toLowerCase()||u.port!==base.port)return '';
-    if(!sitemap && (ASSET.test(u.pathname)||ACTION.test(u.pathname)||[...u.searchParams.keys()].some(k=>ACTION_QUERY.test(k))))return '';
+    if(ACTION.test(u.pathname)||[...u.searchParams.keys()].some(k=>ACTION_QUERY.test(k)))return '';
+    if(!sitemap&&ASSET.test(u.pathname))return '';
     u.hash='';
     for(const k of [...u.searchParams.keys()])if(TRACKING.test(k))u.searchParams.delete(k);
     if(!sitemap && (u.search.length>320||[...u.searchParams.keys()].length>8))return '';
@@ -29,7 +32,7 @@ export function crawlUrlKey(value,base=value){
 export function customerPageScore(value){
   const p=fold(value);
   if(/(?:contact|yhteystied|yhteydenotto|ota-yhteytta|kontakt|kontakta|opening|aukiolo|oppettid|location|toimipiste|myymala|tavaratalo|branches|butiker)/.test(p))return 320;
-  if(/(?:faq|ukk|usein.kys|vanliga.frag|help|support|asiakaspalvelu|kundservice|shipping|delivery|toimit|leverans|return|refund|palaut|retur|warranty|takuu|garanti|payment|maksu|betalning)/.test(p))return 300;
+  if(/(?:faq|ukk|usein.kys|vanliga.frag|help|support|asiakaspalvelu|kundservice|shipping|delivery|toimit|leverans|return|refund|palaut|retur|warranty|takuu|garanti|payment|maksu|betalning|kopvillkor|terms-of-sale|service-area|palvelualue|toimialue|verksamhetsomrade)/.test(p))return 300;
   if(/(?:price|pricing|hinn|pris|palvel|service|tjanst|tarjous|offert|quote|ajanvaraus|booking|appointment|boka)/.test(p))return 280;
   if(/(?:about|meista|yritys|company|om-oss)/.test(p))return 200;
   if(/(?:products?|tuotteet|produkter|collections?|kauppa|shop)/.test(p))return 130;
@@ -41,7 +44,7 @@ export function crawlPageLinks(html,baseUrl){
   // Strip scripts and styles; anchors may have unquoted or mixed-case hrefs.
   const source=String(html||'').replace(/<!--[^]*?-->/g,'').replace(/<(script|style|template)\b[^>]*>[^]*?<\/\1\s*>/gi,'');
   for(const m of source.matchAll(/<a\b([^>]{0,4000})>([^]*?)<\/a\s*>/gi)){
-    const href=m[1].match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+))/i);
+    const href=m[1].match(/(?:^|\s)href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+))/i);
     if(!href)continue;
     const url=normalizedCrawlUrl(href[1]??href[2]??href[3],baseUrl);
     if(!url)continue;
@@ -59,7 +62,9 @@ export function sitemapEntries(xml,baseUrl){
   const out=[];
   const pattern=index?/<(?:[\w.-]+:)?sitemap(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\w.-]+:)?sitemap\s*>/gi:/<(?:[\w.-]+:)?url(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\w.-]+:)?url\s*>/gi;
   for(const m of source.matchAll(pattern)){
-    const loc=m[1].match(/<(?:[\w.-]+:)?loc(?:\s[^>]*)?>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]+?))\s*<\/(?:[\w.-]+:)?loc\s*>/i);
+    // Remove image/video/news extension records before looking for the page loc.
+    const record=m[1].replace(/<(?:[\w.-]+:)?(?:image|video|news)\b[^>]*>[\s\S]*?<\/(?:[\w.-]+:)?(?:image|video|news)\s*>/gi,'');
+    const loc=record.match(/<(?:[\w.-]+:)?loc(?:\s[^>]*)?>\s*(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]+?))\s*<\/(?:[\w.-]+:)?loc\s*>/i);
     if(!loc)continue;
     const url=normalizedCrawlUrl(loc[1]??loc[2],baseUrl,{sitemap:index});
     if(url)out.push({url,index,score:customerPageScore(new URL(url).pathname)});
