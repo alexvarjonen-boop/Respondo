@@ -104,21 +104,21 @@ const FAQ = [
         "Mitä Respondo maksaa kuukaudessa?",
         "Paljonko kuukausitilaus maksaa?"
       ],
-      "a": "Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilaukset ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Säästät 10 €/kk. Suomen kotimaan myynnissä hinnat sisältävät ALV:n 25,5 %."
+      "a": "Uusia vuositilauksia ei tarjota. Nykyinen tilaus maksaa 350 €/kk. Aiemmat sopimukset jatkuvat sovituin ehdoin."
     },
     "sv": {
       "q": [
         "Vad kostar Respondo per månad?",
         "Vad kostar månadsabonnemanget?"
       ],
-      "a": "Månadspriserna är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Årsplanerna är Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Spara 10 €/mån. Priserna inkluderar finsk moms på 25,5 % vid inhemsk försäljning."
+      "a": "Respondo AI kostar 350 €/mån. Valfri installation kostar 200 € som engångsavgift. Priserna inkluderar moms i Finland."
     },
     "en": {
       "q": [
         "How much does Respondo cost per month?",
         "What is the monthly plan price?"
       ],
-      "a": "Monthly pricing is Advanced €49/month, Premium €129/month, and Enterprise €149/month. Annual plans are Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year), saving €10/month. Prices include 25.5% Finnish VAT on domestic sales."
+      "a": "Respondo AI costs €350/month. Optional assisted setup costs €200 once. Prices include VAT in Finland."
     }
   },
   {
@@ -128,21 +128,21 @@ const FAQ = [
         "Mitä vuositilaus maksaa?",
         "Paljonko vuosipaketti maksaa?"
       ],
-      "a": "Vuositilaukset ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Säästät 10 €/kk. Kuukausitilaukset ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Aiemmat vuositilaukset jatkuvat vanhoilla sopimusehdoillaan. Suomen kotimaan myynnissä hinnat sisältävät ALV:n 25,5 %."
+      "a": "Uusia vuositilauksia ei tarjota. Nykyinen tilaus maksaa 350 €/kk. Aiemmat sopimukset jatkuvat sovituin ehdoin."
     },
     "sv": {
       "q": [
         "Vad kostar årsabonnemanget?",
         "Hur mycket kostar årsplanen?"
       ],
-      "a": "Årsabonnemang är 10 €/månad billigare: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år), Enterprise 139 €/mån (1 668 €/år). Årsbeloppet betalas på en gång. Befintliga avtal gäller som avtalat. Priserna inkluderar finsk moms på 25,5 % vid inhemsk försäljning."
+      "a": "Nya årsabonnemang erbjuds inte. Det nuvarande abonnemanget kostar 350 €/mån. Befintliga avtal gäller enligt avtalade villkor."
     },
     "en": {
       "q": [
         "How much is the annual plan?",
         "What does the yearly subscription cost?"
       ],
-      "a": "Annual billing costs €10/month less: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year). The full amount is billed once a year. Existing contracts keep their agreed terms. Prices include 25.5% Finnish VAT on domestic sales."
+      "a": "New annual subscriptions are not offered. The current subscription costs €350/month. Existing agreements retain their agreed terms."
     }
   },
   {
@@ -152,21 +152,21 @@ const FAQ = [
         "Sisältääkö hinta ALV:n?",
         "Tuleeko hinnan päälle vielä veroja?"
       ],
-      "a": "Advanced-, Premium- ja Enterprise-hinnat sisältävät Suomen ALV:n 25,5 %. Vero eritellään Stripe-laskulla, eikä sitä lisätä ilmoitetun hinnan päälle."
+      "a": "Hinta sisältää Suomen ALV:n 25,5 %. Vero eritellään Stripe-laskulla, eikä sitä lisätä ilmoitetun hinnan päälle."
     },
     "sv": {
       "q": [
         "Ingår moms i priset?",
         "Tillkommer skatt på priset?"
       ],
-      "a": "Priserna för Advanced, Premium och Enterprise inkluderar finsk moms på 25,5 % vid inhemsk försäljning. Momsen specificeras på Stripe-fakturan utan att totalpriset höjs."
+      "a": "Priset inkluderar finsk moms på 25,5 % vid inhemsk försäljning. Momsen specificeras på Stripe-fakturan utan att totalpriset höjs."
     },
     "en": {
       "q": [
         "Does the price include VAT?",
         "Are taxes added on top of the price?"
       ],
-      "a": "Advanced, Premium and Enterprise prices include 25.5% Finnish VAT on domestic sales. VAT is itemized on the Stripe invoice without increasing the listed total."
+      "a": "The price includes 25.5% Finnish VAT on domestic sales. VAT is itemized on the Stripe invoice without increasing the listed total."
     }
   },
   {
@@ -224,21 +224,21 @@ const FAQ = [
         "Miten aloitan tilauksen?",
         "Mistä voin tilata Respondon?"
       ],
-      "a": "Aloita osoitteesta {{SITE_URL}}/tilaus. Valitse Advanced, Premium tai Enterprise, luo tili tai jatka Googlella ja lisää maksutapa Stripen kassalla."
+      "a": "Aloita osoitteesta {{SITE_URL}}/tilaus, luo tili tai jatka Googlella ja lisää maksutapa Stripen kassalla."
     },
     "sv": {
       "q": [
         "Hur startar jag ett abonnemang?",
         "Var kan jag beställa Respondo?"
       ],
-      "a": "Börja på {{SITE_URL}}/tilaus. Välj Advanced, Premium eller Enterprise, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden i Stripe."
+      "a": "Börja på {{SITE_URL}}/tilaus, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden i Stripe."
     },
     "en": {
       "q": [
         "How do I start a subscription?",
         "Where can I subscribe to Respondo?"
       ],
-      "a": "Start at {{SITE_URL}}/tilaus. Choose Advanced, Premium or Enterprise, create an account or continue with Google, and add your payment method in Stripe checkout."
+      "a": "Start at {{SITE_URL}}/tilaus, create an account or continue with Google, and add your payment method in Stripe checkout."
     }
   },
   {
@@ -1352,21 +1352,21 @@ const FAQ = [
         "Mitä ominaisuuksia Respondossa on?",
         "Mitä kaikkea Respondo osaa?"
       ],
-      "a": "Ominaisuudet riippuvat paketista. Advanced sisältää AI-chatin, oman tietopohjan, verkkosivutuonnin, ajanvaraukset, yhteydenotot ja 2 asiakaspalvelijapaikkaa. Premium lisää Google Calendarin ja 10 paikkaa. Enterprise sisältää kaikki Respondon nykyiset ominaisuudet ja 20 paikkaa."
+      "a": "Respondo AI:n nykyinen tilaus maksaa 350 €/kk. Siihen sisältyvät AI-chat, verkkosivutietojen tuonti, oma tietopohja, muokattava ulkoasu, ajanvaraus, liidit, keskusteluhistoria, analytiikka ja 20 asiakaspalvelijapaikkaa. Osa toiminnoista edellyttää käyttöönottoa ja määrityksiä."
     },
     "sv": {
       "q": [
         "Vilka funktioner har Respondo?",
         "Vad kan Respondo göra?"
       ],
-      "a": "Funktionerna beror på paketet. Advanced innehåller AI-chatt, företagets kunskapsbas, webbplatsimport, bokningar, kontaktförfrågningar och 2 kundserviceplatser. Premium lägger till Google Kalender och 10 platser. Enterprise innehåller alla nuvarande Respondo-funktioner och 20 platser."
+      "a": "Det nuvarande Respondo AI-abonnemanget kostar 350 €/mån. AI-chatt, webbplatsimport, egen kunskapsbas, anpassningsbart utseende, bokningar, leads, konversationshistorik, analys och 20 kundserviceplatser ingår. Vissa funktioner kräver aktivering och konfiguration."
     },
     "en": {
       "q": [
         "What features does Respondo have?",
         "What can Respondo do?"
       ],
-      "a": "Features depend on the tier. Advanced includes AI chat, a knowledge base, website import, bookings, contact capture, and 2 support-agent seats. Premium adds Google Calendar and 10 seats. Enterprise includes all current Respondo features and 20 seats."
+      "a": "The current Respondo AI subscription costs €350/month. It includes AI chat, website knowledge import, a business knowledge base, customizable appearance, bookings, leads, conversation history, analytics and 20 support-agent seats. Some capabilities require activation and configuration."
     }
   },
   {
@@ -1376,21 +1376,21 @@ const FAQ = [
         "Onko kuukausi- ja vuositilauksessa samat ominaisuudet?",
         "Saanko vuositilauksella enemmän ominaisuuksia?"
       ],
-      "a": "Kuukausi- ja vuositilaus sisältävät saman paketin ominaisuudet. Vuositilaus on 10 €/kk halvempi ja laskutetaan kerran vuodessa. Advanced-, Premium- ja Enterprise-paketit eroavat ominaisuuksien ja asiakaspalvelijapaikkojen määrän perusteella."
+      "a": "Uusia vuositilauksia ei tarjota. Nykyinen tilaus maksaa 350 €/kk. Aiemmat sopimukset jatkuvat sovituin ehdoin."
     },
     "sv": {
       "q": [
         "Har månads- och årsabonnemanget samma funktioner?",
         "Får jag fler funktioner med årsplanen?"
       ],
-      "a": "Månads- och årsabonnemang har samma funktioner inom respektive paket. Årsabonnemang sparar 10 €/mån och betalas en gång per år. Advanced, Premium och Enterprise har olika funktioner och antal kundserviceplatser."
+      "a": "Nya årsabonnemang erbjuds inte. Det nuvarande abonnemanget kostar 350 €/mån. Befintliga avtal gäller enligt avtalade villkor."
     },
     "en": {
       "q": [
         "Do the monthly and annual plans have the same features?",
         "Do I get more features on the annual plan?"
       ],
-      "a": "Advanced, Premium, and Enterprise monthly plans differ in features and support-agent seats. Existing annual subscriptions continue under previous terms."
+      "a": "New annual subscriptions are not offered. The current subscription costs €350/month. Existing agreements retain their agreed terms."
     }
   },
   {

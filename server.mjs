@@ -2329,9 +2329,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   if (!q) return null;
   const language = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const answer = (fi, sv, en) => language === 'sv' ? sv : language === 'en' ? en : fi;
-  // Give the three advertised monthly prices immediately when the visitor
-  // asks a general or monthly pricing question. More detail is supplied only
-  // when the visitor explicitly asks about annual billing or a specific plan.
+  // Give the current single subscription price for monthly and general pricing questions.
   const monthlyPlanList = answer("Respondo AI maksaa 350 €/kk, ja valinnainen käyttöönottopalvelu maksaa 200 € kertaluonteisesti. Hinnat sisältävät ALV:n Suomessa. Pyydä maksuton demo osoitteessa respondoai.fi/yhteystiedot.", "Respondo AI kostar 350 €/mån och valfri installation kostar 200 € som engångsavgift. Priserna inkluderar moms i Finland. Boka en kostnadsfri demo på respondoai.fi/yhteystiedot.", "Respondo AI costs €350/month and optional assisted setup costs €200 once. Prices include VAT in Finland. Book a free demo at respondoai.fi/yhteystiedot.");
 
   // Superlative price questions need the cheapest plan, not a generic
@@ -2364,19 +2362,27 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   // never used for an unrelated tenant or external demo import.
   if (/(?:^|\b)(?:mita (?:te )?teette|mita (?:te )?tarjoatte|kerro (?:respondo(?:sta)?|teista|yrityksestanne)|what do you do|what do you offer|tell me about respondo|vad gor ni|vad erbjuder ni|beratta om respondo)(?:\b|$)/.test(q)) {
     return {id:'respondo-faq-company-overview',answer:answer(
-      'Respondo AI tarjoaa yrityksille verkkosivuille asennettavan AI-asiakaspalvelubotin. Se vastaa asiakkaiden kysymyksiin ympäri vuorokauden yrityksen hyväksyttyjen tietojen perusteella suomeksi, ruotsiksi ja englanniksi. Botti voi myös kerätä yhteydenottoja, auttaa ajanvarauksissa ja siirtää keskustelun asiakaspalvelijalle. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista.',
-      'Respondo AI erbjuder företag en AI-kundtjänstbot för deras webbplatser. Den svarar på kundfrågor dygnet runt utifrån företagets godkända information på finska, svenska och engelska. Den kan även samla in kontaktförfrågningar, hjälpa till med bokningar och lämna över chatten till en medarbetare. Vissa funktioner kräver rätt abonnemang eller integrationer.',
-      'Respondo AI provides businesses with an AI customer-service chatbot for their websites. It answers customer questions around the clock using company-approved information in Finnish, Swedish and English. It can also collect enquiries, assist with bookings and hand conversations over to staff. Some features depend on the plan and enabled integrations.'
+      'Respondo AI tarjoaa yrityksille verkkosivuille asennettavan AI-asiakaspalvelubotin. Se vastaa asiakkaiden kysymyksiin ympäri vuorokauden yrityksen hyväksyttyjen tietojen perusteella suomeksi, ruotsiksi ja englanniksi. Botti voi myös kerätä yhteydenottoja, auttaa ajanvarauksissa ja siirtää keskustelun asiakaspalvelijalle. Osa toiminnoista edellyttää käyttöönotettuja integraatioita.',
+      'Respondo AI erbjuder företag en AI-kundtjänstbot för deras webbplatser. Den svarar på kundfrågor dygnet runt utifrån företagets godkända information på finska, svenska och engelska. Den kan även samla in kontaktförfrågningar, hjälpa till med bokningar och lämna över chatten till en medarbetare. Vissa funktioner kräver aktiverade integrationer.',
+      'Respondo AI provides businesses with an AI customer-service chatbot for their websites. It answers customer questions around the clock using company-approved information in Finnish, Swedish and English. It can also collect enquiries, assist with bookings and hand conversations over to staff. Some features require enabled integrations.'
     )};
+  }
+
+  // New customers have one subscription. Retain old plan names only as input aliases.
+  if (/\b(?:advanced|starter|basic|premium|enterprise|business)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+    return {id:'respondo-faq-basic',answer:answer("Respondo AI:n nykyinen tilaus maksaa 350 €/kk. Siihen sisältyvät AI-chat, verkkosivutietojen tuonti, oma tietopohja, muokattava ulkoasu, ajanvaraus, liidit, keskusteluhistoria, analytiikka ja 20 asiakaspalvelijapaikkaa. Osa toiminnoista edellyttää käyttöönottoa ja määrityksiä.", "Det nuvarande Respondo AI-abonnemanget kostar 350 €/mån. AI-chatt, webbplatsimport, egen kunskapsbas, anpassningsbart utseende, bokningar, leads, konversationshistorik, analys och 20 kundserviceplatser ingår. Vissa funktioner kräver aktivering och konfiguration.", "The current Respondo AI subscription costs €350/month. It includes AI chat, website knowledge import, a business knowledge base, customizable appearance, bookings, leads, conversation history, analytics and 20 support-agent seats. Some capabilities require activation and configuration.")};
+  }
+  if (/(?:what (?:is|comes) included|what does .* include|mita (?:tilaukseen|pakettiin) sisaltyy|vad ingar|what plans are available|mita paketteja|vilka abonnemang)/.test(q)) {
+    return {id:'respondo-faq-basic',answer:answer("Respondo AI:n nykyinen tilaus maksaa 350 €/kk. Siihen sisältyvät AI-chat, verkkosivutietojen tuonti, oma tietopohja, muokattava ulkoasu, ajanvaraus, liidit, keskusteluhistoria, analytiikka ja 20 asiakaspalvelijapaikkaa. Osa toiminnoista edellyttää käyttöönottoa ja määrityksiä.", "Det nuvarande Respondo AI-abonnemanget kostar 350 €/mån. AI-chatt, webbplatsimport, egen kunskapsbas, anpassningsbart utseende, bokningar, leads, konversationshistorik, analys och 20 kundserviceplatser ingår. Vissa funktioner kräver aktivering och konfiguration.", "The current Respondo AI subscription costs €350/month. It includes AI chat, website knowledge import, a business knowledge base, customizable appearance, bookings, leads, conversation history, analytics and 20 support-agent seats. Some capabilities require activation and configuration.")};
   }
 
   // First-party feature overview: highlight actual value and always provide the full feature catalogue.
   if ((/(?:ominaisu|toiminto|mita osaa|mita kaikkea|mitä osaa|mitä kaikkea|feature|capabilit|what can (?:respondo|it) do|funktion|vad kan (?:respondo|den) gora|vad kan (?:respondo|den) göra)/.test(q) || isRespondoCapabilityQuestion(q))
       && !/(?:starter|basic|advanced|premium|business|enterprise|hinta|maksaa|maksavat|price|pricing|cost|pris|kostar)/.test(q)) {
     return {id:'respondo-faq-features-overview',answer:answer(
-      'Respondo AI palvelee asiakkaitasi ympäri vuorokauden ja ymmärtää kysymyksiä sekä jatkokysymyksiä suomeksi, ruotsiksi ja englanniksi. Se voi hakea yrityksesi verkkosivuilta palvelu- ja tuotetietoja, vastata tuotteiden hinnoista, kerätä liidejä ja yhteydenottoja, hoitaa ajanvarauksia sekä siirtää keskustelun oikealle asiakaspalvelijalle. Saat myös muokattavan chatin, keskusteluhistorian ja analytiikkaa. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista.',
-      'Respondo AI svarar kunder dygnet runt på finska, svenska och engelska och hanterar följdfrågor. Den kan hämta tjänste- och produktinformation från företagets webbplats, svara på prisfrågor, samla in leads, hantera bokningar och överföra chatten till en medarbetare. Anpassningsbar chatt, konversationshistorik och analys ingår också. Vissa funktioner beror på abonnemang och integrationer.',
-      'Respondo AI answers customers 24/7 in Finnish, Swedish and English, including follow-up questions. It can import website knowledge, answer product and price questions, capture leads, handle bookings and transfer chats to human agents. Customizable chat, conversation history and analytics are also available. Some features depend on plan and integrations.'
+      'Respondo AI palvelee asiakkaitasi ympäri vuorokauden ja ymmärtää kysymyksiä sekä jatkokysymyksiä suomeksi, ruotsiksi ja englanniksi. Se voi hakea yrityksesi verkkosivuilta palvelu- ja tuotetietoja, vastata tuotteiden hinnoista, kerätä liidejä ja yhteydenottoja, hoitaa ajanvarauksia sekä siirtää keskustelun oikealle asiakaspalvelijalle. Saat myös muokattavan chatin, keskusteluhistorian ja analytiikkaa. Osa toiminnoista edellyttää käyttöönotettuja integraatioita.',
+      'Respondo AI svarar kunder dygnet runt på finska, svenska och engelska och hanterar följdfrågor. Den kan hämta tjänste- och produktinformation från företagets webbplats, svara på prisfrågor, samla in leads, hantera bokningar och överföra chatten till en medarbetare. Anpassningsbar chatt, konversationshistorik och analys ingår också. Vissa funktioner kräver aktiverade integrationer.',
+      'Respondo AI answers customers 24/7 in Finnish, Swedish and English, including follow-up questions. It can import website knowledge, answer product and price questions, capture leads, handle bookings and transfer chats to human agents. Customizable chat, conversation history and analytics are also available. Some features require enabled integrations.'
     )};
   }
 
@@ -2495,28 +2501,6 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
       id:'respondo-faq-pricing',
       answer:monthlyPlanList
     };
-  }
-
-  if (/\b(?:advanced|starter|basic)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
-    return {id:'respondo-faq-basic',answer:answer(
-      'Advanced sisältää verkkosivun AI-chatin, yrityksen verkkosivun tietojen tuonnin, botin ulkoasun muokkauksen, oman tietopohjan, Respondon ajanvarauksen, liidit, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
-      'Advanced omfattar webbchatt, import av företagets webbplatsuppgifter, anpassning av bottens utseende, egen kunskapsbas, bokningar, leads, konversationshistorik och 2 kundserviceplatser.',
-      'Advanced includes website AI chat, website knowledge import, customizable appearance, a business knowledge base, bookings, leads, conversation history and 2 support-agent seats.'
-    )};
-  }
-  if (/\bpremium\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
-    return {id:'respondo-faq-advanced',answer:answer(
-      'Premium sisältää Advanced-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin ajanvarauksiin.',
-      'Premium innehåller allt i Advanced, 10 kundserviceplatser och Google Kalender-synkronisering för bokningar.',
-      'Premium includes everything in Advanced, 10 support-agent seats and Google Calendar synchronization for bookings.'
-    )};
-  }
-  if (/\b(?:enterprise|business)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
-    return {id:'respondo-faq-business',answer:answer(
-      'Enterprise sisältää Advanced- ja Premium-toiminnot sekä 20 asiakaspalvelijapaikkaa, automaattisen tarjouslaskennan, Stripe-maksulinkit, verkkokaupan tilaushaut ja saatavilla olevat webhook- ja API-työnkulut. Toiminnot edellyttävät tarvittavia määrityksiä.',
-      'Enterprise omfattar Advanced och Premium samt 20 kundserviceplatser, automatisk offertberäkning, Stripe-betalningslänkar, orderuppslag och tillgängliga webhook- och API-flöden. Funktionerna kräver rätt inställningar.',
-      'Enterprise includes Advanced and Premium features plus 20 support-agent seats, automated quote calculations, Stripe payment links, ecommerce order lookup and supported webhook/API workflows. These capabilities require proper configuration.'
-    )};
   }
 
   if (/(?:3 paivan|3 päivän|kolmen paivan|free trial|trial|gratis prov|provperiod|kokeilu).*(?:toim|maks|veloitet|peru|cancel|works|cost|charge|funger|kostar)?|(?:kokeilu|trial|provperiod)/.test(q)) {

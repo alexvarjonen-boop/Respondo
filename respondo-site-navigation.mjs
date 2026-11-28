@@ -21,7 +21,7 @@ const pages=[
    labels:['Tutustu ominaisuuksiin','Se funktionerna','Explore features']},
   {type:'site_pricing',path:'/hinnat',ids:['respondo-faq-cheapest-pricing','respondo-faq-pricing','respondo-faq-monthly-pricing','respondo-faq-annual-pricing','respondo-faq-basic','respondo-faq-advanced','respondo-faq-business'],
    match:/\b(hinta\w*|hinnat|hinnoittel\w*|paljonko maks\w*|maksaa\b|maksavat\b|paket\w*|price\w*|pricing|cost\w*|priser|prisplan\w*|kostar|abonnemang\w*)\b/,
-   labels:['Katso hinnat ja paketit','Se priser och paket','View pricing and plans']},
+   labels:['Katso hinta','Se priset','View pricing']},
   {type:'site_contact',path:'/yhteystiedot',ids:['respondo-faq-company-contact'],
    match:/\b(yhteystied\w*|yhteytt\w*|sahkopost\w*|tavoittaa|ota yhteytta|contact|kontakt\w*|kontakta|reach you|email address)\b/,
    labels:['Yhteystiedot ja yhteydenotto','Kontaktuppgifter','Contact details']},
@@ -121,14 +121,14 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
   const q=normalize(message);
   let answer='';
   if(/\b(kirjau[dt]\w*|logga in|inloggn\w*|login|log in|sign in|my account|mitt konto)\b/.test(q)){
-    answer=tr(language,'Voit kirjautua sisään alla olevasta painikkeesta. Jos sinulla ei vielä ole tiliä, voit luoda sen valitsemalla tilauspaketin.','Du kan logga in med knappen nedan. Om du saknar konto kan du skapa ett genom att välja ett abonnemang.','Use the button below to sign in. If you do not have an account yet, choose a plan to create one.');
+    answer=tr(language,'Voit kirjautua sisään alla olevasta painikkeesta. Jos sinulla ei vielä ole tiliä, voit luoda sen siirtymällä tilaussivulle.','Du kan logga in med knappen nedan. Om du saknar konto kan du skapa ett genom att välja ett abonnemang.','Use the button below to sign in. If you do not have an account yet, choose a plan to create one.');
   }else if(/\b(luo tili|luoda tili|luoda tilin|luo tilin|rekistero\w*|uusi tili|create (?:an? )?account|sign up|register|registrera|skapa konto)\b/.test(q)){
     answer=tr(language,'Luo uusi tili valitsemalla ensin sopiva paketti. Maksutapa lisätään turvallisesti Stripessä, ja saat kolmen päivän maksuttoman kokeilun.','Skapa ett konto genom att först välja ett abonnemang. Betalmetoden läggs till säkert via Stripe och du får tre dagars gratis provperiod.','To create an account, first choose a plan. Add your payment method securely through Stripe and get a three-day free trial.');
   }else if(/\b(get started|getting started|start using|how (?:do|can) i start|kom igang|hur kommer jag igang|miten aloitan|aloittaminen)\b/.test(q)){
     answer=tr(language,
-      'Aloita valitsemalla sopiva paketti. Voit luoda tilin ja kokeilla Respondoa kolme päivää maksutta.',
+      'Aloita siirtymällä tilaussivulle. Voit luoda tilin ja kokeilla Respondoa kolme päivää maksutta.',
       'Börja med att välja ett abonnemang. Skapa ett konto och prova Respondo gratis i tre dagar.',
-      'Get started by choosing a plan, creating your account and starting the three-day free trial.');
+      'Get started by opening the subscription page, creating your account and starting the three-day free trial.');
   }else if(/\b(kokeile bottia|testaa bottia|kokeilla bottia|testa botten|try the bot|test the bot|try a demo|demobotti)\b/.test(q)){
     answer=tr(language,'Voit kokeilla Respondo-bottia demossa. Lisää esimerkkiyrityksen tiedot ja kysy botilta kuten oikea asiakas.','Du kan testa Respondo i demon. Lägg till ett exempelföretags uppgifter och ställ frågor som en riktig kund.','You can try Respondo in the demo. Enter example company details and ask questions as a customer would.');
   }else if(genericPages.test(q)&&/\b(mita|mitka|miss[a]?|nayta|lista\w*|haluan|kaikki|where|show|list|which|what|vilka|visa|alla|var)\b/.test(q)){
@@ -139,9 +139,9 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
   if(!answer && !respondoPricingQuestion(message) &&
      respondoCheckoutAction(message,language,'',origin)){
     answer=tr(language,
-      'Voit tilata Respondon valitsemalla sopivan paketin alla olevasta painikkeesta.',
+      'Voit tilata Respondon siirtymällä tilaussivulle alla olevasta painikkeesta.',
       'Du kan beställa Respondo genom att välja ett abonnemang via knappen nedan.',
-      'You can subscribe to Respondo by choosing a plan using the button below.');
+      'You can subscribe to Respondo by opening the subscription page using the button below.');
   }
   if(!answer)return null;
   const actions=respondoSiteNavigationActions(message,language,'',origin);

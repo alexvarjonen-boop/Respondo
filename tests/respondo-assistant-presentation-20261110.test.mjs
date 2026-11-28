@@ -3,39 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { respondoAssistantPresentation } from '../respondo-assistant-presentation.mjs';
 
-test('verified monthly Finnish plan prices are rendered only from approved answer text',()=>{
-  const answer='Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk.';
-  const result=respondoAssistantPresentation({
-    question:'Mitä Respondo maksaa?', language:'fi',answer,verified:true,
-    faqId:'respondo-faq-pricing'
-  });
-  assert.equal(result.language,'fi');
-  assert.equal(result.cards.kind,'pricing');
-  assert.deepEqual(result.cards.items.map(item=>item.price),['49','129','149']);
-  assert.equal(result.suggestions.length,3);
-  assert.ok(result.suggestions.every(question=>typeof question==='string'&&question.length>8));
-});
-
-test('English and Swedish price cards preserve amounts and localized next questions',()=>{
-  const cases=[
-    ['en','How much does Respondo cost?','Advanced €49/month, Premium €129/month, Enterprise €149/month.',['49','129','149']],
-    ['sv','Vad kostar årsabonnemanget?','Årsplaner: Advanced 39 €/mån, Premium 119 €/mån och Enterprise 139 €/mån.',['39','119','139']]
-  ];
-  for(const [language,question,answer,prices] of cases){
-    const result=respondoAssistantPresentation({question,language,answer,verified:true,faqId:'respondo-faq-pricing'});
-    assert.deepEqual(result.cards.items.map(item=>item.price),prices);
-    assert.equal(result.language,language);
-    assert.ok(result.suggestions.every(suggestion=>suggestion!==question));
+test('single subscription uses current localized follow-ups and no obsolete plan comparison',()=>{
+  const cases=[['fi','Mitä Respondo maksaa?','Mitä Respondo AI:n tilaukseen sisältyy?'],['sv','Vad kostar Respondo?','Vad ingår i Respondo AI?'],['en','How much does Respondo cost?','What is included in Respondo AI?']];
+  for(const [language,question,expected] of cases){
+    const result=respondoAssistantPresentation({question,language,answer:'Respondo AI €350/month',verified:true,faqId:'respondo-faq-pricing'});
+    assert.equal(result.cards,null);assert.ok(result.suggestions.includes(expected));assert.doesNotMatch(result.suggestions.join(' '),/Advanced|Premium|Enterprise/);
+    assert.equal(respondoAssistantPresentation({question,language,answer:'Advanced €49, Premium €129, Enterprise €149',verified:true,faqId:'respondo-faq-pricing'}).cards,null);
   }
-});
-
-test('pricing cards are suppressed when prices are missing or unverified',()=>{
-  const base={question:'What does Respondo cost?',language:'en',verified:true,faqId:'respondo-faq-pricing'};
-  assert.equal(respondoAssistantPresentation({...base,answer:'Advanced costs €49, contact us for other packages.'}).cards,null);
-  assert.equal(respondoAssistantPresentation({...base,answer:'Advanced €49, Premium €129, Enterprise €149',verified:false}).cards,null);
-  assert.equal(respondoAssistantPresentation({...base,answer:'Advanced €49, Premium €129, Enterprise €149',handoff:true}).cards,null);
-  const fallback=respondoAssistantPresentation({question:'Unknown request',language:'en',answer:'I am not sure.',verified:false});
-  assert.equal(fallback.suggestions.length,2);
 });
 
 test('site assistant keeps verified message body, links, copy and new contextual buttons',()=>{
