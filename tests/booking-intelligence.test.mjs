@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {estimateServiceDuration,findSuitableStarts} from '../booking-intelligence.mjs';
+const rules=[{id:'window_cleaning',baseMinutes:60,minutesPerUnit:6,roundToMinutes:30,bufferAfterMinutes:15}];
+const e=estimateServiceDuration({serviceId:'window_cleaning',quantity:30,rules});
+test('30 windows: four working hours plus buffer',()=>{assert.equal(e.workMinutes,240);assert.equal(e.totalMinutes,255);assert.equal(e.requiresApproval,true)});
+test('missing details require follow-up',()=>assert.equal(estimateServiceDuration({serviceId:'window_cleaning',rules}).status,'needs_details'));
+test('unknown service is not guessed',()=>assert.equal(estimateServiceDuration({serviceId:'other',quantity:30,rules}).status,'needs_configuration'));
+const calculate=(w,other={})=>findSuitableStarts({estimate:e,windows:[w],now:'2026-11-05T00:00:00Z',availabilityVerified:true,...other});
+test('two hours cannot fit four hours',()=>assert.equal(calculate({start:'2026-11-06T13:00:00Z',end:'2026-11-06T15:00:00Z'}).status,'no_fit'));
+test('suitable opening is only a proposal',()=>{const r=calculate({start:'2026-11-06T12:00:00Z',end:'2026-11-06T18:00:00Z'},{requestedStart:'2026-11-06T13:00:00Z'});assert.equal(r.starts[0],'2026-11-06T13:00:00.000Z');assert.equal(r.requiresApproval,true)});
+test('busy overlap blocks proposals',()=>assert.equal(calculate({start:'2026-11-06T13:00:00Z',end:'2026-11-06T17:15:00Z'},{busy:[{start:'2026-11-06T17:00:00Z',end:'2026-11-06T18:00:00Z'}]}).status,'no_fit'));
+test('unverified calendar fails closed',()=>assert.equal(findSuitableStarts({estimate:e,windows:[{start:'2026-11-06T12:00:00Z',end:'2026-11-06T18:00:00Z'}]}).status,'availability_unverified'));
+test('invalid interval fails closed',()=>assert.equal(calculate({start:'invalid',end:'2026-11-06T18:00:00Z'}).status,'invalid_availability'));
